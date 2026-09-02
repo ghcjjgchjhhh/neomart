@@ -235,12 +235,6 @@ export default function App() {
 
   // Checkout flow
   const handleStartCheckout = () => {
-    if (!isLoggedIn) {
-      setIsCartOpen(false);
-      setIsLoginOpen(true);
-      showToast('Please sign in or enter your contact info to checkout');
-      return;
-    }
     setIsCartOpen(false);
     setIsCheckoutOpen(true);
   };
