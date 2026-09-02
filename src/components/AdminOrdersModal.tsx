@@ -26,33 +26,21 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
   orders,
   onConfirmOrderPayment,
 }) => {
-  const [filter, setFilter] = useState<'all' | 'pending' | 'paid'>('all');
   const [search, setSearch] = useState('');
-  const [clearedOrderIds, setClearedOrderIds] = useState<string[]>([]);
 
   if (!isOpen) return null;
 
   const handleConfirm = (id: string) => {
     onConfirmOrderPayment(id);
-    setClearedOrderIds((prev) => [...prev, id]);
   };
 
   const filteredOrders = orders.filter((ord) => {
-    if (clearedOrderIds.includes(ord.id)) return false;
-
-    const matchesFilter =
-      filter === 'all'
-        ? true
-        : filter === 'pending'
-        ? ord.status === 'Processing'
-        : ord.paymentConfirmed === true;
-
     const matchesSearch =
       ord.id.toLowerCase().includes(search.toLowerCase()) ||
       (ord.phone && ord.phone.includes(search)) ||
       (ord.address && ord.address.toLowerCase().includes(search.toLowerCase()));
 
-    return matchesFilter && matchesSearch;
+    return matchesSearch;
   });
 
   const pendingCount = orders.filter(
@@ -72,11 +60,11 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-extrabold text-base text-white">
-                  Vendor &amp; Payment Manager
+                  Vendor &amp; Order Manager
                 </h3>
                 {pendingCount > 0 && (
                   <span className="bg-[#f68b1e] text-white text-[10px] font-black px-2 py-0.5 rounded-full animate-pulse">
-                    {pendingCount} Pending OPay Transfer{pendingCount > 1 ? 's' : ''}
+                    {pendingCount} Pending Order{pendingCount > 1 ? 's' : ''}
                   </span>
                 )}
               </div>
@@ -127,7 +115,7 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
                           : 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-300 dark:border-amber-800 animate-pulse'
                       }`}
                     >
-                      {ord.paymentConfirmed === true ? '✓ Payment Confirmed' : '⌛ Processing Payment'}
+                      {ord.paymentConfirmed === true ? '✓ Order Confirmed' : '⌛ Order Pending'}
                     </span>
                   </div>
                 </div>
@@ -148,10 +136,10 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
                 <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-gray-200 dark:border-gray-800">
                   <div className="text-[10px] text-gray-400">
                     {ord.status === 'Processing'
-                      ? '👉 Check your payment account for the ₦' + ord.total.toLocaleString() + ' alert, then click confirm:'
+                      ? '👉 Review this order, then click confirm:'
                       : ord.paymentConfirmed === true
-                      ? '✅ Order payment verified. Ready for courier delivery.'
-                      : '⏳ Payment is still processing.'}
+                      ? '✅ Order confirmed. Ready for courier delivery.'
+                      : '⏳ Order is waiting for confirmation.'}
                   </div>
 
                   {ord.paymentConfirmed !== true ? (
@@ -160,11 +148,11 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
                       className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-md cursor-pointer hover:shadow-lg"
                     >
                       <CheckCircle2 className="w-4 h-4" />
-                      <span>I Have Received OPay Alert (Confirm Paid)</span>
+                      <span>Confirm Order</span>
                     </button>
                   ) : (
                     <span className="text-emerald-600 dark:text-emerald-400 font-bold text-xs flex items-center gap-1">
-                      <Check className="w-4 h-4" /> Payment Confirmed
+                      <Check className="w-4 h-4" /> Order Confirmed
                     </span>
                   )}
                 </div>

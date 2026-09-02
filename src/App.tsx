@@ -277,7 +277,7 @@ export default function App() {
     void confirmOrderPayment(orderId).catch(() => {
       showToast('Could not sync confirmation. Check Firebase connection.');
     });
-    showToast('Payment confirmed successfully');
+    showToast('Order confirmed successfully');
   };
 
   // Checkout flow
