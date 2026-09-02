@@ -16,6 +16,7 @@ interface AdminOrdersModalProps {
   isOpen: boolean;
   onClose: () => void;
   orders: Order[];
+  reportOrders: Order[];
   onConfirmOrderPayment: (orderId: string) => void;
   onUpdateOrderStatus: (orderId: string, status: FulfillmentStatus) => void;
   onOpenStockManagement: () => void;
@@ -25,6 +26,7 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
   isOpen,
   onClose,
   orders,
+  reportOrders,
   onConfirmOrderPayment,
   onUpdateOrderStatus,
   onOpenStockManagement,
@@ -57,6 +59,14 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
     notation: 'compact',
     maximumFractionDigits: 1,
   }).format(openOrderValue);
+  const confirmedOrders = reportOrders.filter((order) => order.paymentConfirmed === true);
+  const confirmedSales = confirmedOrders.reduce((total, order) => total + order.total, 0);
+  const formattedConfirmedSales = new Intl.NumberFormat('en-NG', {
+    style: 'currency',
+    currency: 'NGN',
+    notation: 'compact',
+    maximumFractionDigits: 1,
+  }).format(confirmedSales);
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
@@ -107,6 +117,25 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
             <div className="text-[10px] uppercase font-bold text-emerald-700 dark:text-emerald-400">Order value</div>
             <div className="mt-1 text-sm font-black text-gray-900 dark:text-white truncate" title={openOrderValue.toLocaleString('en-NG', { style: 'currency', currency: 'NGN' })}>
               {formattedOrderValue}
+            </div>
+          </div>
+        </div>
+
+        <div className="mx-4 mt-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#202024] p-3">
+          <div className="flex items-center justify-between gap-2">
+            <h4 className="font-extrabold text-sm text-gray-900 dark:text-white">Sales Report</h4>
+            <span className="text-[10px] text-gray-500 dark:text-gray-400">All synced orders</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2 mt-3">
+            <div>
+              <div className="text-[10px] uppercase font-bold text-gray-500 dark:text-gray-400">Confirmed orders</div>
+              <div className="text-lg font-black text-gray-900 dark:text-white">{confirmedOrders.length}</div>
+            </div>
+            <div className="min-w-0">
+              <div className="text-[10px] uppercase font-bold text-gray-500 dark:text-gray-400">Confirmed sales</div>
+              <div className="text-sm font-black text-gray-900 dark:text-white truncate" title={confirmedSales.toLocaleString('en-NG', { style: 'currency', currency: 'NGN' })}>
+                {formattedConfirmedSales}
+              </div>
             </div>
           </div>
         </div>

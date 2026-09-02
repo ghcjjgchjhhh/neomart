@@ -891,6 +891,7 @@ export default function App() {
         orders={orders.filter(
           (order) => order.orderSource === 'customer' && order.paymentConfirmed !== true
         )}
+        reportOrders={orders.filter((order) => order.orderSource === 'customer')}
         onConfirmOrderPayment={handleConfirmOrderPayment}
         onOpenStockManagement={() => setIsStockOpen(true)}
         onUpdateOrderStatus={(orderId, status) => {
