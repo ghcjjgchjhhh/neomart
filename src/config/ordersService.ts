@@ -54,6 +54,31 @@ export async function subscribeToStock(onStock: (stock: Record<number, number>) 
   });
 }
 
+export interface SharedLocation {
+  latitude: number;
+  longitude: number;
+  accuracy: number;
+  updatedAt: string;
+}
+
+export async function saveSharedLocation(orderId: string, location: SharedLocation) {
+  if (!db || !(await ensureFirebaseAuth())) return false;
+  await setDoc(doc(db, 'orderLocations', orderId), location);
+  return true;
+}
+
+export async function subscribeToSharedLocation(
+  orderId: string,
+  onLocation: (location: SharedLocation) => void
+): Promise<Unsubscribe | null> {
+  if (!db || !(await ensureFirebaseAuth())) return null;
+  return onSnapshot(doc(db, 'orderLocations', orderId), (snapshot) => {
+    if (snapshot.exists()) onLocation(snapshot.data() as SharedLocation);
+  }, (error) => {
+    console.error('Firebase location connection failed:', error);
+  });
+}
+
 export async function subscribeToOrders(onOrders: (orders: Order[]) => void): Promise<Unsubscribe | null> {
   if (!db || !(await ensureFirebaseAuth())) return null;
 

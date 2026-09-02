@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { Order } from '../types';
 import { sampleOrders } from '../data/ordersAndReviews';
+import { saveSharedLocation, subscribeToSharedLocation } from '../config/ordersService';
 
 interface OrderTrackingModalProps {
   isOpen: boolean;
@@ -145,6 +146,10 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
           accuracy: acc,
         };
         setUserLocation(loc);
+        void saveSharedLocation(orderId || selectedOrder.id, {
+          ...loc,
+          updatedAt: new Date().toISOString(),
+        });
         setPermissionStatus('granted');
         setLastPingTime(new Date());
         addLog(`✅ GPS lock verified: Accuracy ±${Math.round(acc)}m`);
@@ -167,6 +172,12 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                 ? { ...prev, latitude: wLat, longitude: wLng, accuracy: wAcc }
                 : { latitude: wLat, longitude: wLng, accuracy: wAcc }
             );
+            void saveSharedLocation(orderId || selectedOrder.id, {
+              latitude: wLat,
+              longitude: wLng,
+              accuracy: wAcc,
+              updatedAt: new Date().toISOString(),
+            });
             setLastPingTime(new Date());
           },
           () => {},
@@ -213,6 +224,23 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
       }
     };
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen || !selectedOrder.id) return;
+    let unsubscribe: (() => void) | null = null;
+    subscribeToSharedLocation(selectedOrder.id, (location) => {
+      setUserLocation((previous) => ({
+        ...location,
+        address: previous?.address,
+        city: previous?.city,
+        state: previous?.state,
+      }));
+      setLastPingTime(new Date(location.updatedAt));
+    }).then((cleanup) => {
+      unsubscribe = cleanup;
+    }).catch(() => {});
+    return () => unsubscribe?.();
+  }, [isOpen, selectedOrder.id]);
 
   // Update selected order when prop changes
   useEffect(() => {
