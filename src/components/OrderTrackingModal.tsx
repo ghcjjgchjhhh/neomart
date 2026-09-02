@@ -475,11 +475,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                 <span className="text-xs font-semibold text-[#f68b1e]">
                   {selectedOrder.paymentConfirmed === true
                     ? 'Order Received / Confirmed'
-                    : courierProgress >= 100
-                    ? 'Delivered'
-                    : courierProgress >= 85
-                    ? 'Arriving at Destination'
-                    : 'In Transit with Express Courier'}
+                    : 'Processing'}
                 </span>
               </div>
 
