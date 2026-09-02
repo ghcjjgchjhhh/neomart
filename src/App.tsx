@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Header } from './components/Header';
 import { CategoryNav } from './components/CategoryNav';
 import { Sidebar } from './components/Sidebar';
@@ -115,6 +115,9 @@ export default function App() {
   const [isOrderTrackingOpen, setIsOrderTrackingOpen] = useState(false);
   const [trackingOrderId, setTrackingOrderId] = useState<string | null>(null);
   const [lastPlacedOrderId, setLastPlacedOrderId] = useState<string | null>(null);
+  const lastPlacedOrderIdRef = useRef<string | null>(null);
+  const remoteStatusesRef = useRef<Record<string, string>>({});
+  const hasReceivedOrdersRef = useRef(false);
 
   // UI Views & Modals state
   const [selectedCategory, setSelectedCategory] = useState<CategoryId>('all');
@@ -166,6 +169,21 @@ export default function App() {
           order.orderSource === 'customer' &&
           !sampleOrders.some((sampleOrder) => sampleOrder.id === order.id)
       );
+      if (hasReceivedOrdersRef.current && lastPlacedOrderIdRef.current) {
+        const order = realOrders.find((item) => item.id === lastPlacedOrderIdRef.current);
+        const previousStatus = remoteStatusesRef.current[lastPlacedOrderIdRef.current];
+        if (order && previousStatus && order.status !== previousStatus) {
+          showToast(
+            order.paymentConfirmed === true
+              ? 'Your order has been confirmed by NeoMart.'
+              : `Your order is now ${order.status}.`
+          );
+        }
+      }
+      remoteStatusesRef.current = Object.fromEntries(
+        realOrders.map((order) => [order.id, order.status])
+      );
+      hasReceivedOrdersRef.current = true;
       if (isActive) setOrders(realOrders);
     }).then((cleanup) => {
       if (isActive) unsubscribe = cleanup;
@@ -350,6 +368,7 @@ export default function App() {
             ]
     };
 
+    lastPlacedOrderIdRef.current = newOrderId;
     const updated = [newOrder, ...orders];
     setOrders(updated);
     void saveOrder(newOrder).catch(() => {
