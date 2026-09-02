@@ -297,8 +297,8 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
   const steps = [
     {
       id: 'placed',
-      title: 'Order Confirmed',
-      desc: 'Payment verified & order booked',
+      title: 'Order Received',
+      desc: 'Awaiting payment verification',
       time: '09:15 AM',
       done: courierProgress >= 10,
       active: courierProgress < 25

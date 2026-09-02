@@ -97,8 +97,10 @@ export default function App() {
       const saved = localStorage.getItem('neomart_orders');
       const storedOrders: Order[] = saved ? JSON.parse(saved) : sampleOrders;
       return storedOrders.map((order) =>
-        order.status === 'Out for Delivery' && order.paymentMethod !== 'Payment on Delivery'
-          ? { ...order, status: 'Processing' }
+        !order.paymentConfirmed &&
+        order.paymentMethod !== 'Payment on Delivery' &&
+        (order.status === 'Out for Delivery' || order.status === 'Order Confirmed')
+          ? { ...order, status: 'Processing', paymentConfirmed: false }
           : order
       );
     } catch {
@@ -246,7 +248,9 @@ export default function App() {
   const handleConfirmOrderPayment = (orderId: string) => {
     setOrders((prev) =>
       prev.map((order) =>
-        order.id === orderId ? { ...order, status: 'Order Confirmed' } : order
+        order.id === orderId
+          ? { ...order, status: 'Order Confirmed', paymentConfirmed: true }
+          : order
       )
     );
     showToast('Payment confirmed successfully');
@@ -296,6 +300,7 @@ export default function App() {
       date: new Date().toISOString().split('T')[0],
       eta: new Date(Date.now() + 2 * 86400000).toISOString().split('T')[0],
       status: method === 'delivery' ? 'Order Placed' : 'Processing',
+      paymentConfirmed: false,
       paymentMethod:
         method === 'delivery'
           ? 'Payment on Delivery'

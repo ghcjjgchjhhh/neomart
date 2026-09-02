@@ -41,7 +41,7 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
         ? true
         : filter === 'pending'
         ? ord.status === 'Processing'
-        : ord.status === 'Delivered' || ord.status === 'Order Confirmed' || ord.status === 'Shipped';
+        : ord.paymentConfirmed === true;
 
     const matchesSearch =
       ord.id.toLowerCase().includes(search.toLowerCase()) ||
@@ -52,7 +52,7 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
   });
 
   const pendingCount = orders.filter(
-    (o) => o.status !== 'Order Confirmed' && o.status !== 'Delivered'
+    (o) => o.paymentConfirmed !== true
   ).length;
 
   return (
@@ -118,12 +118,12 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
                     </span>
                     <span
                       className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase tracking-wider ${
-                        ord.status === 'Order Confirmed'
+                        ord.paymentConfirmed === true
                           ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800'
                           : 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-300 dark:border-amber-800 animate-pulse'
                       }`}
                     >
-                      {ord.status === 'Order Confirmed' ? '✓ Order Confirmed' : '⌛ Processing Order'}
+                      {ord.paymentConfirmed === true ? '✓ Payment Confirmed' : '⌛ Processing Payment'}
                     </span>
                   </div>
                 </div>
@@ -145,12 +145,12 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
                   <div className="text-[10px] text-gray-400">
                     {ord.status === 'Processing'
                       ? '👉 Check your payment account for the ₦' + ord.total.toLocaleString() + ' alert, then click confirm:'
-                      : ord.status === 'Order Confirmed'
+                      : ord.paymentConfirmed === true
                       ? '✅ Order payment verified. Ready for courier delivery.'
                       : '⏳ Payment is still processing.'}
                   </div>
 
-                  {ord.status !== 'Order Confirmed' && ord.status !== 'Delivered' ? (
+                  {ord.paymentConfirmed !== true ? (
                     <button
                       onClick={() => handleConfirm(ord.id)}
                       className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-md cursor-pointer hover:shadow-lg"

@@ -66,6 +66,7 @@ export interface Order {
     | 'Out for Delivery'
     | 'Delivered'
     | 'Cancelled';
+  paymentConfirmed?: boolean;
   paymentMethod: string;
   address: string;
   total: number;
