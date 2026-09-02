@@ -10,13 +10,14 @@ import {
   ShieldCheck,
   Package,
   Navigation,
-  ChevronRight,
   RefreshCw,
   Search,
-  ExternalLink,
-  Store,
   AlertCircle,
-  Sparkles
+  Radio,
+  Wifi,
+  Crosshair,
+  Share2,
+  Layers
 } from 'lucide-react';
 import { Order } from '../types';
 import { sampleOrders } from '../data/ordersAndReviews';
@@ -29,16 +30,14 @@ interface OrderTrackingModalProps {
   showToast: (msg: string) => void;
 }
 
-// Route waypoint coordinates for the animated vector map
-const ROUTE_WAYPOINTS = [
-  { x: 50, y: 190, name: 'NeoMart Ikeja Fulfillment Hub', time: '09:40 AM' },
-  { x: 120, y: 175, name: 'Maryland Interchange', time: '09:52 AM' },
-  { x: 190, y: 155, name: 'Anthony Transit Way', time: '10:05 AM' },
-  { x: 260, y: 130, name: '3rd Mainland Bridge Expressway', time: '10:14 AM' },
-  { x: 330, y: 100, name: 'Adeniji Adele Link', time: '10:22 AM' },
-  { x: 395, y: 75, name: 'Falomo / Lekki Toll Plaza', time: '10:30 AM' },
-  { x: 450, y: 55, name: 'Destination Address', time: '10:38 AM' }
-];
+interface UserLocation {
+  latitude: number;
+  longitude: number;
+  accuracy: number;
+  address?: string;
+  city?: string;
+  state?: string;
+}
 
 export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
   isOpen,
@@ -61,16 +60,159 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [searchError, setSearchError] = useState('');
   const [showItemsList, setShowItemsList] = useState(false);
+  const [activeMapView, setActiveMapView] = useState<'osm_live' | 'vector'>('osm_live');
+
+  // Real GPS State
+  const [permissionStatus, setPermissionStatus] = useState<'idle' | 'requesting' | 'granted' | 'denied' | 'error'>('idle');
+  const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [lastPingTime, setLastPingTime] = useState<Date>(new Date());
+  const [telemetryLogs, setTelemetryLogs] = useState<string[]>([
+    'Connected to NeoMart Live GPS Gateway',
+    'Awaiting device location synchronization...',
+  ]);
 
   // Live courier simulation progress (0 to 100%)
   const [courierProgress, setCourierProgress] = useState(65);
   const [isLiveSimulating, setIsLiveSimulating] = useState(true);
 
-  // Derived progress statistics (no cascading state mutations)
+  // Derived progress statistics
   const remainingRatio = Math.max(0, (100 - courierProgress) / 100);
-  const distanceKm = Number((remainingRatio * 6.5).toFixed(1));
-  const etaMinutes = Math.max(2, Math.round(remainingRatio * 22));
-  const speed = courierProgress >= 100 ? 0 : 38;
+  const distanceKm = Number((remainingRatio * 5.8).toFixed(1));
+  const etaMinutes = Math.max(2, Math.round(remainingRatio * 18));
+  const speed = courierProgress >= 100 ? 0 : 34;
+
+  const watchIdRef = useRef<number | null>(null);
+
+  const addLog = (msg: string) => {
+    const timeStr = new Date().toLocaleTimeString();
+    setTelemetryLogs((prev) => [`[${timeStr}] ${msg}`, ...prev.slice(0, 5)]);
+  };
+
+  // Reverse geocoding for real street address
+  const reverseGeocode = async (lat: number, lon: number) => {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`,
+        { headers: { 'Accept-Language': 'en' } }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        const addr = data.address || {};
+        const road = addr.road || addr.suburb || addr.neighbourhood || addr.quarter || 'Street';
+        const city = addr.city || addr.town || addr.county || addr.state_district || 'Lagos';
+        const state = addr.state || 'Lagos State';
+
+        setUserLocation((prev) =>
+          prev
+            ? {
+                ...prev,
+                address: data.display_name || `${road}, ${city}`,
+                city,
+                state,
+              }
+            : null
+        );
+
+        addLog(`📍 Doorstep resolved: ${road}, ${city}`);
+      }
+    } catch {
+      addLog(`📍 Locked GPS fix: ${lat.toFixed(4)}°N, ${lon.toFixed(4)}°E`);
+    }
+  };
+
+  const requestLocationPermission = () => {
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      setPermissionStatus('error');
+      setErrorMessage('Geolocation is not supported by your browser.');
+      addLog('⚠️ Geolocation API unavailable on device');
+      return;
+    }
+
+    setPermissionStatus('requesting');
+    setErrorMessage(null);
+    addLog('📡 Requesting device location permission...');
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        const acc = pos.coords.accuracy;
+
+        const loc: UserLocation = {
+          latitude: lat,
+          longitude: lng,
+          accuracy: acc,
+        };
+        setUserLocation(loc);
+        setPermissionStatus('granted');
+        setLastPingTime(new Date());
+        addLog(`✅ GPS lock verified: Accuracy ±${Math.round(acc)}m`);
+        showToast('📍 Live device GPS connected successfully!');
+
+        // Query internet address
+        reverseGeocode(lat, lng);
+
+        // Continuous watch position
+        if (watchIdRef.current !== null) {
+          navigator.geolocation.clearWatch(watchIdRef.current);
+        }
+        watchIdRef.current = navigator.geolocation.watchPosition(
+          (watchPos) => {
+            const wLat = watchPos.coords.latitude;
+            const wLng = watchPos.coords.longitude;
+            const wAcc = watchPos.coords.accuracy;
+            setUserLocation((prev) =>
+              prev
+                ? { ...prev, latitude: wLat, longitude: wLng, accuracy: wAcc }
+                : { latitude: wLat, longitude: wLng, accuracy: wAcc }
+            );
+            setLastPingTime(new Date());
+          },
+          () => {},
+          { enableHighAccuracy: true, timeout: 15000, maximumAge: 3000 }
+        );
+      },
+      (err) => {
+        setPermissionStatus('denied');
+        let msg = 'Location permission was denied. Please allow location access in your browser.';
+        if (err.code === err.POSITION_UNAVAILABLE) {
+          msg = 'GPS signal unavailable. Please ensure location services are enabled on your device.';
+        } else if (err.code === err.TIMEOUT) {
+          msg = 'Location request timed out. Retrying GPS lock...';
+        }
+        setErrorMessage(msg);
+        addLog(`❌ GPS status: ${err.message}`);
+
+        // Default to Lagos coords if denied
+        setUserLocation({
+          latitude: 6.5244,
+          longitude: 3.3792,
+          accuracy: 30,
+          city: 'Ikeja',
+          state: 'Lagos',
+          address: 'Ikeja City Mall, Alausa, Lagos, Nigeria',
+        });
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 5000,
+      }
+    );
+  };
+
+  // Trigger permission check on open
+  useEffect(() => {
+    if (isOpen) {
+      requestLocationPermission();
+    }
+    return () => {
+      if (watchIdRef.current !== null && typeof navigator !== 'undefined' && navigator.geolocation) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+    };
+  }, [isOpen]);
 
   // Update selected order when prop changes
   useEffect(() => {
@@ -78,7 +220,6 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
       const found = ordersList.find((o) => o.id.toLowerCase() === orderId.toLowerCase());
       if (found) {
         setSelectedOrder(found);
-        // Adjust initial progress based on order status
         if (found.status === 'Delivered') setCourierProgress(100);
         else if (found.status === 'Out for Delivery') setCourierProgress(72);
         else if (found.status === 'Shipped') setCourierProgress(40);
@@ -99,33 +240,10 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
         }
         return prev + 0.5;
       });
-    }, 500);
+    }, 700);
 
     return () => clearInterval(interval);
   }, [isLiveSimulating]);
-
-  // Calculate current point along the 7-waypoint spline
-  const getCoordinatesFromProgress = (progress: number) => {
-    const totalSegments = ROUTE_WAYPOINTS.length - 1;
-    const clamped = Math.min(100, Math.max(0, progress));
-    const globalT = (clamped / 100) * totalSegments;
-    const segmentIndex = Math.min(Math.floor(globalT), totalSegments - 1);
-    const segmentT = globalT - segmentIndex;
-
-    const p0 = ROUTE_WAYPOINTS[segmentIndex];
-    const p1 = ROUTE_WAYPOINTS[segmentIndex + 1];
-
-    const currentX = p0.x + (p1.x - p0.x) * segmentT;
-    const currentY = p0.y + (p1.y - p0.y) * segmentT;
-
-    // Calculate angle in degrees
-    const angleRad = Math.atan2(p1.y - p0.y, p1.x - p0.x);
-    const angleDeg = (angleRad * 180) / Math.PI;
-
-    return { x: currentX, y: currentY, angle: angleDeg };
-  };
-
-  const riderPos = getCoordinatesFromProgress(courierProgress);
 
   const handleSearchOrder = (e: React.FormEvent) => {
     e.preventDefault();
@@ -150,7 +268,20 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
       else setCourierProgress(10);
       showToast(`Tracking details loaded for Order #${found.id}`);
     } else {
-      setSearchError('Order not found. Try searching with an order ID like NM-10492, NM-90341, or NM-48291');
+      setSearchError('Order not found. Try searching with an order ID like NM-10492 or NM-90341');
+    }
+  };
+
+  const handleShareTracking = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: `NeoMart Order #${selectedOrder.id} Live Tracking`,
+        text: `Live courier tracking for NeoMart order #${selectedOrder.id}. ETA: ~${etaMinutes} mins (${distanceKm} km away).`,
+        url: window.location.href,
+      }).catch(() => {});
+    } else {
+      navigator.clipboard?.writeText?.(window.location.href);
+      showToast('Live tracking link copied to clipboard!');
     }
   };
 
@@ -158,20 +289,16 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
     return '₦' + amount.toLocaleString('en-NG');
   };
 
-  const handleStepForward = () => {
-    setCourierProgress((prev) => Math.min(100, prev + 25));
-  };
-
-  const handleResetProgress = () => {
-    setCourierProgress(15);
-  };
+  const mapCenterLat = userLocation?.latitude || 6.5244;
+  const mapCenterLng = userLocation?.longitude || 3.3792;
+  const osmEmbedUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${mapCenterLng - 0.02}%2C${mapCenterLat - 0.02}%2C${mapCenterLng + 0.02}%2C${mapCenterLat + 0.02}&layer=mapnik&marker=${mapCenterLat}%2C${mapCenterLng}`;
 
   // Status Stepper Definitions
   const steps = [
     {
       id: 'placed',
       title: 'Order Confirmed',
-      desc: 'Payment received & verified',
+      desc: 'Payment verified & order booked',
       time: '09:15 AM',
       done: courierProgress >= 10,
       active: courierProgress < 25
@@ -179,7 +306,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
     {
       id: 'packed',
       title: 'Packed at Warehouse',
-      desc: 'Quality checked & packaged',
+      desc: 'Quality checked & sealed',
       time: '09:40 AM',
       done: courierProgress >= 25,
       active: courierProgress >= 25 && courierProgress < 50
@@ -187,7 +314,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
     {
       id: 'transit',
       title: 'In Transit',
-      desc: 'En route via Expressway Hub',
+      desc: 'Express dispatch via delivery route',
       time: '10:05 AM',
       done: courierProgress >= 50,
       active: courierProgress >= 50 && courierProgress < 85
@@ -195,7 +322,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
     {
       id: 'out',
       title: 'Out for Delivery',
-      desc: 'Rider is in your neighborhood',
+      desc: 'Courier Musa is approaching your street',
       time: '10:28 AM',
       done: courierProgress >= 85,
       active: courierProgress >= 85 && courierProgress < 100
@@ -203,7 +330,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
     {
       id: 'delivered',
       title: 'Delivered',
-      desc: 'Delivered safely to doorstep',
+      desc: 'Delivered securely to your doorstep',
       time: courierProgress >= 100 ? 'Just now' : 'Est. ~10:45 AM',
       done: courierProgress >= 100,
       active: courierProgress >= 100
@@ -213,6 +340,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/70 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-200">
       <div className="bg-white dark:bg-[#161616] border border-gray-200 dark:border-gray-800 rounded-3xl max-w-3xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+        
         {/* Top Header Bar */}
         <div className="flex items-center justify-between px-5 py-3.5 bg-gray-900 text-white border-b border-gray-800">
           <div className="flex items-center gap-2.5">
@@ -222,25 +350,34 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-extrabold text-sm sm:text-base leading-tight text-white">
-                  Live Dispatch Tracking
+                  Live Dispatch GPS Tracking
                 </h3>
                 <span className="flex items-center gap-1 text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  LIVE GPS
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                  ONLINE GPS
                 </span>
               </div>
               <p className="text-[11px] text-gray-400">
-                Real-time express delivery status in Nigeria
+                Direct phone GPS integration with live delivery routing
               </p>
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-full text-gray-400 hover:text-white hover:bg-gray-800 transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleShareTracking}
+              className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors cursor-pointer"
+              title="Share Tracking Link"
+            >
+              <Share2 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-full text-gray-400 hover:text-white hover:bg-gray-800 transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Search Order Bar & Quick Switcher */}
@@ -291,6 +428,29 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
           </div>
         </div>
 
+        {/* Location Status Alerts */}
+        {permissionStatus === 'denied' && (
+          <div className="bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 px-5 py-2.5 text-xs flex items-center justify-between border-b border-amber-200 dark:border-amber-900/60">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+              <span>{errorMessage || 'Location access blocked. Allow phone GPS for doorstep live tracking.'}</span>
+            </div>
+            <button
+              onClick={requestLocationPermission}
+              className="bg-amber-600 hover:bg-amber-700 text-white font-bold px-2.5 py-1 rounded-lg text-[11px] transition-colors cursor-pointer shrink-0 ml-2"
+            >
+              Grant GPS Permission
+            </button>
+          </div>
+        )}
+
+        {permissionStatus === 'requesting' && (
+          <div className="bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 px-5 py-2 text-xs flex items-center gap-2 border-b border-blue-200 dark:border-blue-900 animate-pulse">
+            <Crosshair className="w-4 h-4 animate-spin text-blue-600" />
+            <span>Connecting to your phone's GPS... please tap <strong>Allow</strong> on your screen.</span>
+          </div>
+        )}
+
         {searchError && (
           <div className="bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 px-5 py-2 text-xs flex items-center gap-2 border-b border-red-200 dark:border-red-900">
             <AlertCircle className="w-4 h-4 shrink-0" />
@@ -298,11 +458,12 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
           </div>
         )}
 
-        {/* Main Content Area */}
+        {/* Main Scrollable Area */}
         <div className="overflow-y-auto flex-1 divide-y divide-gray-100 dark:divide-gray-800">
-          {/* 1. Animated Vector Map & GPS Status Card */}
+          
+          {/* 1. Live GPS Map Canvas */}
           <div className="p-4 sm:p-5 bg-linear-to-b from-gray-900 via-[#131722] to-gray-900 text-white relative">
-            {/* Map Top Status Pill Overlay */}
+            {/* Top Status Bar */}
             <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-black tracking-wider text-gray-300 uppercase">
@@ -329,155 +490,65 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
               </div>
             </div>
 
-            {/* Stylized Interactive Vector Map */}
-            <div className="w-full h-52 sm:h-64 rounded-2xl bg-[#0f141c] border border-gray-800/80 relative overflow-hidden shadow-inner">
-              {/* Grid Background */}
-              <svg className="absolute inset-0 w-full h-full opacity-15" width="100%" height="100%">
-                <defs>
-                  <pattern id="grid_track" width="24" height="24" patternUnits="userSpaceOnUse">
-                    <path d="M 24 0 L 0 0 0 24" fill="none" stroke="#60a5fa" strokeWidth="0.5" />
-                  </pattern>
-                </defs>
-                <rect width="100%" height="100%" fill="url(#grid_track)" />
-              </svg>
+            {/* Interactive Real OpenStreetMap GPS Map */}
+            <div className="w-full h-56 sm:h-64 rounded-2xl bg-[#0f141c] border border-gray-800 relative overflow-hidden shadow-inner">
+              <iframe
+                title="NeoMart Live Delivery GPS Map"
+                src={osmEmbedUrl}
+                className="w-full h-full border-0 pointer-events-auto filter dark:invert-[0.88] dark:hue-rotate-180"
+                loading="lazy"
+              />
 
-              {/* Stylized Water Bodies / Lagos Lagoon */}
-              <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 500 240">
-                <path
-                  d="M 0 100 Q 150 140 280 180 T 500 240 L 500 240 L 0 240 Z"
-                  fill="#0c2340"
-                  opacity="0.6"
-                />
-                <text x="340" y="215" fill="#3b82f6" opacity="0.3" fontSize="10" fontWeight="bold">
-                  LAGOS LAGOON / WATERWAY
-                </text>
+              {/* Top Map HUD Overlays */}
+              <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">
+                <div className="bg-white/95 dark:bg-black/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-gray-200 dark:border-gray-800 shadow-md flex items-center gap-2 pointer-events-auto">
+                  <div className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-ping" />
+                  <div className="text-[11px] font-bold text-gray-900 dark:text-gray-100 flex items-center gap-1">
+                    <MapPin className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Your Location</span>
+                    {userLocation && (
+                      <span className="text-[9px] text-gray-500 font-normal">
+                        (±{Math.round(userLocation.accuracy)}m)
+                      </span>
+                    )}
+                  </div>
+                </div>
 
-                {/* Road Network Lines */}
-                <path
-                  d="M 20 50 L 480 30"
-                  stroke="#1e293b"
-                  strokeWidth="8"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M 50 190 Q 200 160 300 120 T 450 55"
-                  stroke="#334155"
-                  strokeWidth="12"
-                  fill="none"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M 50 190 Q 200 160 300 120 T 450 55"
-                  stroke="#1e293b"
-                  strokeWidth="8"
-                  fill="none"
-                  strokeLinecap="round"
-                />
-
-                {/* Active Highlighted Traveled Path */}
-                <path
-                  d="M 50 190 Q 200 160 300 120 T 450 55"
-                  stroke="#f68b1e"
-                  strokeWidth="5"
-                  fill="none"
-                  strokeLinecap="round"
-                  strokeDasharray="8 4"
-                  className="animate-pulse"
-                />
-
-                {/* Waypoint Markers */}
-                {/* 1. Origin Hub */}
-                <circle cx="50" cy="190" r="7" fill="#f68b1e" stroke="#ffffff" strokeWidth="2.5" />
-                <text x="40" y="215" fill="#e2e8f0" fontSize="9" fontWeight="bold">
-                  Ikeja Hub
-                </text>
-
-                {/* 2. Midway Landmark */}
-                <circle cx="260" cy="130" r="4" fill="#64748b" stroke="#ffffff" strokeWidth="1.5" />
-                <text x="240" y="120" fill="#94a3b8" fontSize="8">
-                  3rd Mainland
-                </text>
-
-                {/* 3. Destination Pin */}
-                <circle cx="450" cy="55" r="8" fill="#10b981" stroke="#ffffff" strokeWidth="3" />
-                <text x="410" y="40" fill="#34d399" fontSize="9" fontWeight="bold">
-                  📍 Destination
-                </text>
-
-                {/* Live Animated Rider Icon */}
-                <g
-                  transform={`translate(${riderPos.x}, ${riderPos.y})`}
-                  className="transition-transform duration-300"
+                <button
+                  type="button"
+                  onClick={requestLocationPermission}
+                  className="bg-white/95 dark:bg-black/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-gray-200 dark:border-gray-800 shadow-md text-gray-700 dark:text-gray-300 hover:text-[#f68b1e] transition-all pointer-events-auto cursor-pointer flex items-center gap-1 text-[11px] font-bold"
+                  title="Resync phone GPS"
                 >
-                  {/* Pulse Radar Wave */}
-                  <circle cx="0" cy="0" r="16" fill="#f68b1e" opacity="0.3" className="animate-ping" />
-                  <circle cx="0" cy="0" r="10" fill="#f68b1e" stroke="#ffffff" strokeWidth="2" />
-
-                  {/* Rider Motorcycle Icon */}
-                  <g transform={`rotate(${riderPos.angle}) scale(0.65)`}>
-                    <path
-                      d="M -10 -4 L 10 -4 L 5 4 L -5 4 Z"
-                      fill="#ffffff"
-                    />
-                    <circle cx="-6" cy="5" r="4" fill="#111827" stroke="#ffffff" strokeWidth="1.5" />
-                    <circle cx="6" cy="5" r="4" fill="#111827" stroke="#ffffff" strokeWidth="1.5" />
-                    <circle cx="0" cy="-6" r="3" fill="#f68b1e" />
-                  </g>
-                </g>
-              </svg>
-
-              {/* Map Floating Badges */}
-              <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-md text-[10px] text-gray-300 border border-white/10 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                <span>Courier: <strong>LAG-482-KT</strong></span>
+                  <RefreshCw className={`w-3.5 h-3.5 ${permissionStatus === 'requesting' ? 'animate-spin text-[#f68b1e]' : ''}`} />
+                  <span>Sync GPS</span>
+                </button>
               </div>
 
-              {/* Simulation Controls Overlay */}
-              <div className="absolute bottom-2.5 right-2.5 flex items-center gap-1.5 bg-black/75 backdrop-blur-md p-1 rounded-xl border border-white/10">
-                <button
-                  type="button"
-                  onClick={() => setIsLiveSimulating(!isLiveSimulating)}
-                  className="px-2 py-1 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[10px] font-semibold transition-colors cursor-pointer"
-                  title="Pause/Play GPS simulation"
-                >
-                  {isLiveSimulating ? '⏸️ Pause' : '▶️ Resume'}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleStepForward}
-                  className="px-2 py-1 bg-[#f68b1e] hover:bg-[#e07a10] text-white rounded-lg text-[10px] font-bold transition-colors cursor-pointer"
-                  title="Fast forward delivery"
-                >
-                  ⏩ Advance
-                </button>
-                <button
-                  type="button"
-                  onClick={handleResetProgress}
-                  className="p-1 text-gray-400 hover:text-white transition-colors cursor-pointer"
-                  title="Reset trip"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                </button>
+              {/* Map Floating Dispatch Pill */}
+              <div className="absolute bottom-3 left-3 bg-black/75 backdrop-blur-md px-3 py-1.5 rounded-xl text-[11px] text-gray-300 border border-white/10 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>Rider: <strong>Musa Garba</strong> • LAG-482-KT</span>
               </div>
             </div>
 
-            {/* Rider Information & Contact Strip */}
+            {/* Courier Profile & Contact Strip */}
             <div className="mt-3.5 p-3 rounded-2xl bg-white/5 border border-white/10 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div className="w-11 h-11 rounded-full bg-linear-to-tr from-[#f68b1e] to-amber-400 p-0.5 shadow-md shrink-0">
                   <div className="w-full h-full rounded-full bg-gray-900 flex items-center justify-center text-white font-bold text-sm">
-                    CE
+                    MG
                   </div>
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-sm font-bold text-white">Chukwudi Eze</span>
+                    <span className="text-sm font-bold text-white">Musa Garba</span>
                     <span className="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded-full font-bold">
-                      ★ 4.9 (1,480 trips)
+                      ★ 4.9 (1,820 trips)
                     </span>
                   </div>
                   <div className="text-[11px] text-gray-400">
-                    NeoMart Express Priority Courier • Bike: Honda Ace 125
+                    NeoExpress Priority Courier • Bike: Yamaha 125cc
                   </div>
                 </div>
               </div>
@@ -500,7 +571,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                 </a>
 
                 <a
-                  href="https://wa.me/2348135642842?text=Hello%20Chukwudi,%20I%20am%20tracking%20my%20NeoMart%20order"
+                  href={`https://wa.me/2348135642842?text=${encodeURIComponent(`Hello Musa, I am tracking my NeoMart order #${selectedOrder.id}. My live location is active.`)}`}
                   target="_blank"
                   rel="noreferrer"
                   className="flex items-center gap-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-md"
@@ -512,16 +583,76 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
             </div>
           </div>
 
-          {/* 2. Interactive Delivery Progress Stepper */}
+          {/* 2. Real-Time Telemetry & Resolved Location Grid */}
+          <div className="p-4 sm:p-5 bg-gray-50 dark:bg-[#1a1a1a] grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            {/* Real Doorstep Coordinates */}
+            <div className="p-3 bg-white dark:bg-[#202020] rounded-2xl border border-gray-200 dark:border-gray-800">
+              <div className="flex items-center justify-between text-gray-500 dark:text-gray-400 mb-1">
+                <span className="font-bold flex items-center gap-1 text-gray-700 dark:text-gray-300">
+                  <Navigation className="w-3.5 h-3.5 text-blue-500" />
+                  Phone GPS Coordinates
+                </span>
+                <span className="text-[10px] text-emerald-600 font-mono font-bold">
+                  {permissionStatus === 'granted' ? 'SYNCED' : 'STANDBY'}
+                </span>
+              </div>
+              <div className="font-mono text-xs font-bold text-gray-900 dark:text-gray-100">
+                {userLocation ? (
+                  `${userLocation.latitude.toFixed(5)}° N, ${userLocation.longitude.toFixed(5)}° E`
+                ) : (
+                  'Waiting for GPS lock...'
+                )}
+              </div>
+              <div className="text-[11px] text-gray-500 dark:text-gray-400 mt-1 truncate">
+                {userLocation?.address || `${userLocation?.city || 'Lagos'}, ${userLocation?.state || 'Nigeria'}`}
+              </div>
+            </div>
+
+            {/* Destination Address in Order */}
+            <div className="p-3 bg-white dark:bg-[#202020] rounded-2xl border border-gray-200 dark:border-gray-800">
+              <div className="flex items-center justify-between text-gray-500 dark:text-gray-400 mb-1">
+                <span className="font-bold flex items-center gap-1 text-gray-700 dark:text-gray-300">
+                  <MapPin className="w-3.5 h-3.5 text-[#f68b1e]" />
+                  Order Destination
+                </span>
+                <span className="text-[10px] text-gray-400">DELIVERY ADDRESS</span>
+              </div>
+              <div className="font-semibold text-xs text-gray-900 dark:text-gray-100 truncate">
+                {selectedOrder.address}
+              </div>
+              <div className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
+                Recipient: <strong>{selectedOrder.phone}</strong> • {selectedOrder.email}
+              </div>
+            </div>
+          </div>
+
+          {/* 3. Live Telemetry Console */}
+          <div className="p-4 sm:p-5 bg-black text-emerald-400 font-mono text-[11px]">
+            <div className="flex items-center justify-between text-gray-400 text-[10px] pb-1.5 mb-2 border-b border-gray-800">
+              <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
+                <Wifi className="w-3 h-3 text-emerald-500 animate-pulse" />
+                <span>INTERNET TELEMETRY STREAM</span>
+              </span>
+              <span className="text-gray-500">GATEWAY: LAG-NG-01 • SSL ENCRYPTED</span>
+            </div>
+            <div className="space-y-1">
+              {telemetryLogs.map((log, idx) => (
+                <div key={idx} className="leading-tight opacity-90 truncate">
+                  {log}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 4. Delivery Progress Stepper */}
           <div className="p-5 bg-white dark:bg-[#161616]">
             <h4 className="text-xs font-extrabold uppercase tracking-wider text-gray-400 mb-4">
               Tracking Timeline
             </h4>
 
             <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-200 dark:before:bg-gray-800">
-              {steps.map((step, idx) => (
+              {steps.map((step) => (
                 <div key={step.id} className="relative flex items-start gap-3.5 group">
-                  {/* Step Dot Icon */}
                   <div
                     className={`absolute -left-6 top-0.5 w-5.5 h-5.5 rounded-full flex items-center justify-center transition-all shadow-xs ${
                       step.done
@@ -538,7 +669,6 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                     )}
                   </div>
 
-                  {/* Step Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
                       <span
@@ -561,29 +691,9 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                 </div>
               ))}
             </div>
-          </div>
-
-          {/* 3. Destination & Delivery Address Details */}
-          <div className="p-5 bg-gray-50 dark:bg-[#1a1a1a] text-xs space-y-3">
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 mt-0.5">
-                <MapPin className="w-4 h-4" />
-              </div>
-              <div className="flex-1">
-                <div className="font-bold text-gray-900 dark:text-gray-100 text-xs">
-                  Delivery Destination
-                </div>
-                <div className="text-gray-600 dark:text-gray-300 mt-0.5">
-                  {selectedOrder.address}
-                </div>
-                <div className="text-[11px] text-gray-400 mt-0.5">
-                  Recipient Contact: <strong>{selectedOrder.phone}</strong> • {selectedOrder.email}
-                </div>
-              </div>
-            </div>
 
             {/* Accordion: View Items in this Order */}
-            <div className="pt-2 border-t border-gray-200 dark:border-gray-800">
+            <div className="mt-6 pt-3 border-t border-gray-200 dark:border-gray-800">
               <button
                 type="button"
                 onClick={() => setShowItemsList(!showItemsList)}
@@ -603,14 +713,14 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                   {selectedOrder.items.map((item, i) => (
                     <div
                       key={i}
-                      className="flex items-center justify-between p-2 rounded-xl bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-800 text-xs"
+                      className="flex items-center justify-between p-2 rounded-xl bg-gray-50 dark:bg-[#202020] border border-gray-200 dark:border-gray-800 text-xs"
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
                         {item.image ? (
                           <img
                             src={item.image}
                             alt={item.name}
-                            className="w-10 h-10 object-contain rounded-lg bg-gray-50 p-1 shrink-0"
+                            className="w-10 h-10 object-contain rounded-lg bg-white p-1 shrink-0"
                           />
                         ) : (
                           <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-base">
@@ -650,14 +760,14 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
         <div className="p-4 bg-gray-50 dark:bg-[#1f1f1f] border-t border-gray-200 dark:border-gray-800 flex items-center justify-between gap-3">
           <div className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-400">
             <ShieldCheck className="w-4 h-4 text-emerald-500" />
-            <span>Protected by NeoMart Buyer Protection</span>
+            <span>Protected by NeoMart Buyer Protection & OTP Verification</span>
           </div>
 
           <button
             onClick={onClose}
             className="bg-[#f68b1e] hover:bg-[#e07a10] text-white px-5 py-2 rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer"
           >
-            Done
+            Done Tracking
           </button>
         </div>
       </div>
