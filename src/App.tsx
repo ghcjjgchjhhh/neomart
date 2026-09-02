@@ -121,7 +121,7 @@ export default function App() {
 
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isPaymentSuccessOpen, setIsPaymentSuccessOpen] = useState(false);
-  const [lastPaymentMethod, setLastPaymentMethod] = useState<PaymentMethodType>('bank');
+  const [lastPaymentMethod, setLastPaymentMethod] = useState<PaymentMethodType>('delivery');
 
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);

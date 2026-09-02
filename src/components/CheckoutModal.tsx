@@ -1,16 +1,14 @@
 import React, { useState } from 'react';
 import {
   X,
-  CreditCard,
   Truck,
-  Building2,
   ChevronDown,
   Search,
   ShieldCheck,
   CheckCircle2,
   Lock
 } from 'lucide-react';
-import { CartItem, PaymentMethodType, DeliveryDetails, CardDetails } from '../types';
+import { CartItem, PaymentMethodType, DeliveryDetails } from '../types';
 import { nigerianStates, stateCities } from '../data/locations';
 
 interface CheckoutModalProps {
@@ -30,14 +28,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 }) => {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>('delivery');
   const [isProcessing, setIsProcessing] = useState(false);
-
-  // Card state
-  const [card, setCard] = useState<CardDetails>({
-    holderName: '',
-    cardNumber: '',
-    expiry: '',
-    cvv: ''
-  });
 
   // Delivery state
   const [delivery, setDelivery] = useState<DeliveryDetails>({
@@ -60,17 +50,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
   const formatPrice = (amount: number) => {
     return '₦' + amount.toLocaleString('en-NG');
-  };
-
-  const handleCardNumberChange = (val: string) => {
-    const raw = val.replace(/\D/g, '').slice(0, 16);
-    const formatted = raw.replace(/(\d{4})(?=\d)/g, '$1 ').trim();
-    setCard({ ...card, cardNumber: formatted });
-  };
-
-  const handleExpiryChange = (val: string) => {
-    const raw = val.replace(/\D/g, '').slice(0, 4);
-    setCard({ ...card, expiry: raw });
   };
 
   const filteredStates = nigerianStates.filter((s) =>
@@ -105,26 +84,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     if (!delivery.phone.trim() || delivery.phone.replace(/\D/g, '').length < 10) {
       showToast('Please provide a valid Nigerian contact phone number');
       return;
-    }
-
-    if (paymentMethod === 'card') {
-      const cleanNum = card.cardNumber.replace(/\s+/g, '');
-      if (!card.holderName.trim()) {
-        showToast('Please enter the cardholder name');
-        return;
-      }
-      if (cleanNum.length !== 16) {
-        showToast('Card number must be 16 digits');
-        return;
-      }
-      if (card.expiry.length !== 4) {
-        showToast('Expiry must be MMYY format (4 digits)');
-        return;
-      }
-      if (card.cvv.length !== 3) {
-        showToast('CVV must be 3 digits');
-        return;
-      }
     }
 
     setIsProcessing(true);
@@ -334,122 +293,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 </div>
               </button>
 
-              {/* Direct Card Payment */}
-              <button
-                type="button"
-                onClick={() => setPaymentMethod('card')}
-                className={`w-full p-3 rounded-xl border text-left flex items-start justify-between transition-all cursor-pointer ${
-                  paymentMethod === 'card'
-                    ? 'border-[#f68b1e] bg-[#fff3e0] dark:bg-[#2a1a00] shadow-xs'
-                    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-[#202024] hover:border-gray-300'
-                }`}
-              >
-                <div className="space-y-0.5">
-                  <div className="flex items-center gap-1.5 font-bold text-gray-900 dark:text-gray-100">
-                    <CreditCard className="w-4 h-4 text-blue-600" />
-                    <span>Debit / Credit Card (Verve, Mastercard, Visa)</span>
-                  </div>
-                  <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                    Instant 256-bit encrypted online card processing
-                  </p>
-                </div>
-                <div
-                  className={`w-4 h-4 rounded-full border flex items-center justify-center mt-0.5 ${
-                    paymentMethod === 'card' ? 'border-[#f68b1e] bg-[#f68b1e]' : 'border-gray-400'
-                  }`}
-                >
-                  {paymentMethod === 'card' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                </div>
-              </button>
-
-              {/* Card Form when Card is selected */}
-              {paymentMethod === 'card' && (
-                <div className="p-3 bg-gray-50 dark:bg-[#18181b] border border-gray-200 dark:border-gray-700 rounded-xl space-y-2.5">
-                  <div>
-                    <label className="block text-[11px] font-semibold text-gray-600 dark:text-gray-400 mb-1">
-                      Cardholder Name
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. IFEANYI ANOMA"
-                      value={card.holderName}
-                      onChange={(e) => setCard({ ...card, holderName: e.target.value })}
-                      className="w-full px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#202024] text-gray-800 dark:text-gray-200"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-semibold text-gray-600 dark:text-gray-400 mb-1">
-                      Card Number
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="5399 0000 0000 0000"
-                      maxLength={19}
-                      value={card.cardNumber}
-                      onChange={(e) => handleCardNumberChange(e.target.value)}
-                      className="w-full px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#202024] text-gray-800 dark:text-gray-200 font-mono"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="block text-[11px] font-semibold text-gray-600 dark:text-gray-400 mb-1">
-                        Expiry (MMYY)
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="0827"
-                        maxLength={4}
-                        value={card.expiry}
-                        onChange={(e) => handleExpiryChange(e.target.value)}
-                        className="w-full px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#202024] text-gray-800 dark:text-gray-200 font-mono"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-semibold text-gray-600 dark:text-gray-400 mb-1">
-                        CVV
-                      </label>
-                      <input
-                        type="password"
-                        placeholder="123"
-                        maxLength={3}
-                        value={card.cvv}
-                        onChange={(e) =>
-                          setCard({ ...card, cvv: e.target.value.replace(/\D/g, '').slice(0, 3) })
-                        }
-                        className="w-full px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#202024] text-gray-800 dark:text-gray-200 font-mono"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Direct Bank Transfer */}
-              <button
-                type="button"
-                onClick={() => setPaymentMethod('bank')}
-                className={`w-full p-3 rounded-xl border text-left flex items-start justify-between transition-all cursor-pointer ${
-                  paymentMethod === 'bank'
-                    ? 'border-[#f68b1e] bg-[#fff3e0] dark:bg-[#2a1a00] shadow-xs'
-                    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-[#202024] hover:border-gray-300'
-                }`}
-              >
-                <div className="space-y-0.5">
-                  <div className="flex items-center gap-1.5 font-bold text-gray-900 dark:text-gray-100">
-                    <Building2 className="w-4 h-4 text-emerald-600" />
-                    <span>Direct Bank Transfer (GTBank / Zenith / Access)</span>
-                  </div>
-                  <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                    Transfer directly to NeoMart corporate account with instant confirmation
-                  </p>
-                </div>
-                <div
-                  className={`w-4 h-4 rounded-full border flex items-center justify-center mt-0.5 ${
-                    paymentMethod === 'bank' ? 'border-[#f68b1e] bg-[#f68b1e]' : 'border-gray-400'
-                  }`}
-                >
-                  {paymentMethod === 'bank' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                </div>
-              </button>
             </div>
           </div>
 
@@ -478,12 +321,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             >
               {isProcessing ? (
                 <span>Processing Order...</span>
-              ) : paymentMethod === 'delivery' ? (
-                <span>Confirm Order (Pay {formatPrice(total)} on Delivery) →</span>
-              ) : paymentMethod === 'card' ? (
-                <span>Pay {formatPrice(total)} Securely →</span>
               ) : (
-                <span>Proceed to Bank Transfer ({formatPrice(total)}) →</span>
+                <span>Confirm Order (Pay {formatPrice(total)} on Delivery) →</span>
               )}
             </button>
           </div>
