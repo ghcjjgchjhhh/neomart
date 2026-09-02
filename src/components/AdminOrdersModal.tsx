@@ -20,6 +20,7 @@ interface AdminOrdersModalProps {
   onConfirmOrderPayment: (orderId: string) => void;
   onUpdateOrderStatus: (orderId: string, status: FulfillmentStatus) => void;
   onOpenStockManagement: () => void;
+  onOpenLiveGps: (orderId: string) => void;
 }
 
 export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
@@ -30,6 +31,7 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
   onConfirmOrderPayment,
   onUpdateOrderStatus,
   onOpenStockManagement,
+  onOpenLiveGps,
 }) => {
   const [search, setSearch] = useState('');
 
@@ -201,6 +203,14 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
                   </div>
 
                   <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => onOpenLiveGps(ord.id)}
+                      className="px-3 py-2 rounded-xl border border-blue-500 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 font-bold text-xs flex items-center gap-1.5 transition-colors"
+                      title="Open live GPS for this order"
+                    >
+                      <MapPin className="w-4 h-4" />
+                      <span>Live GPS</span>
+                    </button>
                     {ord.paymentConfirmed !== true && (
                       <button
                         onClick={() => handleConfirm(ord.id)}

@@ -926,6 +926,10 @@ export default function App() {
         reportOrders={orders.filter((order) => order.orderSource === 'customer')}
         onConfirmOrderPayment={handleConfirmOrderPayment}
         onOpenStockManagement={() => setIsStockOpen(true)}
+        onOpenLiveGps={(orderId) => {
+          setIsAdminOpen(false);
+          handleOpenLiveTracking(orderId);
+        }}
         onUpdateOrderStatus={(orderId, status) => {
           setOrders((prev) =>
             prev.map((order) =>
