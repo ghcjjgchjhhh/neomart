@@ -290,7 +290,7 @@ export default function App() {
       email: 'ifeanyianoma198@gmail.com',
       date: new Date().toISOString().split('T')[0],
       eta: new Date(Date.now() + 2 * 86400000).toISOString().split('T')[0],
-      status: 'Out for Delivery',
+      status: method === 'delivery' ? 'Order Placed' : 'Processing',
       paymentMethod:
         method === 'delivery'
           ? 'Payment on Delivery'
