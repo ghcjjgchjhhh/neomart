@@ -96,7 +96,11 @@ export default function App() {
   const [orders, setOrders] = useState<Order[]>(() => {
     try {
       const saved = localStorage.getItem('neomart_orders');
-      const storedOrders: Order[] = saved ? JSON.parse(saved) : sampleOrders;
+      const storedOrders: Order[] = saved
+        ? (JSON.parse(saved) as Order[]).filter(
+            (order) => !sampleOrders.some((sampleOrder) => sampleOrder.id === order.id)
+          )
+        : [];
       return storedOrders.map((order) =>
         !order.paymentConfirmed &&
         order.paymentMethod !== 'Payment on Delivery' &&
@@ -105,7 +109,7 @@ export default function App() {
           : order
       );
     } catch {
-      return sampleOrders;
+      return [];
     }
   });
   const [isOrderTrackingOpen, setIsOrderTrackingOpen] = useState(false);
