@@ -28,14 +28,18 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
 }) => {
   const [filter, setFilter] = useState<'all' | 'pending' | 'paid'>('all');
   const [search, setSearch] = useState('');
+  const [clearedOrderIds, setClearedOrderIds] = useState<string[]>([]);
 
   if (!isOpen) return null;
 
   const handleConfirm = (id: string) => {
     onConfirmOrderPayment(id);
+    setClearedOrderIds((prev) => [...prev, id]);
   };
 
   const filteredOrders = orders.filter((ord) => {
+    if (clearedOrderIds.includes(ord.id)) return false;
+
     const matchesFilter =
       filter === 'all'
         ? true
