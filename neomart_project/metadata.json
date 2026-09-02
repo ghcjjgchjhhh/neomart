@@ -1,0 +1,6 @@
+{
+  "name": "NeoMart",
+  "description": "Shop Smart, Live Better - Nigeria's premier e-commerce marketplace with phones, laptops, electronics, fashion, and home appliances.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
