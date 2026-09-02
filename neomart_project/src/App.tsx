@@ -18,6 +18,7 @@ import { Toast } from './components/Toast';
 
 import { allProducts, flashProductIds } from './data/products';
 import { initialReviews } from './data/ordersAndReviews';
+import { importProductsToFirestore } from './config/firestoreService';
 import {
   Product,
   CartItem,
@@ -103,6 +104,29 @@ export default function App() {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('neomart_theme', theme);
   }, [theme]);
+
+  // Initialize Firebase and import products
+  useEffect(() => {
+    const initializeFirebase = async () => {
+      try {
+        // Check if Firebase is configured
+        if (!import.meta.env.VITE_FIREBASE_API_KEY) {
+          console.warn('Firebase not configured. Add your Firebase config to .env');
+          return;
+        }
+        
+        // Import products on first load
+        const result = await importProductsToFirestore();
+        if (result.success) {
+          console.log('✅ Firebase initialized with products');
+        }
+      } catch (error) {
+        console.error('Firebase initialization error:', error);
+      }
+    };
+
+    initializeFirebase();
+  }, []);
 
   // Sync cart
   useEffect(() => {
