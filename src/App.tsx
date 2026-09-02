@@ -161,7 +161,10 @@ export default function App() {
     let unsubscribe: (() => void) | null = null;
 
     subscribeToOrders((remoteOrders) => {
-      if (isActive && remoteOrders.length > 0) setOrders(remoteOrders);
+      const realOrders = remoteOrders.filter(
+        (order) => !sampleOrders.some((sampleOrder) => sampleOrder.id === order.id)
+      );
+      if (isActive) setOrders(realOrders);
     }).then((cleanup) => {
       if (isActive) unsubscribe = cleanup;
       else cleanup?.();
