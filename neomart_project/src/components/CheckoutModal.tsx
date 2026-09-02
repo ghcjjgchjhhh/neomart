@@ -181,7 +181,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               {/* Bank Transfer */}
               <label
                 onClick={() => setPaymentMethod('bank')}
-                className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
+                className={`hidden flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
                   paymentMethod === 'bank'
                     ? 'border-[#f68b1e] bg-[#fff3e0]/40 dark:bg-[#2a1a00]/40 ring-1 ring-[#f68b1e]'
                     : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
@@ -201,7 +201,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               {/* Card Payment */}
               <label
                 onClick={() => setPaymentMethod('card')}
-                className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
+                className={`hidden flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
                   paymentMethod === 'card'
                     ? 'border-[#f68b1e] bg-[#fff3e0]/40 dark:bg-[#2a1a00]/40 ring-1 ring-[#f68b1e]'
                     : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
