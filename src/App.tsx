@@ -545,6 +545,7 @@ export default function App() {
             {selectedProduct ? (
               <ProductDetail
                 product={selectedProduct}
+                stock={getStockLevel(selectedProduct.id)}
                 onBack={handleBackToCatalog}
                 onAddToCart={handleAddToCart}
                 reviews={reviews}

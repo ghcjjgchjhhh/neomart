@@ -15,6 +15,7 @@ import { Product, Review } from '../types';
 
 interface ProductDetailProps {
   product: Product;
+  stock: number;
   onBack: () => void;
   onAddToCart: (product: Product) => boolean | void;
   reviews: Review[];
@@ -24,6 +25,7 @@ interface ProductDetailProps {
 
 export const ProductDetail: React.FC<ProductDetailProps> = ({
   product,
+  stock,
   onBack,
   onAddToCart,
   reviews,
@@ -105,7 +107,10 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6 pb-6 border-b border-gray-200 dark:border-gray-800">
         {/* Gallery (5 cols) */}
         <div className="md:col-span-5 flex flex-col items-center">
-          <div className="w-full aspect-square bg-gray-50 dark:bg-[#242424] rounded-2xl border border-gray-100 dark:border-gray-800 p-6 flex items-center justify-center overflow-hidden">
+          <div className="relative w-full aspect-square bg-gray-50 dark:bg-[#242424] rounded-2xl border border-gray-100 dark:border-gray-800 p-6 flex items-center justify-center overflow-hidden">
+            <span className={`absolute top-3 right-3 z-10 text-white font-bold text-xs px-3 py-1 rounded-lg shadow-md ${stock === 0 ? 'bg-red-600' : 'bg-black/70'}`}>
+              {stock === 0 ? 'Unavailable' : `${stock} units left`}
+            </span>
             {activeThumb === 'real' && product.img && !imgError ? (
               <img
                 src={product.img}
