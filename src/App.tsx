@@ -213,6 +213,7 @@ export default function App() {
     subscribeToStock((remoteStock) => {
       setStockLevels(remoteStock);
       localStorage.setItem('neomart_stock_levels', JSON.stringify(remoteStock));
+      window.dispatchEvent(new Event('neomart-stock-updated'));
     }).then((cleanup) => {
       unsubscribe = cleanup;
     }).catch(() => {});
@@ -236,7 +237,12 @@ export default function App() {
   };
 
   const handleUpdateStock = (productId: number, quantity: number) => {
-    setStockLevels((previous) => ({ ...previous, [productId]: quantity }));
+    setStockLevels((previous) => {
+      const updated = { ...previous, [productId]: quantity };
+      localStorage.setItem('neomart_stock_levels', JSON.stringify(updated));
+      window.dispatchEvent(new Event('neomart-stock-updated'));
+      return updated;
+    });
     void saveStockLevel(productId, quantity).catch(() => {
       showToast('Could not sync stock. Check Firebase connection.');
     });

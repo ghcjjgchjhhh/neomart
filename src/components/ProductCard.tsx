@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ShoppingCart, Check, Star } from 'lucide-react';
 import { Product } from '../types';
 
@@ -15,6 +15,33 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 }) => {
   const [imgError, setImgError] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
+  const [stock, setStock] = useState(() => {
+    try {
+      const saved = localStorage.getItem('neomart_stock_levels');
+      const levels = saved ? (JSON.parse(saved) as Record<string, number>) : {};
+      return levels[product.id] ?? 10;
+    } catch {
+      return 10;
+    }
+  });
+
+  useEffect(() => {
+    const refreshStock = () => {
+      try {
+        const saved = localStorage.getItem('neomart_stock_levels');
+        const levels = saved ? (JSON.parse(saved) as Record<string, number>) : {};
+        setStock(levels[product.id] ?? 10);
+      } catch {
+        setStock(10);
+      }
+    };
+    window.addEventListener('storage', refreshStock);
+    window.addEventListener('neomart-stock-updated', refreshStock);
+    return () => {
+      window.removeEventListener('storage', refreshStock);
+      window.removeEventListener('neomart-stock-updated', refreshStock);
+    };
+  }, [product.id]);
 
   const formatPrice = (amount: number) => {
     return '₦' + amount.toLocaleString('en-NG');
@@ -55,6 +82,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             -{product.discount}%
           </span>
         )}
+
+        <span className={`absolute top-2 right-2 z-10 text-white font-bold text-[10px] px-2 py-0.5 rounded shadow-xs ${stock === 0 ? 'bg-red-600' : 'bg-black/70'}`}>
+          {stock === 0 ? 'Unavailable' : `${stock} left`}
+        </span>
 
         <div className="absolute inset-0 flex items-center justify-center p-3">
           {product.img && !imgError ? (
