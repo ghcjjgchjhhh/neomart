@@ -16,7 +16,7 @@ import { Product, Review } from '../types';
 interface ProductDetailProps {
   product: Product;
   onBack: () => void;
-  onAddToCart: (product: Product) => void;
+  onAddToCart: (product: Product) => boolean | void;
   reviews: Review[];
   onAddReview: (review: Omit<Review, 'id' | 'date' | 'helpful'>) => void;
   onVoteHelpful: (reviewId: number) => void;
@@ -59,9 +59,10 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({
   }));
 
   const handleAddToCart = () => {
-    onAddToCart(product);
-    setIsAdded(true);
-    setTimeout(() => setIsAdded(false), 1500);
+    if (onAddToCart(product)) {
+      setIsAdded(true);
+      setTimeout(() => setIsAdded(false), 1500);
+    }
   };
 
   const handleHelpfulClick = (reviewId: number) => {

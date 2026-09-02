@@ -243,10 +243,12 @@ export default function App() {
   };
 
   const handleAddToCart = (product: Product) => {
+    let added = true;
     setCart((prev) => {
       const existing = prev.find((item) => item.id === product.id);
       if (getStockLevel(product.id) <= (existing?.qty || 0)) {
         showToast(`${product.name.slice(0, 28)}... is unavailable`);
+        added = false;
         return prev;
       }
       if (existing) {
@@ -256,7 +258,8 @@ export default function App() {
       }
       return [...prev, { ...product, qty: 1 }];
     });
-    showToast(`${product.name.slice(0, 28)}... added to cart 🛒`);
+    if (added) showToast(`${product.name.slice(0, 28)}... added to cart 🛒`);
+    return added;
   };
 
   const handleChangeQty = (productId: number, delta: number) => {

@@ -4,7 +4,7 @@ import { Product } from '../types';
 
 interface ProductCardProps {
   product: Product;
-  onAddToCart: (product: Product) => void;
+  onAddToCart: (product: Product) => boolean | void;
   onSelectProduct: (productId: number) => void;
 }
 
@@ -22,9 +22,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   const handleAddClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onAddToCart(product);
-    setIsAdded(true);
-    setTimeout(() => setIsAdded(false), 1500);
+    if (onAddToCart(product) !== false) {
+      setIsAdded(true);
+      setTimeout(() => setIsAdded(false), 1500);
+    }
   };
 
   const renderStars = (rating: number) => {
