@@ -797,7 +797,7 @@ export default function App() {
       <AdminOrdersModal
         isOpen={isAdminOpen}
         onClose={() => setIsAdminOpen(false)}
-        orders={orders}
+        orders={orders.filter((order) => order.orderSource === 'customer')}
         onConfirmOrderPayment={handleConfirmOrderPayment}
         onUpdateOrderStatus={(orderId, status) => {
           setOrders((prev) =>
