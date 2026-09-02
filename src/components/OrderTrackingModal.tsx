@@ -298,7 +298,9 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
     {
       id: 'placed',
       title: 'Order Received',
-      desc: 'Awaiting payment verification',
+      desc: selectedOrder.paymentConfirmed === true
+        ? 'Payment verified by NeoMart admin'
+        : 'Awaiting payment verification',
       time: '09:15 AM',
       done: courierProgress >= 10,
       active: courierProgress < 25
@@ -471,7 +473,9 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                 </span>
                 <span className="text-gray-500">•</span>
                 <span className="text-xs font-semibold text-[#f68b1e]">
-                  {courierProgress >= 100
+                  {selectedOrder.paymentConfirmed === true
+                    ? 'Order Received / Confirmed'
+                    : courierProgress >= 100
                     ? 'Delivered'
                     : courierProgress >= 85
                     ? 'Arriving at Destination'
