@@ -137,18 +137,6 @@ export const Header: React.FC<HeaderProps> = ({
               Track Order
             </button>
             <div className="flex items-center gap-1.5 bg-[#f68b1e] text-white px-2.5 py-0.5 rounded-full font-bold text-[11px] animate-pulse-line">
-                      {isAdmin && (
-                        <button
-                          onClick={() => {
-                            onOpenAdmin();
-                            setIsHelpOpen(false);
-                          }}
-                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-[#fff3e0] dark:hover:bg-[#2a1a00] font-semibold text-left transition-colors cursor-pointer"
-                        >
-                          <Building2 className="w-4 h-4 text-[#f68b1e]" />
-                          <span>Admin panel</span>
-                        </button>
-                      )}
               <PhoneCall className="w-3 h-3" />
               <span>Hotline: 08135642842</span>
             </div>
@@ -608,6 +596,17 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
       </div>
+      {isAdmin && (
+        <button
+          onClick={onOpenAdmin}
+          className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full bg-[#222222] px-4 py-3 text-xs font-bold text-white shadow-xl transition-transform hover:scale-105 cursor-pointer"
+          aria-label="Open admin panel"
+          title="Open admin panel"
+        >
+          <Building2 className="w-4 h-4 text-[#f68b1e]" />
+          <span>Admin</span>
+        </button>
+      )}
     </header>
   );
 };
