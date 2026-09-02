@@ -210,9 +210,23 @@ export default function App() {
   };
 
   // Cart Operations
+  const getStockLevel = (productId: number) => {
+    try {
+      const saved = localStorage.getItem('neomart_stock_levels');
+      const levels = saved ? (JSON.parse(saved) as Record<string, number>) : {};
+      return levels[productId] ?? 10;
+    } catch {
+      return 10;
+    }
+  };
+
   const handleAddToCart = (product: Product) => {
     setCart((prev) => {
       const existing = prev.find((item) => item.id === product.id);
+      if (getStockLevel(product.id) <= (existing?.qty || 0)) {
+        showToast(`${product.name.slice(0, 28)}... is unavailable`);
+        return prev;
+      }
       if (existing) {
         return prev.map((item) =>
           item.id === product.id ? { ...item, qty: item.qty + 1 } : item
@@ -324,6 +338,12 @@ export default function App() {
   ) => {
     setLastPaymentMethod(method);
 
+    const unavailableItem = cart.find((item) => item.qty > getStockLevel(item.id));
+    if (unavailableItem) {
+      showToast(`${unavailableItem.name.slice(0, 28)}... is unavailable or has insufficient stock`);
+      return;
+    }
+
     // Create real Order item
     const newOrderId = 'NM-' + Math.floor(10000 + Math.random() * 90000);
     const orderItems = cart.map((c) => ({
@@ -374,6 +394,18 @@ export default function App() {
     void saveOrder(newOrder).catch(() => {
       showToast('Order saved locally. Firebase sync is unavailable.');
     });
+
+    try {
+      const saved = localStorage.getItem('neomart_stock_levels');
+      const levels = saved ? (JSON.parse(saved) as Record<string, number>) : {};
+      orderItems.forEach((item) => {
+        const product = allProducts.find((candidate) => candidate.name === item.name);
+        if (product) levels[product.id] = Math.max(0, getStockLevel(product.id) - item.qty);
+      });
+      localStorage.setItem('neomart_stock_levels', JSON.stringify(levels));
+    } catch {
+      // Keep checkout successful if stock persistence is unavailable.
+    }
     setLastPlacedOrderId(newOrderId);
 
     setCart([]);
