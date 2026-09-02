@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   X,
+  CreditCard,
   Truck,
   ChevronDown,
   Search,
