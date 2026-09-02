@@ -47,6 +47,8 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
   const pendingCount = orders.filter(
     (o) => o.paymentConfirmed !== true
   ).length;
+  const processingCount = orders.filter((o) => o.status === 'Processing').length;
+  const openOrderValue = orders.reduce((total, order) => total + order.total, 0);
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
@@ -81,6 +83,22 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
           >
             <X className="w-5 h-5" />
           </button>
+        </div>
+
+        {/* Dashboard Summary */}
+        <div className="grid grid-cols-3 gap-2 p-4 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-[#18181b]">
+          <div className="rounded-xl border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/20 p-3">
+            <div className="text-[10px] uppercase font-bold text-amber-700 dark:text-amber-400">Open orders</div>
+            <div className="mt-1 text-lg font-black text-gray-900 dark:text-white">{orders.length}</div>
+          </div>
+          <div className="rounded-xl border border-blue-200 dark:border-blue-900/50 bg-blue-50 dark:bg-blue-950/20 p-3">
+            <div className="text-[10px] uppercase font-bold text-blue-700 dark:text-blue-400">Processing</div>
+            <div className="mt-1 text-lg font-black text-gray-900 dark:text-white">{processingCount}</div>
+          </div>
+          <div className="rounded-xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-950/20 p-3">
+            <div className="text-[10px] uppercase font-bold text-emerald-700 dark:text-emerald-400">Order value</div>
+            <div className="mt-1 text-sm font-black text-gray-900 dark:text-white">₦{openOrderValue.toLocaleString()}</div>
+          </div>
         </div>
 
         {/* Orders List */}
