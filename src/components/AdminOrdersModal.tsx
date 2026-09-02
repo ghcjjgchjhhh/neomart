@@ -51,7 +51,9 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
     return matchesFilter && matchesSearch;
   });
 
-  const pendingCount = orders.filter((o) => o.status === 'Processing').length;
+  const pendingCount = orders.filter(
+    (o) => o.status !== 'Order Confirmed' && o.status !== 'Delivered'
+  ).length;
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
@@ -142,11 +144,13 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
                 <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-gray-200 dark:border-gray-800">
                   <div className="text-[10px] text-gray-400">
                     {ord.status === 'Processing'
-                      ? '👉 Check your OPay app for the ₦' + ord.total.toLocaleString() + ' alert, then click confirm:'
-                      : '✅ Order payment verified. Ready for courier delivery.'}
+                      ? '👉 Check your payment account for the ₦' + ord.total.toLocaleString() + ' alert, then click confirm:'
+                      : ord.status === 'Order Confirmed'
+                      ? '✅ Order payment verified. Ready for courier delivery.'
+                      : '⏳ Payment is still processing.'}
                   </div>
 
-                  {ord.status === 'Processing' ? (
+                  {ord.status !== 'Order Confirmed' && ord.status !== 'Delivered' ? (
                     <button
                       onClick={() => handleConfirm(ord.id)}
                       className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-md cursor-pointer hover:shadow-lg"

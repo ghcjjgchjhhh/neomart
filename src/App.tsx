@@ -95,7 +95,12 @@ export default function App() {
   const [orders, setOrders] = useState<Order[]>(() => {
     try {
       const saved = localStorage.getItem('neomart_orders');
-      return saved ? JSON.parse(saved) : sampleOrders;
+      const storedOrders: Order[] = saved ? JSON.parse(saved) : sampleOrders;
+      return storedOrders.map((order) =>
+        order.status === 'Out for Delivery' && order.paymentMethod !== 'Payment on Delivery'
+          ? { ...order, status: 'Processing' }
+          : order
+      );
     } catch {
       return sampleOrders;
     }
