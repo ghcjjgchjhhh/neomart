@@ -36,6 +36,7 @@ interface HeaderProps {
   products: Product[];
   onSelectProduct: (productId: number) => void;
   onOpenTrackOrder: () => void;
+  onOpenOrderHistory: () => void;
   onSelectCategory: (category: string) => void;
   onOpenAdmin: () => void;
   isAdmin: boolean;
@@ -55,6 +56,7 @@ export const Header: React.FC<HeaderProps> = ({
   products,
   onSelectProduct,
   onOpenTrackOrder,
+    onOpenOrderHistory,
   onSelectCategory,
   onOpenAdmin,
   isAdmin
@@ -135,6 +137,12 @@ export const Header: React.FC<HeaderProps> = ({
               className="hover:text-[#f68b1e] transition-colors cursor-pointer"
             >
               Track Order
+            </button>
+            <button
+              onClick={onOpenOrderHistory}
+              className="hover:text-[#f68b1e] transition-colors cursor-pointer"
+            >
+              Order History
             </button>
             <div className="flex items-center gap-1.5 bg-[#f68b1e] text-white px-2.5 py-0.5 rounded-full font-bold text-[11px] animate-pulse-line">
               <PhoneCall className="w-3 h-3" />

@@ -15,6 +15,7 @@ import { LoginModal } from './components/LoginModal';
 import { HelpCenterModal } from './components/HelpCenterModal';
 import { AdminOrdersModal } from './components/AdminOrdersModal';
 import { AdminStockModal } from './components/AdminStockModal';
+import { OrderHistoryModal } from './components/OrderHistoryModal';
 import { OrderTrackingModal } from './components/TrackingModal';
 import { Footer } from './components/Footer';
 import { Toast } from './components/Toast';
@@ -134,6 +135,7 @@ export default function App() {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isStockOpen, setIsStockOpen] = useState(false);
+      const [isOrderHistoryOpen, setIsOrderHistoryOpen] = useState(false);
     const [stockLevels, setStockLevels] = useState<Record<number, number>>(() => {
       try {
         const saved = localStorage.getItem('neomart_stock_levels');
@@ -363,6 +365,10 @@ export default function App() {
     setIsOrderTrackingOpen(true);
   };
 
+  const customerOrders = orders.filter(
+    (order) => order.orderSource === 'customer' && order.email === currentUserEmail
+  );
+
   const handleCompleteOrder = (
     method: PaymentMethodType,
     _deliveryDetails?: DeliveryDetails
@@ -519,6 +525,7 @@ export default function App() {
         products={allProducts}
         onSelectProduct={handleSelectProduct}
         onOpenTrackOrder={() => handleOpenLiveTracking()}
+        onOpenOrderHistory={() => setIsOrderHistoryOpen(true)}
         onSelectCategory={handleSelectCategory}
         onOpenAdmin={() => setIsAdminOpen(true)}
         isAdmin={isLoggedIn && currentUserEmail.toLowerCase() === ADMIN_EMAIL}
@@ -882,6 +889,16 @@ export default function App() {
         orderId={trackingOrderId}
         ordersList={orders}
         showToast={showToast}
+      />
+
+      <OrderHistoryModal
+        isOpen={isOrderHistoryOpen}
+        onClose={() => setIsOrderHistoryOpen(false)}
+        orders={customerOrders}
+        onTrackOrder={(orderId) => {
+          setIsOrderHistoryOpen(false);
+          handleOpenLiveTracking(orderId);
+        }}
       />
 
       {/* 11. Admin Orders and Payment Manager */}
