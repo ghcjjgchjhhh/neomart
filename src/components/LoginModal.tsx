@@ -23,15 +23,7 @@ interface GoogleAccount {
 
 const SAVED_ACCOUNTS_KEY = 'neomart_google_accounts_list';
 
-const INITIAL_GOOGLE_ACCOUNTS: GoogleAccount[] = [
-  {
-    name: 'Ifeanyi Anoma',
-    email: 'ifeanyianoma2@gmail.com',
-    avatarBg: 'bg-[#f68b1e]',
-    avatarLetter: 'I',
-    avatarColor: 'text-white',
-  },
-];
+const INITIAL_GOOGLE_ACCOUNTS: GoogleAccount[] = [];
 
 export const LoginModal: React.FC<LoginModalProps> = ({
   isOpen,
@@ -110,9 +102,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
   const handleGoogleIconClick = () => {
     try {
-      // @ts-expect-error Google Identity Services global object
       if (window.google?.accounts?.oauth2?.initTokenClient) {
-        // @ts-expect-error Google Identity Services global object
         const client = window.google.accounts.oauth2.initTokenClient({
           client_id: GOOGLE_CLIENT_ID,
           scope: 'email profile openid',
@@ -143,9 +133,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                   }
                 })
                 .catch(() => {
-                  onLoginSuccess('ifeanyianoma2@gmail.com');
-                  showToast('Signed in with Google!');
-                  onClose();
+                  showToast('Google sign-in failed. Please try again.');
                 });
             }
           },
