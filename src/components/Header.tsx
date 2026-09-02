@@ -181,7 +181,7 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Logo */}
             <button
               onClick={() => onSelectCategory('all')}
-              className="flex items-center gap-1.5 font-extrabold text-2xl md:text-3xl tracking-tight text-white cursor-pointer hover:opacity-95 transition-opacity shrink-0"
+              className="flex items-center gap-1.5 font-extrabold text-2xl md:text-3xl tracking-tight text-white cursor-pointer hover:opacity-95 transition-opacity flex-shrink-0"
             >
               <NeoMartIcon size={30} className="drop-shadow-sm" />
               <span>
@@ -190,7 +190,7 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
 
             {/* Mobile Actions (Google, Track, Account, Help, Cart) */}
-            <div className="flex md:hidden items-center gap-1.5">
+            <div className="flex md:hidden items-center gap-1.5 relative">
               {/* Google Button */}
               <button
                 onClick={onOpenLogin}
@@ -225,14 +225,111 @@ export const Header: React.FC<HeaderProps> = ({
                 <User className="w-5 h-5" />
               </button>
 
-              {/* Help */}
-              <button
-                onClick={() => setIsHelpOpen(!isHelpOpen)}
-                className="p-2 rounded-lg hover:bg-white/20 transition-colors text-white cursor-pointer"
-                aria-label="Help"
-              >
-                <HelpCircle className="w-5 h-5" />
-              </button>
+              {/* Help (Opens Help Center on Mobile) */}
+              <div className="relative">
+                <button
+                  onClick={() => setIsHelpOpen(!isHelpOpen)}
+                  className="p-2 rounded-lg hover:bg-white/20 transition-colors text-white cursor-pointer"
+                  aria-label="Help Center"
+                  title="Help & Customer Care"
+                >
+                  <HelpCircle className="w-5 h-5" />
+                </button>
+
+                {/* Mobile Help Menu Dropdown Popover */}
+                {isHelpOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-72 bg-white dark:bg-[#1e1e1e] text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-2xl p-2.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                    <div className="flex items-center justify-between pb-2 mb-2 border-b border-gray-100 dark:border-gray-800 px-2 font-bold text-xs">
+                      <span className="flex items-center gap-1.5 text-gray-900 dark:text-white font-extrabold">
+                        <HelpCircle className="w-4 h-4 text-[#f68b1e]" />
+                        NeoMart Customer Care
+                      </span>
+                      <button
+                        onClick={() => setIsHelpOpen(false)}
+                        className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    <div className="flex flex-col gap-1 text-xs">
+                      <button
+                        onClick={() => {
+                          onOpenHelpSection('place-order');
+                          setIsHelpOpen(false);
+                        }}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-[#fff3e0] dark:hover:bg-[#2a1a00] font-semibold text-left transition-colors cursor-pointer"
+                      >
+                        <ShoppingBag className="w-4 h-4 text-[#f68b1e]" />
+                        <span>Place an order</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          onOpenHelpSection('payment-options');
+                          setIsHelpOpen(false);
+                        }}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-[#fff3e0] dark:hover:bg-[#2a1a00] font-semibold text-left transition-colors cursor-pointer"
+                      >
+                        <CreditCard className="w-4 h-4 text-[#f68b1e]" />
+                        <span>Payment options</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          onOpenTrackOrder();
+                          setIsHelpOpen(false);
+                        }}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-[#fff3e0] dark:hover:bg-[#2a1a00] font-semibold text-left transition-colors cursor-pointer"
+                      >
+                        <Truck className="w-4 h-4 text-[#f68b1e]" />
+                        <span>Live GPS Order Tracking</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          onOpenHelpSection('cancel-order');
+                          setIsHelpOpen(false);
+                        }}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-[#fff3e0] dark:hover:bg-[#2a1a00] font-semibold text-left transition-colors cursor-pointer"
+                      >
+                        <X className="w-4 h-4 text-red-500" />
+                        <span>Cancel an order</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          onOpenHelpSection('returns-refunds');
+                          setIsHelpOpen(false);
+                        }}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-[#fff3e0] dark:hover:bg-[#2a1a00] font-semibold text-left transition-colors cursor-pointer"
+                      >
+                        <RotateCcw className="w-4 h-4 text-[#f68b1e]" />
+                        <span>Returns & Refunds</span>
+                      </button>
+
+                      <div className="pt-2 mt-1 border-t border-gray-100 dark:border-gray-800 flex flex-col gap-1.5">
+                        <button
+                          onClick={() => {
+                            onOpenHelpSection('live-chat');
+                            setIsHelpOpen(false);
+                          }}
+                          className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-[#fff3e0] dark:bg-[#2a1a00] text-[#f68b1e] font-bold text-xs hover:bg-[#ffe5c7] dark:hover:bg-[#3d2400] transition-colors cursor-pointer shadow-xs"
+                        >
+                          <MessageSquare className="w-4 h-4" />
+                          <span>Open Live Chat Support</span>
+                        </button>
+                        <a
+                          href="https://wa.me/2348135642842?text=Hello%20NeoMart%20Support,%20I%20need%20help%20with%20my%20order."
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 font-bold text-xs hover:bg-emerald-100 transition-colors cursor-pointer"
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                          <span>WhatsApp Support</span>
+                          <ExternalLink className="w-3 h-3 opacity-70" />
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Cart */}
               <button
@@ -285,7 +382,7 @@ export const Header: React.FC<HeaderProps> = ({
               )}
               <button
                 type="submit"
-                className="bg-[#222222] hover:bg-[#111111] text-white px-4.5 sm:px-5 py-2.5 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                className="bg-[#222222] hover:bg-[#111111] text-white px-4.5 sm:px-5 py-2.5 flex items-center justify-center transition-colors cursor-pointer flex-shrink-0"
                 aria-label="Search"
               >
                 <Search className="w-4 h-4" />
@@ -317,7 +414,7 @@ export const Header: React.FC<HeaderProps> = ({
                         {item.name}
                       </span>
                     </div>
-                    <span className="text-[10px] text-gray-400 capitalize px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 shrink-0 ml-2">
+                    <span className="text-[10px] text-gray-400 capitalize px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 flex-shrink-0 ml-2">
                       {item.category}
                     </span>
                   </button>
@@ -327,7 +424,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Desktop Header Action Buttons */}
-          <div className="hidden md:flex items-center gap-2 shrink-0">
+          <div className="hidden md:flex items-center gap-2 flex-shrink-0">
             {/* Google Sign In Button */}
             <button
               onClick={onOpenLogin}
