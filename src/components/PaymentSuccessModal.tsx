@@ -36,11 +36,11 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
 
         <div>
           <h3 className="text-xl font-extrabold text-gray-900 dark:text-gray-100">
-            {method === 'delivery' ? 'Order Received!' : 'Payment Submitted!'}
+            {method === 'delivery' ? 'Order Submitted!' : 'Payment Submitted!'}
           </h3>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
             {method === 'delivery'
-              ? 'Thank you for shopping with NeoMart. Your order is being processed.'
+              ? 'Thank you for shopping with NeoMart. Your order is awaiting confirmation.'
               : 'Your payment was submitted and is awaiting admin verification.'}
           </p>
         </div>

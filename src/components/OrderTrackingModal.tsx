@@ -297,7 +297,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
   const steps = [
     {
       id: 'placed',
-      title: 'Order Received',
+      title: selectedOrder.paymentConfirmed === true ? 'Order Received' : 'Processing',
       desc: selectedOrder.paymentConfirmed === true
         ? 'Payment verified by NeoMart admin'
         : 'Awaiting payment verification',
