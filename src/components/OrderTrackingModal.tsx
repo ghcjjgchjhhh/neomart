@@ -382,7 +382,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
 
         {/* Search Order Bar & Quick Switcher */}
         <div className="bg-gray-50 dark:bg-[#1f1f1f] px-5 py-2.5 border-b border-gray-200 dark:border-gray-800 flex flex-wrap items-center justify-between gap-3 text-xs">
-          <form onSubmit={handleSearchOrder} className="flex-1 min-w-[200px] flex items-center gap-1.5">
+          <form onSubmit={handleSearchOrder} className="flex-1 min-w-50 flex items-center gap-1.5">
             <div className="relative flex-1">
               <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
@@ -432,12 +432,12 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
         {permissionStatus === 'denied' && (
           <div className="bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 px-5 py-2.5 text-xs flex items-center justify-between border-b border-amber-200 dark:border-amber-900/60">
             <div className="flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+              <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
               <span>{errorMessage || 'Location access blocked. Allow phone GPS for doorstep live tracking.'}</span>
             </div>
             <button
               onClick={requestLocationPermission}
-              className="bg-amber-600 hover:bg-amber-700 text-white font-bold px-2.5 py-1 rounded-lg text-[11px] transition-colors cursor-pointer flex-shrink-0 ml-2"
+              className="bg-amber-600 hover:bg-amber-700 text-white font-bold px-2.5 py-1 rounded-lg text-[11px] transition-colors cursor-pointer shrink-0 ml-2"
             >
               Grant GPS Permission
             </button>
@@ -453,7 +453,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
 
         {searchError && (
           <div className="bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 px-5 py-2 text-xs flex items-center gap-2 border-b border-red-200 dark:border-red-900">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{searchError}</span>
           </div>
         )}
@@ -462,7 +462,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
         <div className="overflow-y-auto flex-1 divide-y divide-gray-100 dark:divide-gray-800">
           
           {/* 1. Live GPS Map Canvas */}
-          <div className="p-4 sm:p-5 bg-gradient-to-b from-gray-900 via-[#131722] to-gray-900 text-white relative">
+          <div className="p-4 sm:p-5 bg-linear-to-b from-gray-900 via-[#131722] to-gray-900 text-white relative">
             {/* Top Status Bar */}
             <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
               <div className="flex items-center gap-2">
@@ -535,7 +535,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
             {/* Courier Profile & Contact Strip */}
             <div className="mt-3.5 p-3 rounded-2xl bg-white/5 border border-white/10 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-[#f68b1e] to-amber-400 p-0.5 shadow-md flex-shrink-0">
+                <div className="w-11 h-11 rounded-full bg-linear-to-tr from-[#f68b1e] to-amber-400 p-0.5 shadow-md shrink-0">
                   <div className="w-full h-full rounded-full bg-gray-900 flex items-center justify-center text-white font-bold text-sm">
                     MG
                   </div>
@@ -720,7 +720,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                           <img
                             src={item.image}
                             alt={item.name}
-                            className="w-10 h-10 object-contain rounded-lg bg-white p-1 flex-shrink-0"
+                            className="w-10 h-10 object-contain rounded-lg bg-white p-1 shrink-0"
                           />
                         ) : (
                           <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-base">

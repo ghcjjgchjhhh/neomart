@@ -181,7 +181,7 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Logo */}
             <button
               onClick={() => onSelectCategory('all')}
-              className="flex items-center gap-1.5 font-extrabold text-2xl md:text-3xl tracking-tight text-white cursor-pointer hover:opacity-95 transition-opacity flex-shrink-0"
+              className="flex items-center gap-1.5 font-extrabold text-2xl md:text-3xl tracking-tight text-white cursor-pointer hover:opacity-95 transition-opacity shrink-0"
             >
               <NeoMartIcon size={30} className="drop-shadow-sm" />
               <span>
@@ -382,7 +382,7 @@ export const Header: React.FC<HeaderProps> = ({
               )}
               <button
                 type="submit"
-                className="bg-[#222222] hover:bg-[#111111] text-white px-4.5 sm:px-5 py-2.5 flex items-center justify-center transition-colors cursor-pointer flex-shrink-0"
+                className="bg-[#222222] hover:bg-[#111111] text-white px-4.5 sm:px-5 py-2.5 flex items-center justify-center transition-colors cursor-pointer shrink-0"
                 aria-label="Search"
               >
                 <Search className="w-4 h-4" />
@@ -414,7 +414,7 @@ export const Header: React.FC<HeaderProps> = ({
                         {item.name}
                       </span>
                     </div>
-                    <span className="text-[10px] text-gray-400 capitalize px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 flex-shrink-0 ml-2">
+                    <span className="text-[10px] text-gray-400 capitalize px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 shrink-0 ml-2">
                       {item.category}
                     </span>
                   </button>
@@ -424,7 +424,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Desktop Header Action Buttons */}
-          <div className="hidden md:flex items-center gap-2 flex-shrink-0">
+          <div className="hidden md:flex items-center gap-2 shrink-0">
             {/* Google Sign In Button */}
             <button
               onClick={onOpenLogin}
