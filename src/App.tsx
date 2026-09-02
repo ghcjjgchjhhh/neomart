@@ -23,6 +23,7 @@ const ADMIN_EMAIL = 'ifeanyianoma2@gmail.com';
 
 import { allProducts, flashProductIds } from './data/products';
 import { initialReviews, sampleOrders } from './data/ordersAndReviews';
+import { confirmOrderPayment, saveOrder, subscribeToOrders } from './config/ordersService';
 import {
   Product,
   CartItem,
@@ -150,6 +151,14 @@ export default function App() {
     localStorage.setItem('neomart_orders', JSON.stringify(orders));
   }, [orders]);
 
+  // Keep customer and admin order lists synchronized across devices when Firebase is configured.
+  useEffect(() => {
+    const unsubscribe = subscribeToOrders((remoteOrders) => {
+      if (remoteOrders.length > 0) setOrders(remoteOrders);
+    });
+    return () => unsubscribe?.();
+  }, []);
+
   const toggleTheme = () => {
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
   };
@@ -253,6 +262,9 @@ export default function App() {
           : order
       )
     );
+    void confirmOrderPayment(orderId).catch(() => {
+      showToast('Could not sync confirmation. Check Firebase connection.');
+    });
     showToast('Payment confirmed successfully');
   };
 
@@ -324,6 +336,9 @@ export default function App() {
 
     const updated = [newOrder, ...orders];
     setOrders(updated);
+    void saveOrder(newOrder).catch(() => {
+      showToast('Order saved locally. Firebase sync is unavailable.');
+    });
     setLastPlacedOrderId(newOrderId);
 
     setCart([]);
