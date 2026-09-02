@@ -7,6 +7,7 @@ interface PaymentSuccessModalProps {
   onClose: () => void;
   method: PaymentMethodType;
   orderId?: string;
+  isOrderConfirmed?: boolean;
   onOpenTrackLiveOrder?: (orderId?: string) => void;
 }
 
@@ -15,6 +16,7 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
   onClose,
   method,
   orderId,
+  isOrderConfirmed = false,
   onOpenTrackLiveOrder
 }) => {
   if (!isOpen) return null;
@@ -36,10 +38,16 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
 
         <div>
           <h3 className="text-xl font-extrabold text-gray-900 dark:text-gray-100">
-            {method === 'delivery' ? 'Order Submitted!' : 'Payment Submitted!'}
+            {isOrderConfirmed
+              ? 'Order Received / Confirmed!'
+              : method === 'delivery'
+              ? 'Order Submitted!'
+              : 'Payment Submitted!'}
           </h3>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            {method === 'delivery'
+            {isOrderConfirmed
+              ? 'Your order has been confirmed by NeoMart and is being prepared for delivery.'
+              : method === 'delivery'
               ? 'Thank you for shopping with NeoMart. Your order is awaiting confirmation.'
               : 'Your payment was submitted and is awaiting admin verification.'}
           </p>

@@ -745,6 +745,9 @@ export default function App() {
         onClose={() => setIsPaymentSuccessOpen(false)}
         method={lastPaymentMethod}
         orderId={lastPlacedOrderId || undefined}
+        isOrderConfirmed={Boolean(
+          lastPlacedOrderId && orders.find((order) => order.id === lastPlacedOrderId)?.paymentConfirmed
+        )}
         onOpenTrackLiveOrder={handleOpenLiveTracking}
       />
 
