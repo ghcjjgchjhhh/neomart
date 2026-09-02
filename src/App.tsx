@@ -24,7 +24,7 @@ const ADMIN_EMAIL = 'ifeanyianoma2@gmail.com';
 
 import { allProducts, flashProductIds } from './data/products';
 import { initialReviews, sampleOrders } from './data/ordersAndReviews';
-import { confirmOrderPayment, saveOrder, subscribeToOrders, updateOrderStatus } from './config/ordersService';
+import { confirmOrderPayment, saveOrder, subscribeToOrders, updateOrderStatus, saveStockLevel, subscribeToStock } from './config/ordersService';
 import {
   Product,
   CartItem,
@@ -134,6 +134,14 @@ export default function App() {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isStockOpen, setIsStockOpen] = useState(false);
+    const [stockLevels, setStockLevels] = useState<Record<number, number>>(() => {
+      try {
+        const saved = localStorage.getItem('neomart_stock_levels');
+        return saved ? JSON.parse(saved) : {};
+      } catch {
+        return {};
+      }
+    });
   const [activeHelpSection, setActiveHelpSection] = useState<HelpSectionType>('place-order');
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -200,6 +208,17 @@ export default function App() {
     };
   }, []);
 
+  useEffect(() => {
+    let unsubscribe: (() => void) | null = null;
+    subscribeToStock((remoteStock) => {
+      setStockLevels(remoteStock);
+      localStorage.setItem('neomart_stock_levels', JSON.stringify(remoteStock));
+    }).then((cleanup) => {
+      unsubscribe = cleanup;
+    }).catch(() => {});
+    return () => unsubscribe?.();
+  }, []);
+
   const toggleTheme = () => {
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
   };
@@ -213,13 +232,14 @@ export default function App() {
 
   // Cart Operations
   const getStockLevel = (productId: number) => {
-    try {
-      const saved = localStorage.getItem('neomart_stock_levels');
-      const levels = saved ? (JSON.parse(saved) as Record<string, number>) : {};
-      return levels[productId] ?? 10;
-    } catch {
-      return 10;
-    }
+    return stockLevels[productId] ?? 10;
+  };
+
+  const handleUpdateStock = (productId: number, quantity: number) => {
+    setStockLevels((previous) => ({ ...previous, [productId]: quantity }));
+    void saveStockLevel(productId, quantity).catch(() => {
+      showToast('Could not sync stock. Check Firebase connection.');
+    });
   };
 
   const handleAddToCart = (product: Product) => {
@@ -399,11 +419,16 @@ export default function App() {
 
     try {
       const saved = localStorage.getItem('neomart_stock_levels');
-      const levels = saved ? (JSON.parse(saved) as Record<string, number>) : {};
+      const levels = { ...stockLevels };
       orderItems.forEach((item) => {
         const product = allProducts.find((candidate) => candidate.name === item.name);
         if (product) levels[product.id] = Math.max(0, getStockLevel(product.id) - item.qty);
+        if (product) {
+          levels[product.id] = Math.max(0, getStockLevel(product.id) - item.qty);
+          void saveStockLevel(product.id, levels[product.id]).catch(() => {});
+        }
       });
+      setStockLevels(levels);
       localStorage.setItem('neomart_stock_levels', JSON.stringify(levels));
     } catch {
       // Keep checkout successful if stock persistence is unavailable.
@@ -874,6 +899,8 @@ export default function App() {
       <AdminStockModal
         isOpen={isStockOpen}
         onClose={() => setIsStockOpen(false)}
+        stockLevels={stockLevels}
+        onUpdateStock={handleUpdateStock}
       />
 
       {/* 12. Global Toast Alert */}

@@ -36,6 +36,24 @@ export async function updateOrderStatus(orderId: string, status: FulfillmentStat
   return true;
 }
 
+export async function saveStockLevel(productId: number, quantity: number) {
+  if (!db || !(await ensureFirebaseAuth())) {
+    throw new Error('Firebase stock sync is not configured');
+  }
+  await setDoc(doc(db, 'inventory', String(productId)), { quantity });
+  return true;
+}
+
+export async function subscribeToStock(onStock: (stock: Record<number, number>) => void): Promise<Unsubscribe | null> {
+  if (!db || !(await ensureFirebaseAuth())) return null;
+
+  return onSnapshot(collection(db, 'inventory'), (snapshot) => {
+    onStock(Object.fromEntries(snapshot.docs.map((item) => [Number(item.id), item.data().quantity as number])));
+  }, (error) => {
+    console.error('Firebase inventory connection failed:', error);
+  });
+}
+
 export async function subscribeToOrders(onOrders: (orders: Order[]) => void): Promise<Unsubscribe | null> {
   if (!db || !(await ensureFirebaseAuth())) return null;
 

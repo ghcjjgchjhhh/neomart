@@ -5,18 +5,12 @@ import { allProducts } from '../data/products';
 interface AdminStockModalProps {
   isOpen: boolean;
   onClose: () => void;
+  stockLevels: Record<number, number>;
+  onUpdateStock: (productId: number, quantity: number) => void;
 }
 
-export const AdminStockModal: React.FC<AdminStockModalProps> = ({ isOpen, onClose }) => {
+export const AdminStockModal: React.FC<AdminStockModalProps> = ({ isOpen, onClose, stockLevels, onUpdateStock }) => {
   const [search, setSearch] = useState('');
-  const [stockLevels, setStockLevels] = useState<Record<number, number>>(() => {
-    try {
-      const saved = localStorage.getItem('neomart_stock_levels');
-      return saved ? JSON.parse(saved) : {};
-    } catch {
-      return {};
-    }
-  });
 
   if (!isOpen) return null;
 
@@ -26,9 +20,7 @@ export const AdminStockModal: React.FC<AdminStockModalProps> = ({ isOpen, onClos
 
   const updateStock = (productId: number, value: string) => {
     const nextValue = Math.max(0, Number.parseInt(value, 10) || 0);
-    const updated = { ...stockLevels, [productId]: nextValue };
-    setStockLevels(updated);
-    localStorage.setItem('neomart_stock_levels', JSON.stringify(updated));
+    onUpdateStock(productId, nextValue);
   };
 
   return (
