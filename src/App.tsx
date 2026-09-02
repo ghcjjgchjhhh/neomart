@@ -153,10 +153,22 @@ export default function App() {
 
   // Keep customer and admin order lists synchronized across devices when Firebase is configured.
   useEffect(() => {
-    const unsubscribe = subscribeToOrders((remoteOrders) => {
-      if (remoteOrders.length > 0) setOrders(remoteOrders);
+    let isActive = true;
+    let unsubscribe: (() => void) | null = null;
+
+    subscribeToOrders((remoteOrders) => {
+      if (isActive && remoteOrders.length > 0) setOrders(remoteOrders);
+    }).then((cleanup) => {
+      if (isActive) unsubscribe = cleanup;
+      else cleanup?.();
+    }).catch((error) => {
+      console.error('Could not connect to shared orders:', error);
     });
-    return () => unsubscribe?.();
+
+    return () => {
+      isActive = false;
+      unsubscribe?.();
+    };
   }, []);
 
   const toggleTheme = () => {

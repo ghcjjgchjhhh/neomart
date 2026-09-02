@@ -25,17 +25,12 @@ export async function confirmOrderPayment(orderId: string) {
   return true;
 }
 
-export function subscribeToOrders(onOrders: (orders: Order[]) => void): Unsubscribe | null {
-  if (!db) return null;
-  let unsubscribe: Unsubscribe | null = null;
-  ensureFirebaseAuth()
-    .then(() => {
-      if (!db) return;
-      unsubscribe = onSnapshot(collection(db, 'orders'), (snapshot) => {
-        onOrders(snapshot.docs.map((item) => item.data() as Order));
-      });
-    })
-    .catch((error) => console.error('Firebase orders connection failed:', error));
+export async function subscribeToOrders(onOrders: (orders: Order[]) => void): Promise<Unsubscribe | null> {
+  if (!db || !(await ensureFirebaseAuth())) return null;
 
-  return () => unsubscribe?.();
+  return onSnapshot(collection(db, 'orders'), (snapshot) => {
+    onOrders(snapshot.docs.map((item) => item.data() as Order));
+  }, (error) => {
+    console.error('Firebase orders connection failed:', error);
+  });
 }
