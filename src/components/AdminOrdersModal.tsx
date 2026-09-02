@@ -11,6 +11,7 @@ import {
   Check
 } from 'lucide-react';
 import { FulfillmentStatus, Order } from '../types';
+import { allProducts } from '../data/products';
 
 interface AdminOrdersModalProps {
   isOpen: boolean;
@@ -28,6 +29,15 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
   onUpdateOrderStatus,
 }) => {
   const [search, setSearch] = useState('');
+  const [stockSearch, setStockSearch] = useState('');
+  const [stockLevels, setStockLevels] = useState<Record<number, number>>(() => {
+    try {
+      const saved = localStorage.getItem('neomart_stock_levels');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
 
   if (!isOpen) return null;
 
@@ -55,6 +65,16 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
     notation: 'compact',
     maximumFractionDigits: 1,
   }).format(openOrderValue);
+  const filteredProducts = allProducts.filter((product) =>
+    product.name.toLowerCase().includes(stockSearch.toLowerCase())
+  );
+
+  const updateStock = (productId: number, value: string) => {
+    const nextValue = Math.max(0, Number.parseInt(value, 10) || 0);
+    const updated = { ...stockLevels, [productId]: nextValue };
+    setStockLevels(updated);
+    localStorage.setItem('neomart_stock_levels', JSON.stringify(updated));
+  };
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
@@ -196,6 +216,37 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
               </div>
             ))
           )}
+        </div>
+
+        <div className="border-t border-gray-200 dark:border-gray-800 p-4 bg-white dark:bg-[#18181b] space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h4 className="font-extrabold text-sm text-gray-900 dark:text-white">Stock Management</h4>
+            <input
+              value={stockSearch}
+              onChange={(event) => setStockSearch(event.target.value)}
+              placeholder="Search products"
+              className="w-full sm:w-48 px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#202024] text-gray-800 dark:text-gray-200 outline-none focus:border-[#f68b1e]"
+              aria-label="Search products for stock management"
+            />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto">
+            {filteredProducts.map((product) => {
+              const stock = stockLevels[product.id] ?? 10;
+              return (
+                <div key={product.id} className="flex items-center justify-between gap-2 rounded-xl border border-gray-200 dark:border-gray-800 p-2.5">
+                  <span className="truncate font-semibold text-gray-700 dark:text-gray-300" title={product.name}>{product.name}</span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={stock}
+                    onChange={(event) => updateStock(product.id, event.target.value)}
+                    className="w-16 shrink-0 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#202024] px-2 py-1.5 text-center font-bold text-gray-900 dark:text-white"
+                    aria-label={`Stock quantity for ${product.name}`}
+                  />
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
