@@ -14,6 +14,7 @@ import { PaymentSuccessModal } from './components/PaymentSuccessModal';
 import { LoginModal } from './components/LoginModal';
 import { HelpCenterModal } from './components/HelpCenterModal';
 import { AdminOrdersModal } from './components/AdminOrdersModal';
+import { AdminStockModal } from './components/AdminStockModal';
 import { OrderTrackingModal } from './components/TrackingModal';
 import { Footer } from './components/Footer';
 import { Toast } from './components/Toast';
@@ -132,6 +133,7 @@ export default function App() {
 
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [isStockOpen, setIsStockOpen] = useState(false);
   const [activeHelpSection, setActiveHelpSection] = useState<HelpSectionType>('place-order');
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -855,6 +857,7 @@ export default function App() {
           (order) => order.orderSource === 'customer' && order.paymentConfirmed !== true
         )}
         onConfirmOrderPayment={handleConfirmOrderPayment}
+        onOpenStockManagement={() => setIsStockOpen(true)}
         onUpdateOrderStatus={(orderId, status) => {
           setOrders((prev) =>
             prev.map((order) =>
@@ -867,6 +870,10 @@ export default function App() {
             showToast('Could not sync status. Check Firebase connection.');
           });
         }}
+      />
+      <AdminStockModal
+        isOpen={isStockOpen}
+        onClose={() => setIsStockOpen(false)}
       />
 
       {/* 12. Global Toast Alert */}
