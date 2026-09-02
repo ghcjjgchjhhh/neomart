@@ -10,7 +10,9 @@ import { db, ensureFirebaseAuth } from './firebase';
 import { Order } from '../types';
 
 export async function saveOrder(order: Order) {
-  if (!db || !(await ensureFirebaseAuth())) return false;
+  if (!db || !(await ensureFirebaseAuth())) {
+    throw new Error('Firebase orders sync is not configured');
+  }
   await setDoc(doc(db, 'orders', order.id), order);
   return true;
 }
