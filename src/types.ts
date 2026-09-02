@@ -74,6 +74,8 @@ export interface Order {
   items: OrderItem[];
 }
 
+export type FulfillmentStatus = 'Processing' | 'Packed' | 'Shipped' | 'Out for Delivery' | 'Delivered';
+
 export type HelpSectionType =
   | 'place-order'
   | 'payment-options'

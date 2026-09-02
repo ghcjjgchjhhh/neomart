@@ -23,7 +23,7 @@ const ADMIN_EMAIL = 'ifeanyianoma2@gmail.com';
 
 import { allProducts, flashProductIds } from './data/products';
 import { initialReviews, sampleOrders } from './data/ordersAndReviews';
-import { confirmOrderPayment, saveOrder, subscribeToOrders } from './config/ordersService';
+import { confirmOrderPayment, saveOrder, subscribeToOrders, updateOrderStatus } from './config/ordersService';
 import {
   Product,
   CartItem,
@@ -808,10 +808,13 @@ export default function App() {
           setOrders((prev) =>
             prev.map((order) =>
               order.id === orderId
-                ? { ...order, status: status === 'Paid' ? 'Order Confirmed' : status }
+                ? { ...order, status }
                 : order
             )
           );
+          void updateOrderStatus(orderId, status).catch(() => {
+            showToast('Could not sync status. Check Firebase connection.');
+          });
         }}
       />
 

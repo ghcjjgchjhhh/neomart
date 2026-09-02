@@ -8,6 +8,7 @@ import {
 } from 'firebase/firestore';
 import { db, ensureFirebaseAuth } from './firebase';
 import { Order } from '../types';
+import { FulfillmentStatus } from '../types';
 
 export async function saveOrder(order: Order) {
   if (!db || !(await ensureFirebaseAuth())) {
@@ -24,6 +25,14 @@ export async function confirmOrderPayment(orderId: string) {
     status: 'Order Confirmed',
     paymentConfirmedAt: new Date().toISOString(),
   });
+  return true;
+}
+
+export async function updateOrderStatus(orderId: string, status: FulfillmentStatus) {
+  if (!db || !(await ensureFirebaseAuth())) {
+    throw new Error('Firebase orders sync is not configured');
+  }
+  await updateDoc(doc(db, 'orders', orderId), { status });
   return true;
 }
 

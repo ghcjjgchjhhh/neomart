@@ -10,14 +10,14 @@ import {
   Search,
   Check
 } from 'lucide-react';
-import { Order } from '../types';
+import { FulfillmentStatus, Order } from '../types';
 
 interface AdminOrdersModalProps {
   isOpen: boolean;
   onClose: () => void;
   orders: Order[];
   onConfirmOrderPayment: (orderId: string) => void;
-  onUpdateOrderStatus: (orderId: string, status: 'Paid' | 'Processing' | 'Shipped' | 'Delivered') => void;
+  onUpdateOrderStatus: (orderId: string, status: FulfillmentStatus) => void;
 }
 
 export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
@@ -25,6 +25,7 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
   onClose,
   orders,
   onConfirmOrderPayment,
+  onUpdateOrderStatus,
 }) => {
   const [search, setSearch] = useState('');
 
@@ -142,19 +143,29 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
                       : '⏳ Order is waiting for confirmation.'}
                   </div>
 
-                  {ord.paymentConfirmed !== true ? (
-                    <button
-                      onClick={() => handleConfirm(ord.id)}
-                      className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-md cursor-pointer hover:shadow-lg"
+                  <div className="flex items-center gap-2">
+                    {ord.paymentConfirmed !== true && (
+                      <button
+                        onClick={() => handleConfirm(ord.id)}
+                        className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-md cursor-pointer hover:shadow-lg"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>Confirm Order</span>
+                      </button>
+                    )}
+                    <select
+                      value={ord.status === 'Order Confirmed' ? 'Processing' : ord.status}
+                      onChange={(event) => onUpdateOrderStatus(ord.id, event.target.value as FulfillmentStatus)}
+                      className="px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#18181b] text-gray-800 dark:text-gray-200 font-bold text-xs cursor-pointer"
+                      aria-label={`Update status for order ${ord.id}`}
                     >
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>Confirm Order</span>
-                    </button>
-                  ) : (
-                    <span className="text-emerald-600 dark:text-emerald-400 font-bold text-xs flex items-center gap-1">
-                      <Check className="w-4 h-4" /> Order Confirmed
-                    </span>
-                  )}
+                      <option value="Processing">Processing</option>
+                      <option value="Packed">Packed</option>
+                      <option value="Shipped">Shipped</option>
+                      <option value="Out for Delivery">Out for Delivery</option>
+                      <option value="Delivered">Delivered</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             ))
