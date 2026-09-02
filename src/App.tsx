@@ -136,6 +136,14 @@ export default function App() {
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isStockOpen, setIsStockOpen] = useState(false);
       const [isOrderHistoryOpen, setIsOrderHistoryOpen] = useState(false);
+      const [customerOrderIds, setCustomerOrderIds] = useState<string[]>(() => {
+        try {
+          const saved = localStorage.getItem('neomart_customer_order_ids');
+          return saved ? JSON.parse(saved) : [];
+        } catch {
+          return [];
+        }
+      });
     const [stockLevels, setStockLevels] = useState<Record<number, number>>(() => {
       try {
         const saved = localStorage.getItem('neomart_stock_levels');
@@ -366,7 +374,9 @@ export default function App() {
   };
 
   const customerOrders = orders.filter(
-    (order) => order.orderSource === 'customer' && order.email === currentUserEmail
+    (order) =>
+      order.orderSource === 'customer' &&
+      (order.email === currentUserEmail || customerOrderIds.includes(order.id))
   );
 
   const handleCompleteOrder = (
@@ -426,6 +436,11 @@ export default function App() {
     };
 
     lastPlacedOrderIdRef.current = newOrderId;
+    setCustomerOrderIds((previous) => {
+      const updatedIds = [newOrderId, ...previous.filter((id) => id !== newOrderId)];
+      localStorage.setItem('neomart_customer_order_ids', JSON.stringify(updatedIds));
+      return updatedIds;
+    });
     const updated = [newOrder, ...orders];
     setOrders(updated);
     void saveOrder(newOrder).catch(() => {
