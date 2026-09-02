@@ -115,6 +115,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             <div className="text-sm sm:text-base font-extrabold text-[#f68b1e]">
               {formatPrice(product.price)}
             </div>
+            <div className={`text-[11px] font-bold ${stock === 0 ? 'text-red-600' : stock < 5 ? 'text-amber-600' : 'text-emerald-600'}`}>
+              {stock === 0 ? 'Unavailable' : `${stock} units left`}
+            </div>
             {product.oldPrice > product.price && (
               <div className="text-[11px] text-gray-400 dark:text-gray-500 line-through">
                 {formatPrice(product.oldPrice)}
