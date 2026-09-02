@@ -57,17 +57,6 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenTrackOrder,
   onSelectCategory,
   onOpenAdmin,
-  isAdmin
-}) => {
-  const [isHelpOpen, setIsHelpOpen] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [badgeBouncing, setBadgeBouncing] = useState(false);
-  const helpMenuRef = useRef<HTMLDivElement>(null);
-  const searchWrapRef = useRef<HTMLDivElement>(null);
-
-  // Trigger bounce when cartCount increases
-  useEffect(() => {
-    if (cartCount > 0) {
       setBadgeBouncing(true);
       const t = setTimeout(() => setBadgeBouncing(false), 500);
       return () => clearTimeout(t);
@@ -137,6 +126,18 @@ export const Header: React.FC<HeaderProps> = ({
               Track Order
             </button>
             <div className="flex items-center gap-1.5 bg-[#f68b1e] text-white px-2.5 py-0.5 rounded-full font-bold text-[11px] animate-pulse-line">
+                      {isAdmin && (
+                        <button
+                          onClick={() => {
+                            onOpenAdmin();
+                            setIsHelpOpen(false);
+                          }}
+                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-[#fff3e0] dark:hover:bg-[#2a1a00] font-semibold text-left transition-colors cursor-pointer"
+                        >
+                          <Building2 className="w-4 h-4 text-[#f68b1e]" />
+                          <span>Admin panel</span>
+                        </button>
+                      )}
               <PhoneCall className="w-3 h-3" />
               <span>Hotline: 08135642842</span>
             </div>
