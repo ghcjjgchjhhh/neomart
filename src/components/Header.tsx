@@ -16,9 +16,10 @@ import {
   Cookie,
   MessageSquare,
   MessageCircle,
-  ExternalLink,
+  ExternalLink
 } from 'lucide-react';
 import { Product, HelpSectionType } from '../types';
+import { NeoMartIcon } from './NeoMartLogo';
 
 interface HeaderProps {
   theme: 'light' | 'dark';
@@ -51,7 +52,7 @@ export const Header: React.FC<HeaderProps> = ({
   products,
   onSelectProduct,
   onOpenTrackOrder,
-  onSelectCategory,
+  onSelectCategory
 }) => {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -59,6 +60,7 @@ export const Header: React.FC<HeaderProps> = ({
   const helpMenuRef = useRef<HTMLDivElement>(null);
   const searchWrapRef = useRef<HTMLDivElement>(null);
 
+  // Trigger bounce when cartCount increases
   useEffect(() => {
     if (cartCount > 0) {
       setBadgeBouncing(true);
@@ -67,16 +69,16 @@ export const Header: React.FC<HeaderProps> = ({
     }
   }, [cartCount]);
 
+  // Click outside listeners with touch and pointer event support
   useEffect(() => {
-    const handlePointerDownOutside = (event: MouseEvent | TouchEvent | PointerEvent) => {
-      if (helpMenuRef.current && !helpMenuRef.current.contains(event.target as Node)) {
+    const handlePointerDownOutside = (e: MouseEvent | TouchEvent | PointerEvent) => {
+      if (helpMenuRef.current && !helpMenuRef.current.contains(e.target as Node)) {
         setIsHelpOpen(false);
       }
-      if (searchWrapRef.current && !searchWrapRef.current.contains(event.target as Node)) {
+      if (searchWrapRef.current && !searchWrapRef.current.contains(e.target as Node)) {
         setShowSuggestions(false);
       }
     };
-
     document.addEventListener('pointerdown', handlePointerDownOutside);
     return () => document.removeEventListener('pointerdown', handlePointerDownOutside);
   }, []);
@@ -84,16 +86,16 @@ export const Header: React.FC<HeaderProps> = ({
   const suggestions = searchQuery.trim()
     ? products
         .filter(
-          (product) =>
-            product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            product.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase())) ||
-            product.category.toLowerCase().includes(searchQuery.toLowerCase())
+          (p) =>
+            p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            p.tags.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            p.category.toLowerCase().includes(searchQuery.toLowerCase())
         )
         .slice(0, 6)
     : [];
 
-  const handleFormSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
     if (searchQuery.trim()) {
       setShowSuggestions(false);
       onSearchSubmit(searchQuery);
@@ -102,6 +104,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="w-full z-40 sticky top-0 shadow-sm">
+      {/* Top Utility Bar */}
       <div className="bg-[#222222] text-[#cccccc] text-[11px] py-1.5 px-4 border-b border-[#333333] hidden md:block">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-4">
@@ -111,21 +114,18 @@ export const Header: React.FC<HeaderProps> = ({
             </span>
             <span className="text-gray-600">|</span>
             <button
-              type="button"
               onClick={() => onOpenHelpSection('place-order')}
               className="hover:text-[#f68b1e] transition-colors cursor-pointer"
             >
               Sell on NeoMart
             </button>
             <button
-              type="button"
               onClick={() => onSelectCategory('all')}
               className="hover:text-[#f68b1e] transition-colors cursor-pointer"
             >
               NeoMart Express
             </button>
             <button
-              type="button"
               onClick={onOpenTrackOrder}
               className="hover:text-[#f68b1e] transition-colors cursor-pointer"
             >
@@ -139,55 +139,85 @@ export const Header: React.FC<HeaderProps> = ({
 
           <div className="flex items-center gap-3.5">
             <button
-              type="button"
-              onClick={() => onOpenHelpSection('track-order')}
-              className="hover:text-white transition-colors cursor-pointer"
-            >
-              Order Status
-            </button>
-            <button
-              type="button"
-              onClick={() => onOpenHelpSection('returns-refunds')}
-              className="hover:text-white transition-colors cursor-pointer"
-            >
-              Return Center
-            </button>
-            <button
-              type="button"
+              id="themeToggleBtn"
               onClick={onToggleTheme}
-              className="flex items-center gap-1.5 bg-[#333333] hover:bg-[#444444] text-gray-200 px-2.5 py-0.5 rounded transition-colors cursor-pointer"
-              title="Toggle Dark / Light Theme"
+              className="flex items-center gap-1.5 text-xs py-0.5 px-2.5 rounded-full border border-gray-600 hover:border-[#f68b1e] hover:text-[#f68b1e] transition-all cursor-pointer"
             >
               {theme === 'dark' ? (
                 <>
-                  <Sun className="w-3 h-3 text-[#f68b1e]" />
+                  <Sun className="w-3.5 h-3.5 text-[#f68b1e]" />
                   <span>Light Mode</span>
                 </>
               ) : (
                 <>
-                  <Moon className="w-3 h-3 text-indigo-400" />
+                  <Moon className="w-3.5 h-3.5" />
                   <span>Dark Mode</span>
                 </>
               )}
+            </button>
+            <span className="text-gray-600">|</span>
+            <button
+              onClick={() => onOpenHelpSection('place-order')}
+              className="hover:text-[#f68b1e] transition-colors cursor-pointer"
+            >
+              Become a Vendor
+            </button>
+            <span className="text-gray-600">|</span>
+            <button
+              onClick={() => onOpenHelpSection('live-chat')}
+              className="hover:text-[#f68b1e] transition-colors cursor-pointer"
+            >
+              Contact Us
             </button>
           </div>
         </div>
       </div>
 
+      {/* Main Orange Header */}
       <div className="bg-[#f68b1e] text-white px-3 sm:px-4 py-2.5 transition-colors">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-2.5 md:gap-6">
+          {/* Top Bar for Mobile / Left Section for Desktop */}
           <div className="flex items-center justify-between w-full md:w-auto">
+            {/* Logo */}
             <button
-              type="button"
               onClick={() => onSelectCategory('all')}
-              className="flex items-baseline font-extrabold text-2xl md:text-3xl tracking-tight text-white cursor-pointer hover:opacity-95 transition-opacity shrink-0"
+              className="flex items-center gap-1.5 font-extrabold text-2xl md:text-3xl tracking-tight text-white cursor-pointer hover:opacity-95 transition-opacity shrink-0"
             >
-              Neo<span className="text-gray-900">Mart</span>
+              <NeoMartIcon size={30} className="drop-shadow-sm" />
+              <span>
+                neo<span className="text-gray-900">mart</span>
+              </span>
             </button>
 
+            {/* Mobile Actions (Google, Track, Account, Help, Cart) */}
             <div className="flex md:hidden items-center gap-1.5">
+              {/* Google Button */}
               <button
-                type="button"
+                onClick={onOpenLogin}
+                className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors text-white cursor-pointer"
+                aria-label="Google Sign In"
+                title="Sign in with Google"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24">
+                  <path fill="#ffffff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                  <path fill="#ffffff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                  <path fill="#ffffff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                  <path fill="#ffffff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                </svg>
+              </button>
+
+              {/* Live GPS Track Button */}
+              <button
+                onClick={onOpenTrackOrder}
+                className="p-2 rounded-lg bg-orange-600/40 hover:bg-orange-600/60 border border-white/20 transition-colors text-white cursor-pointer"
+                aria-label="Track Order Live GPS"
+                title="Track Order Live GPS"
+              >
+                <Truck className="w-4 h-4 animate-pulse" />
+              </button>
+
+              {/* Account */}
+              <button
                 onClick={onOpenLogin}
                 className="p-2 rounded-lg hover:bg-white/20 transition-colors text-white cursor-pointer"
                 aria-label="Account"
@@ -195,17 +225,17 @@ export const Header: React.FC<HeaderProps> = ({
                 <User className="w-5 h-5" />
               </button>
 
+              {/* Help */}
               <button
-                type="button"
-                onClick={() => setIsHelpOpen((prev) => !prev)}
+                onClick={() => setIsHelpOpen(!isHelpOpen)}
                 className="p-2 rounded-lg hover:bg-white/20 transition-colors text-white cursor-pointer"
                 aria-label="Help"
               >
                 <HelpCircle className="w-5 h-5" />
               </button>
 
+              {/* Cart */}
               <button
-                type="button"
                 onClick={onOpenCart}
                 className="relative p-2 rounded-lg hover:bg-white/20 transition-colors text-white cursor-pointer"
                 aria-label="Cart"
@@ -224,14 +254,15 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
 
+          {/* Search Box - Full Width on Mobile, Expanded on Desktop */}
           <div ref={searchWrapRef} className="relative w-full md:flex-1 md:max-w-2xl">
             <form onSubmit={handleFormSubmit} className="flex rounded-full overflow-hidden shadow-sm md:shadow-md bg-white">
               <input
                 id="searchInput"
                 type="text"
                 value={searchQuery}
-                onChange={(event) => {
-                  onSearchChange(event.target.value);
+                onChange={(e) => {
+                  onSearchChange(e.target.value);
                   setShowSuggestions(true);
                 }}
                 onFocus={() => setShowSuggestions(true)}
@@ -261,10 +292,11 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
             </form>
 
+            {/* Live Search Suggestions Dropdown */}
             {showSuggestions && suggestions.length > 0 && (
               <div
                 className="absolute top-full left-0 right-0 mt-1.5 bg-white dark:bg-[#1e1e1e] border border-gray-200 dark:border-gray-800 rounded-xl shadow-xl overflow-hidden z-50 text-gray-900 dark:text-gray-100 max-h-80 overflow-y-auto"
-                onPointerDown={(event) => event.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
               >
                 <div className="p-2 border-b border-gray-100 dark:border-gray-800 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
                   Suggestions
@@ -273,8 +305,8 @@ export const Header: React.FC<HeaderProps> = ({
                   <button
                     key={item.id}
                     type="button"
-                    onPointerDown={(event) => {
-                      event.preventDefault();
+                    onPointerDown={(e) => {
+                      e.preventDefault();
                       onSelectProduct(item.id);
                       setShowSuggestions(false);
                     }}
@@ -294,9 +326,35 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </div>
 
+          {/* Desktop Header Action Buttons */}
           <div className="hidden md:flex items-center gap-2 shrink-0">
+            {/* Google Sign In Button */}
             <button
-              type="button"
+              onClick={onOpenLogin}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white text-gray-800 hover:bg-gray-100 transition-all text-xs font-bold cursor-pointer shadow-sm"
+              title="Sign in with Google"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+              </svg>
+              <span className="text-[11px] font-semibold">Google</span>
+            </button>
+
+            {/* Live GPS Track Button */}
+            <button
+              onClick={onOpenTrackOrder}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-600/30 hover:bg-orange-600/50 border border-white/30 text-white transition-all text-xs font-bold cursor-pointer"
+              title="Track Order Live GPS"
+            >
+              <Truck className="w-4 h-4 text-white animate-pulse" />
+              <span className="text-[11px] font-semibold">Live GPS</span>
+            </button>
+
+            {/* Account */}
+            <button
               onClick={onOpenLogin}
               className="flex flex-col items-center justify-center px-3 py-1 rounded-lg hover:bg-white/20 transition-colors text-white text-xs cursor-pointer"
             >
@@ -306,11 +364,11 @@ export const Header: React.FC<HeaderProps> = ({
               </span>
             </button>
 
-            <div className="relative" ref={helpMenuRef}>
+            {/* Help Dropdown Wrap */}
+            <div ref={helpMenuRef} className="relative">
               <button
                 id="helpButton"
-                type="button"
-                onClick={() => setIsHelpOpen((prev) => !prev)}
+                onClick={() => setIsHelpOpen(!isHelpOpen)}
                 className="flex flex-col items-center justify-center px-3 py-1 rounded-lg hover:bg-white/20 transition-colors text-white text-xs cursor-pointer"
                 aria-expanded={isHelpOpen}
               >
@@ -319,119 +377,108 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
 
               {isHelpOpen && (
-                <div
-                  id="helpDropdown"
-                  className="absolute right-0 mt-2 w-72 bg-white dark:bg-[#1e1e1e] text-gray-800 dark:text-gray-200 rounded-xl shadow-2xl py-2 z-50 border border-gray-100 dark:border-gray-800 animate-in fade-in slide-in-from-top-2 duration-150"
-                >
-                  <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
-                    <span className="font-semibold text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Help &amp; Customer Care
-                    </span>
+                <div className="absolute right-0 top-full mt-2 w-72 bg-white dark:bg-[#1e1e1e] text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-800 rounded-xl shadow-2xl p-2 z-50 animate-fadeIn">
+                  <div className="flex items-center justify-between pb-2 mb-2 border-b border-gray-100 dark:border-gray-800 px-2 font-bold text-xs">
+                    <span>Help Center</span>
                     <button
-                      type="button"
-                      onClick={() => {
-                        setIsHelpOpen(false);
-                        onOpenHelpSection('place-order');
-                      }}
-                      className="text-[11px] text-[#f68b1e] hover:underline font-semibold"
+                      onClick={() => setIsHelpOpen(false)}
+                      className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
                     >
-                      Full Center →
+                      <X className="w-3.5 h-3.5" />
                     </button>
                   </div>
 
-                  <div className="py-1">
+                  <div className="flex flex-col gap-1 text-xs">
                     <button
-                      type="button"
                       onClick={() => {
-                        setIsHelpOpen(false);
                         onOpenHelpSection('place-order');
-                      }}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-xs hover:bg-orange-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 transition-colors text-left"
-                    >
-                      <div className="w-7 h-7 rounded-full bg-orange-100 dark:bg-orange-950/60 flex items-center justify-center text-[#f68b1e]">
-                        <ShoppingBag className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <div className="font-semibold">How to Place an Order</div>
-                        <div className="text-[11px] text-gray-500">Step-by-step checkout guide</div>
-                      </div>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
                         setIsHelpOpen(false);
-                        onOpenHelpSection('track-order');
                       }}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-xs hover:bg-orange-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 transition-colors text-left"
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-[#fff3e0] dark:hover:bg-[#2a1a00] font-medium text-left transition-colors cursor-pointer"
                     >
-                      <div className="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-950/60 flex items-center justify-center text-blue-600">
-                        <Truck className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <div className="font-semibold">Track Your Package</div>
-                        <div className="text-[11px] text-gray-500">Real-time delivery progress</div>
-                      </div>
+                      <ShoppingBag className="w-4 h-4 text-[#f68b1e]" />
+                      <span>Place an order</span>
                     </button>
-
                     <button
-                      type="button"
                       onClick={() => {
-                        setIsHelpOpen(false);
-                        onOpenHelpSection('returns-refunds');
-                      }}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-xs hover:bg-orange-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 transition-colors text-left"
-                    >
-                      <div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-950/60 flex items-center justify-center text-emerald-600">
-                        <RotateCcw className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <div className="font-semibold">Returns &amp; Refunds</div>
-                        <div className="text-[11px] text-gray-500">7-day hassle-free returns</div>
-                      </div>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsHelpOpen(false);
                         onOpenHelpSection('payment-options');
-                      }}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-xs hover:bg-orange-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 transition-colors text-left"
-                    >
-                      <div className="w-7 h-7 rounded-full bg-purple-100 dark:bg-purple-950/60 flex items-center justify-center text-purple-600">
-                        <CreditCard className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <div className="font-semibold">Payment Methods</div>
-                        <div className="text-[11px] text-gray-500">Card, Transfer &amp; Pay on Delivery</div>
-                      </div>
-                    </button>
-                  </div>
-
-                  <div className="p-3 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 text-center">
-                    <button
-                      type="button"
-                      onClick={() => {
                         setIsHelpOpen(false);
-                        onOpenHelpSection('live-chat');
                       }}
-                      className="w-full py-2 bg-[#f68b1e] hover:bg-[#e07b14] text-white text-xs font-bold rounded-lg flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-[#fff3e0] dark:hover:bg-[#2a1a00] font-medium text-left transition-colors cursor-pointer"
                     >
-                      <MessageSquare className="w-3.5 h-3.5" />
-                      Live Chat Support
+                      <CreditCard className="w-4 h-4 text-[#f68b1e]" />
+                      <span>Payment options</span>
                     </button>
-                    <div className="flex items-center justify-center gap-1 text-[11px] text-gray-500 mt-2">
-                      <PhoneCall className="w-3 h-3 text-emerald-600" />
-                      <span>Call: 08135642842 (8am - 8pm)</span>
+                    <button
+                      onClick={() => {
+                        onOpenHelpSection('track-order');
+                        setIsHelpOpen(false);
+                      }}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-[#fff3e0] dark:hover:bg-[#2a1a00] font-medium text-left transition-colors cursor-pointer"
+                    >
+                      <Truck className="w-4 h-4 text-[#f68b1e]" />
+                      <span>Track an order</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        onOpenHelpSection('cancel-order');
+                        setIsHelpOpen(false);
+                      }}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-[#fff3e0] dark:hover:bg-[#2a1a00] font-medium text-left transition-colors cursor-pointer"
+                    >
+                      <X className="w-4 h-4 text-red-500" />
+                      <span>Cancel an order</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        onOpenHelpSection('returns-refunds');
+                        setIsHelpOpen(false);
+                      }}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-[#fff3e0] dark:hover:bg-[#2a1a00] font-medium text-left transition-colors cursor-pointer"
+                    >
+                      <RotateCcw className="w-4 h-4 text-[#f68b1e]" />
+                      <span>Returns & Refunds</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        onOpenHelpSection('cookie-preferences');
+                        setIsHelpOpen(false);
+                      }}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-[#fff3e0] dark:hover:bg-[#2a1a00] font-medium text-left transition-colors cursor-pointer"
+                    >
+                      <Cookie className="w-4 h-4 text-[#f68b1e]" />
+                      <span>Cookie Preferences</span>
+                    </button>
+
+                    <div className="pt-1.5 mt-1 border-t border-gray-100 dark:border-gray-800 flex flex-col gap-1.5">
+                      <button
+                        onClick={() => {
+                          onOpenHelpSection('live-chat');
+                          setIsHelpOpen(false);
+                        }}
+                        className="flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-[#fff3e0] dark:bg-[#2a1a00] text-[#f68b1e] font-bold text-xs hover:bg-[#ffe5c7] dark:hover:bg-[#3d2400] transition-colors cursor-pointer"
+                      >
+                        <MessageSquare className="w-4 h-4" />
+                        <span>Live Chat Support</span>
+                      </button>
+                      <a
+                        href="https://wa.me/2348135642842?text=Hello%20NeoMart%20Support,%20I%20need%20help%20with%20my%20order."
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 font-bold text-xs hover:bg-emerald-100 transition-colors"
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                        <span>WhatsApp Support</span>
+                        <ExternalLink className="w-3 h-3 opacity-70" />
+                      </a>
                     </div>
                   </div>
                 </div>
               )}
             </div>
 
+            {/* Cart Button */}
             <button
-              type="button"
               onClick={onOpenCart}
               className="relative flex flex-col items-center justify-center px-3 py-1 rounded-lg hover:bg-white/20 transition-colors text-white text-xs cursor-pointer"
             >
@@ -439,7 +486,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <ShoppingCart className="w-5 h-5" />
                 <span
                   id="cartBadge"
-                  className={`absolute -top-1.5 -right-2.5 bg-gray-900 text-white font-bold text-[10px] w-5 h-5 rounded-full flex items-center justify-center border-2 border-[#f68b1e] ${
+                  className={`absolute -top-1.5 -right-2 bg-gray-900 text-white font-bold text-[10px] w-4.5 h-4.5 rounded-full flex items-center justify-center border border-white/40 ${
                     badgeBouncing ? 'cart-badge-bounce' : ''
                   }`}
                 >

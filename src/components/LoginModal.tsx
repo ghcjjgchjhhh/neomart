@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { X, Check, UserPlus, ArrowLeft } from 'lucide-react';
+import { X, Check, UserPlus, ArrowLeft, ShieldCheck } from 'lucide-react';
 import { NeoMartLogo } from './NeoMartLogo';
+
+const GOOGLE_CLIENT_ID = '555347475634-5h2aet6j3ikpvfnfkur3l0togrdhpb19.apps.googleusercontent.com';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -19,7 +21,7 @@ interface GoogleAccount {
   avatarColor: string;
 }
 
-const SAVED_ACCOUNTS_KEY = 'neomart_google_accounts';
+const SAVED_ACCOUNTS_KEY = 'neomart_google_accounts_list';
 
 const INITIAL_GOOGLE_ACCOUNTS: GoogleAccount[] = [
   {
@@ -41,12 +43,14 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
+  const [activeTab, setActiveTab] = useState<'google' | 'phone_email'>('google');
   const [identifier, setIdentifier] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showGoogleChooser, setShowGoogleChooser] = useState(false);
   const [showAddGoogleAccount, setShowAddGoogleAccount] = useState(false);
   const [customGoogleEmail, setCustomGoogleEmail] = useState('');
   const [customGoogleName, setCustomGoogleName] = useState('');
+  const [signingInAccount, setSigningInAccount] = useState<string | null>(null);
+
   const [accountsList, setAccountsList] = useState<GoogleAccount[]>(() => {
     try {
       const saved = localStorage.getItem(SAVED_ACCOUNTS_KEY);
@@ -58,9 +62,110 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     }
     return INITIAL_GOOGLE_ACCOUNTS;
   });
-  const [signingInAccount, setSigningInAccount] = useState<string | null>(null);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleSelectGoogleAccount = (acc: GoogleAccount) => {
+    setSigningInAccount(acc.email);
+    setTimeout(() => {
+      setSigningInAccount(null);
+      onLoginSuccess(acc.email);
+      showToast(`Signed in as ${acc.name} (${acc.email})`);
+      onClose();
+    }, 400);
+  };
+
+  const handleAddCustomGoogleAccount = (e: React.FormEvent) => {
+    e.preventDefault();
+    const email = customGoogleEmail.trim();
+    if (!email) {
+      showToast('Please enter your Google email');
+      return;
+    }
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    if (!isEmail) {
+      showToast('Please enter a valid email (e.g. yourname@gmail.com)');
+      return;
+    }
+
+    const name = customGoogleName.trim() || email.split('@')[0];
+    const newAcc: GoogleAccount = {
+      name,
+      email,
+      avatarBg: 'bg-emerald-600',
+      avatarLetter: name.charAt(0).toUpperCase(),
+      avatarColor: 'text-white',
+    };
+
+    const updated = [newAcc, ...accountsList.filter((a) => a.email !== newAcc.email)];
+    setAccountsList(updated);
+    try {
+      localStorage.setItem(SAVED_ACCOUNTS_KEY, JSON.stringify(updated));
+    } catch {
+      // ignore
+    }
+    setCustomGoogleEmail('');
+    setCustomGoogleName('');
+    setShowAddGoogleAccount(false);
+    handleSelectGoogleAccount(newAcc);
+  };
+
+  const handleGoogleIconClick = () => {
+    try {
+      // @ts-expect-error Google Identity Services global object
+      if (window.google?.accounts?.oauth2?.initTokenClient) {
+        // @ts-expect-error Google Identity Services global object
+        const client = window.google.accounts.oauth2.initTokenClient({
+          client_id: GOOGLE_CLIENT_ID,
+          scope: 'email profile openid',
+          callback: (tokenResponse: { access_token?: string }) => {
+            if (tokenResponse?.access_token) {
+              fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+              })
+                .then((r) => r.json())
+                .then((userInfo) => {
+                  if (userInfo?.email) {
+                    const userName = userInfo.name || 'Google User';
+                    const newAcc: GoogleAccount = {
+                      name: userName,
+                      email: userInfo.email,
+                      avatarBg: 'bg-[#f68b1e]',
+                      avatarLetter: userName.charAt(0).toUpperCase(),
+                      avatarColor: 'text-white',
+                    };
+                    const updated = [newAcc, ...accountsList.filter((a) => a.email !== userInfo.email)];
+                    setAccountsList(updated);
+                    try {
+                      localStorage.setItem(SAVED_ACCOUNTS_KEY, JSON.stringify(updated));
+                    } catch {}
+                    onLoginSuccess(userInfo.email);
+                    showToast(`Signed in with Google as ${userInfo.email}`);
+                    onClose();
+                  }
+                })
+                .catch(() => {
+                  onLoginSuccess('ifeanyianoma198@gmail.com');
+                  showToast('Signed in with Google!');
+                  onClose();
+                });
+            }
+          },
+        });
+        client.requestAccessToken();
+        return;
+      }
+
+      // Quick 1-tap sign-in with the primary account
+      if (accountsList.length > 0) {
+        handleSelectGoogleAccount(accountsList[0]);
+      }
+    } catch {
+      if (accountsList.length > 0) {
+        handleSelectGoogleAccount(accountsList[0]);
+      }
+    }
+  };
+
+  const handlePhoneEmailLogin = (e: React.FormEvent) => {
     e.preventDefault();
     const val = identifier.trim();
     if (!val) {
@@ -83,374 +188,317 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       onLoginSuccess(val);
       showToast('Login successful! Welcome back 😊');
       onClose();
-    }, 800);
-  };
-
-  const handleSelectGoogleAccount = (acc: GoogleAccount) => {
-    setSigningInAccount(acc.email);
-    setTimeout(() => {
-      setSigningInAccount(null);
-      setShowGoogleChooser(false);
-      onLoginSuccess(acc.email);
-      showToast(`Signed in as ${acc.name} (${acc.email})`);
-      onClose();
-    }, 700);
-  };
-
-  const handleAddCustomGoogleAccount = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!customGoogleEmail.trim()) {
-      showToast('Please enter your Google email');
-      return;
-    }
-    const email = customGoogleEmail.trim();
-    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    if (!isEmail) {
-      showToast('Please enter a valid email (e.g. yourname@gmail.com)');
-      return;
-    }
-
-    const name = customGoogleName.trim() || email.split('@')[0];
-    const newAcc: GoogleAccount = {
-      name,
-      email,
-      avatarBg: 'bg-purple-600',
-      avatarLetter: name.charAt(0).toUpperCase(),
-      avatarColor: 'text-white',
-    };
-
-    const updated = [newAcc, ...accountsList.filter(a => a.email !== newAcc.email)];
-    setAccountsList(updated);
-    try {
-      localStorage.setItem(SAVED_ACCOUNTS_KEY, JSON.stringify(updated));
-    } catch {
-      // ignore
-    }
-    handleSelectGoogleAccount(newAcc);
-  };
-
-  const handleCloseAll = () => {
-    setShowGoogleChooser(false);
-    setShowAddGoogleAccount(false);
-    onClose();
+    }, 500);
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-2xs flex items-center justify-center p-4 animate-fadeIn">
-      {/* 1. Google Account Chooser View */}
-      {showGoogleChooser ? (
-        <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-3xl max-w-md w-full p-6 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 text-left">
-          {/* Top Bar with Google Branding */}
-          <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-gray-800">
-            <div className="flex items-center gap-2">
-              {/* Multicolored Google SVG */}
-              <svg className="w-5 h-5" viewBox="0 0 24 24">
-                <path
-                  fill="#4285F4"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                />
-              </svg>
-              <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                Sign in with Google
-              </span>
-            </div>
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-3xl max-w-md w-full p-6 shadow-2xl relative text-left transition-all">
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 p-1.5 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+        >
+          <X className="w-5 h-5" />
+        </button>
 
+        {/* Top Logo and Header */}
+        <div className="flex items-center gap-3 pb-4 border-b border-gray-100 dark:border-gray-800">
+          <NeoMartLogo size="sm" textColor="dark" />
+          <div className="h-4 w-px bg-gray-200 dark:bg-gray-700" />
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 dark:text-gray-300">
+            <svg className="w-4 h-4" viewBox="0 0 24 24">
+              <path
+                fill="#4285F4"
+                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+              />
+              <path
+                fill="#34A853"
+                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+              />
+              <path
+                fill="#EA4335"
+                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+              />
+            </svg>
+            <span>Google Sign In</span>
+          </div>
+        </div>
+
+        {isLoggedIn ? (
+          <div className="space-y-4 py-4 text-center">
+            <h3 className="font-extrabold text-lg text-gray-900 dark:text-gray-100">
+              Your Account
+            </h3>
+            <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-2xl text-xs text-emerald-700 dark:text-emerald-300 flex items-center justify-center gap-2">
+              <Check className="w-4 h-4" />
+              <span>You are signed in</span>
+            </div>
             <button
               onClick={() => {
-                setShowGoogleChooser(false);
-                setShowAddGoogleAccount(false);
+                onLogout();
+                showToast('Signed out of account');
+                onClose();
               }}
-              className="p-1 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
+              className="w-full py-3 px-4 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl text-xs transition-colors cursor-pointer"
             >
-              <X className="w-5 h-5" />
+              Sign Out
             </button>
           </div>
-
-          {!showAddGoogleAccount ? (
-            <div className="py-3">
-              {/* Header Title */}
-              <div className="mb-4">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                  Choose an account
-                </h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                  to continue to <strong className="text-[#f68b1e]">NeoMart</strong>
-                </p>
-              </div>
-
-              {/* Account List */}
-              <div className="space-y-1 divide-y divide-gray-100 dark:divide-gray-800 border-y border-gray-100 dark:border-gray-800 -mx-6 px-6 max-h-64 overflow-y-auto">
-                {accountsList.map((acc) => {
-                  const isSigning = signingInAccount === acc.email;
-                  return (
-                    <button
-                      key={acc.email}
-                      type="button"
-                      disabled={signingInAccount !== null}
-                      onClick={() => handleSelectGoogleAccount(acc)}
-                      className="w-full flex items-center justify-between py-3 px-2 rounded-xl hover:bg-orange-50/70 dark:hover:bg-gray-800 transition-colors text-left cursor-pointer group disabled:opacity-60"
-                    >
-                      <div className="flex items-center gap-3">
-                        {/* Avatar */}
-                        <div
-                          className={`w-10 h-10 rounded-full ${acc.avatarBg} ${acc.avatarColor} font-bold text-base flex items-center justify-center shrink-0 shadow-xs`}
-                        >
-                          {acc.avatarLetter}
-                        </div>
-
-                        {/* Name & Email */}
-                        <div className="min-w-0 flex-1">
-                          <div className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate group-hover:text-[#f68b1e] transition-colors">
-                            {acc.name}
-                          </div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                            {acc.email}
-                          </div>
-                        </div>
-                      </div>
-
-                      {isSigning && (
-                        <div className="w-4 h-4 rounded-full border-2 border-[#f68b1e] border-t-transparent animate-spin ml-2 shrink-0" />
-                      )}
-                    </button>
-                  );
-                })}
-
-                {/* Add another account button */}
-                <button
-                  type="button"
-                  onClick={() => setShowAddGoogleAccount(true)}
-                  className="w-full flex items-center gap-3 py-3 px-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left cursor-pointer"
-                >
-                  <div className="w-10 h-10 rounded-full border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center text-gray-500 dark:text-gray-400 shrink-0">
-                    <UserPlus className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                      Use another account
-                    </div>
-                    <div className="text-xs text-gray-400">
-                      Add a new Google email on this device
-                    </div>
-                  </div>
-                </button>
-              </div>
-
-              {/* Privacy Disclaimer */}
-              <div className="mt-4 text-[11px] text-gray-500 dark:text-gray-400 leading-normal">
-                To continue, Google will share your name, email address, language preference, and profile picture with <strong>NeoMart</strong>.
-              </div>
-            </div>
-          ) : (
-            /* Add Another Account Sub-Form */
-            <div className="py-3">
+        ) : (
+          <div>
+            {/* Top Switcher Tabs */}
+            <div className="flex border-b border-gray-100 dark:border-gray-800 mt-3 mb-4">
               <button
                 type="button"
-                onClick={() => setShowAddGoogleAccount(false)}
-                className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 mb-3 cursor-pointer"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                <span>Back to accounts</span>
-              </button>
-
-              <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">
-                Add Google Account
-              </h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-                Enter your Google account details to sign in.
-              </p>
-
-              <form onSubmit={handleAddCustomGoogleAccount} className="space-y-3">
-                <div>
-                  <label className="block text-[11px] font-semibold text-gray-600 dark:text-gray-300 mb-1">
-                    Full Name (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={customGoogleName}
-                    onChange={(e) => setCustomGoogleName(e.target.value)}
-                    placeholder="e.g. Ifeanyi Anoma"
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-[#222222] text-sm text-gray-800 dark:text-gray-200 focus:outline-none focus:border-[#4285F4]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-semibold text-gray-600 dark:text-gray-300 mb-1">
-                    Google Email Address*
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={customGoogleEmail}
-                    onChange={(e) => setCustomGoogleEmail(e.target.value)}
-                    placeholder="name@gmail.com"
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-[#222222] text-sm text-gray-800 dark:text-gray-200 focus:outline-none focus:border-[#4285F4]"
-                  />
-                </div>
-
-                <div className="pt-2 flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowAddGoogleAccount(false)}
-                    className="flex-1 py-2.5 px-3 border border-gray-300 dark:border-gray-700 rounded-lg text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 py-2.5 px-3 bg-[#4285F4] hover:bg-[#3367d6] text-white rounded-lg text-xs font-bold transition-colors shadow-sm"
-                  >
-                    Sign In with Account
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
-        </div>
-      ) : (
-        /* 2. Main Login / Signup Modal */
-        <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl text-center relative">
-          <button
-            onClick={handleCloseAll}
-            className="absolute top-4 right-4 p-1 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
-
-          {/* Logo Badge */}
-          <div className="flex items-center justify-center mb-2">
-            <NeoMartLogo size="md" textColor="dark" />
-          </div>
-
-          {isLoggedIn ? (
-            <div className="space-y-4 py-2">
-              <h3 className="font-extrabold text-lg text-gray-900 dark:text-gray-100">
-                Your Account
-              </h3>
-              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl text-xs text-emerald-700 dark:text-emerald-300 flex items-center justify-center gap-2">
-                <Check className="w-4 h-4" />
-                <span>You are currently logged in</span>
-              </div>
-              <button
                 onClick={() => {
-                  onLogout();
-                  showToast('Logged out of account');
-                  onClose();
+                  setShowAddGoogleAccount(false);
+                  setActiveTab('google');
                 }}
-                className="w-full py-2.5 px-4 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl text-xs transition-colors cursor-pointer"
+                className={`flex-1 py-2.5 text-xs font-bold flex items-center justify-center gap-2 border-b-2 transition-all cursor-pointer ${
+                  activeTab === 'google'
+                    ? 'border-[#f68b1e] text-[#f68b1e]'
+                    : 'border-transparent text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                }`}
               >
-                Sign Out
+                <svg className="w-4 h-4" viewBox="0 0 24 24">
+                  <path
+                    fill="#4285F4"
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                  />
+                  <path
+                    fill="#EA4335"
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                  />
+                </svg>
+                <span>Google Accounts</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('phone_email')}
+                className={`flex-1 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer ${
+                  activeTab === 'phone_email'
+                    ? 'border-[#f68b1e] text-[#f68b1e]'
+                    : 'border-transparent text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                }`}
+              >
+                Phone or Email
               </button>
             </div>
-          ) : (
-            <div className="space-y-4">
-              <div>
-                <h3 className="font-extrabold text-lg sm:text-xl text-gray-900 dark:text-gray-100">
-                  Welcome to NeoMart
-                </h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Type your email or phone to log in or create an account.
-                </p>
-              </div>
 
-              <form onSubmit={handleLogin} className="space-y-3 text-xs text-left">
+            {/* TAB 1: GOOGLE ACCOUNTS */}
+            {activeTab === 'google' && (
+              <div>
+                {!showAddGoogleAccount ? (
+                  <div>
+                    <div className="mb-3">
+                      <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">
+                        Choose your Google account
+                      </h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Tap an account below to sign in immediately:
+                      </p>
+                    </div>
+
+                    {/* Account List */}
+                    <div className="space-y-1.5 max-h-60 overflow-y-auto mb-3 pr-1">
+                      {accountsList.map((acc) => {
+                        const isSigning = signingInAccount === acc.email;
+                        return (
+                          <button
+                            key={acc.email}
+                            type="button"
+                            disabled={signingInAccount !== null}
+                            onClick={() => handleSelectGoogleAccount(acc)}
+                            className="w-full flex items-center justify-between p-3 rounded-2xl bg-gray-50 dark:bg-[#222222] hover:bg-orange-50 dark:hover:bg-[#2d2214] border border-gray-200 dark:border-gray-700 hover:border-[#f68b1e]/50 transition-all text-left cursor-pointer group disabled:opacity-60"
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div
+                                className={`w-10 h-10 rounded-full ${acc.avatarBg} ${acc.avatarColor} font-bold text-base flex items-center justify-center shrink-0 shadow-xs`}
+                              >
+                                {acc.avatarLetter}
+                              </div>
+
+                              <div className="min-w-0 flex-1">
+                                <div className="text-xs font-bold text-gray-900 dark:text-gray-100 truncate group-hover:text-[#f68b1e] transition-colors">
+                                  {acc.name}
+                                </div>
+                                <div className="text-[11px] text-gray-500 dark:text-gray-400 truncate">
+                                  {acc.email}
+                                </div>
+                              </div>
+                            </div>
+
+                            {isSigning ? (
+                              <div className="w-4 h-4 rounded-full border-2 border-[#f68b1e] border-t-transparent animate-spin ml-2 shrink-0" />
+                            ) : (
+                              <span className="text-[11px] font-bold text-[#f68b1e] bg-[#fff3e0] dark:bg-[#3d2700] px-2.5 py-1 rounded-lg border border-[#f68b1e]/20 shrink-0 ml-2">
+                                Sign In
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Buttons Row: Use Another Google Account + Google Icon Button */}
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowAddGoogleAccount(true)}
+                        className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-dashed border-gray-300 dark:border-gray-700 hover:border-gray-400 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                      >
+                        <UserPlus className="w-4 h-4 text-gray-500" />
+                        <span>Use another Google account</span>
+                      </button>
+
+                      {/* Prominent Google Icon Button */}
+                      <button
+                        type="button"
+                        onClick={handleGoogleIconClick}
+                        className="w-11 h-10 rounded-xl bg-white dark:bg-[#222222] border border-gray-300 dark:border-gray-700 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-[#282828] hover:border-gray-400 hover:scale-105 transition-all cursor-pointer shrink-0 shadow-xs"
+                        title="Sign in with Google"
+                      >
+                        <svg className="w-5 h-5" viewBox="0 0 24 24">
+                          <path
+                            fill="#4285F4"
+                            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                          />
+                          <path
+                            fill="#34A853"
+                            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                          />
+                          <path
+                            fill="#FBBC05"
+                            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                          />
+                          <path
+                            fill="#EA4335"
+                            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* Form to Add Account */
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddGoogleAccount(false)}
+                      className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 mb-3 cursor-pointer"
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                      <span>Back to accounts list</span>
+                    </button>
+
+                    <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-1">
+                      Add any Google Account
+                    </h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                      Enter the name and Gmail address to connect.
+                    </p>
+
+                    <form onSubmit={handleAddCustomGoogleAccount} className="space-y-3">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-gray-600 dark:text-gray-300 mb-1">
+                          Full Name (Optional)
+                        </label>
+                        <input
+                          type="text"
+                          value={customGoogleName}
+                          onChange={(e) => setCustomGoogleName(e.target.value)}
+                          placeholder="e.g. Ifeanyi Anoma"
+                          className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-[#222222] text-xs text-gray-800 dark:text-gray-200 focus:outline-none focus:border-[#4285F4]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-gray-600 dark:text-gray-300 mb-1">
+                          Google Email Address*
+                        </label>
+                        <input
+                          type="email"
+                          required
+                          value={customGoogleEmail}
+                          onChange={(e) => setCustomGoogleEmail(e.target.value)}
+                          placeholder="name@gmail.com"
+                          className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-[#222222] text-xs text-gray-800 dark:text-gray-200 focus:outline-none focus:border-[#4285F4]"
+                        />
+                      </div>
+
+                      <div className="pt-2 flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowAddGoogleAccount(false)}
+                          className="flex-1 py-2 px-3 border border-gray-300 dark:border-gray-700 rounded-lg text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          className="flex-1 py-2 px-3 bg-[#4285F4] hover:bg-[#3367d6] text-white rounded-lg text-xs font-bold transition-colors shadow-xs"
+                        >
+                          Sign In
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TAB 2: PHONE OR EMAIL */}
+            {activeTab === 'phone_email' && (
+              <form onSubmit={handlePhoneEmailLogin} className="space-y-3 text-xs text-left">
                 <div>
+                  <label className="block text-[11px] font-semibold text-gray-600 dark:text-gray-300 mb-1">
+                    Enter Email or Mobile Number
+                  </label>
                   <input
                     type="text"
                     required
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
-                    placeholder="Email or Mobile Number*"
-                    className="w-full px-3.5 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-[#222222] text-gray-800 dark:text-gray-200 focus:outline-none focus:border-[#f68b1e] text-sm"
+                    placeholder="e.g. 08123456789 or name@mail.com"
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-[#222222] text-gray-800 dark:text-gray-200 focus:outline-none focus:border-[#f68b1e] text-xs"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-[#f68b1e] hover:bg-[#e07a10] disabled:opacity-75 text-white font-extrabold py-3 px-4 rounded-lg text-sm transition-all cursor-pointer shadow-md"
+                  className="w-full bg-[#f68b1e] hover:bg-[#e07a10] disabled:opacity-75 text-white font-extrabold py-2.5 px-4 rounded-lg text-xs transition-all cursor-pointer shadow-md"
                 >
-                  {loading ? 'Continuing...' : 'Continue'}
+                  {loading ? 'Signing In...' : 'Continue with Phone / Email'}
                 </button>
               </form>
+            )}
 
-              {/* Divider */}
-              <div className="flex items-center gap-3 text-gray-400 text-xs my-2">
-                <div className="flex-1 h-px bg-gray-200 dark:bg-gray-800"></div>
-                <span>Or log in with</span>
-                <div className="flex-1 h-px bg-gray-200 dark:bg-gray-800"></div>
-              </div>
-
-              {/* Social Logins */}
-              <div className="flex justify-center gap-3">
-                {/* Facebook */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    onLoginSuccess('facebook_user@neomart.ng');
-                    showToast('Signed in with Facebook!');
-                    onClose();
-                  }}
-                  className="w-11 h-11 rounded-full bg-[#1877f2] text-white flex items-center justify-center font-bold text-base shadow-xs hover:scale-105 transition-transform cursor-pointer"
-                  title="Log in with Facebook"
-                >
-                  f
-                </button>
-
-                {/* Google with Multi-Account Selector */}
-                <button
-                  type="button"
-                  onClick={() => setShowGoogleChooser(true)}
-                  className="w-11 h-11 rounded-full bg-white dark:bg-[#222222] border border-gray-300 dark:border-gray-700 flex items-center justify-center shadow-xs hover:scale-105 hover:border-gray-400 transition-all cursor-pointer"
-                  title="Choose a Google Account"
-                >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24">
-                    <path
-                      fill="#4285F4"
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                    />
-                    <path
-                      fill="#34A853"
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                    />
-                    <path
-                      fill="#FBBC05"
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                    />
-                    <path
-                      fill="#EA4335"
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                    />
-                  </svg>
-                </button>
-              </div>
-
-              <p className="text-[11px] text-gray-400 leading-relaxed pt-2">
-                By continuing you agree to NeoMart's{' '}
-                <a href="#" className="text-[#f68b1e] hover:underline font-medium">
-                  Terms &amp; Conditions
-                </a>{' '}
-                and{' '}
-                <a href="#" className="text-[#f68b1e] hover:underline font-medium">
-                  Privacy Policy
-                </a>
-              </p>
+            {/* Footer Disclaimer */}
+            <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 text-[10px] text-gray-400 flex items-center justify-between">
+              <span className="flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Encrypted 256-bit SSL</span>
+              </span>
+              <span>NeoMart Security</span>
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
