@@ -53,6 +53,7 @@ export interface OrderItem {
 
 export interface Order {
   id: string;
+  orderSource?: 'customer';
   phone: string;
   email: string;
   date: string;

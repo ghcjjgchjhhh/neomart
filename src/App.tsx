@@ -162,7 +162,9 @@ export default function App() {
 
     subscribeToOrders((remoteOrders) => {
       const realOrders = remoteOrders.filter(
-        (order) => !sampleOrders.some((sampleOrder) => sampleOrder.id === order.id)
+        (order) =>
+          order.orderSource === 'customer' &&
+          !sampleOrders.some((sampleOrder) => sampleOrder.id === order.id)
       );
       if (isActive) setOrders(realOrders);
     }).then((cleanup) => {
@@ -320,6 +322,7 @@ export default function App() {
 
     const newOrder: Order = {
       id: newOrderId,
+      orderSource: 'customer',
       phone: _deliveryDetails?.phone || '08135642842',
       email: currentUserEmail || ADMIN_EMAIL,
       date: new Date().toISOString().split('T')[0],
