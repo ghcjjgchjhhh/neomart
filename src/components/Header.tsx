@@ -16,7 +16,8 @@ import {
   Cookie,
   MessageSquare,
   MessageCircle,
-  ExternalLink
+  ExternalLink,
+  Building2
 } from 'lucide-react';
 import { Product, HelpSectionType } from '../types';
 import { NeoMartIcon } from './NeoMartLogo';
@@ -36,6 +37,7 @@ interface HeaderProps {
   onSelectProduct: (productId: number) => void;
   onOpenTrackOrder: () => void;
   onSelectCategory: (category: string) => void;
+  onOpenAdmin: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -52,7 +54,8 @@ export const Header: React.FC<HeaderProps> = ({
   products,
   onSelectProduct,
   onOpenTrackOrder,
-  onSelectCategory
+  onSelectCategory,
+  onOpenAdmin
 }) => {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -169,6 +172,13 @@ export const Header: React.FC<HeaderProps> = ({
             >
               Contact Us
             </button>
+            <span className="text-gray-600">|</span>
+            <button
+              onClick={onOpenAdmin}
+              className="hover:text-[#f68b1e] transition-colors cursor-pointer"
+            >
+              Admin
+            </button>
           </div>
         </div>
       </div>
@@ -223,6 +233,16 @@ export const Header: React.FC<HeaderProps> = ({
                 aria-label="Account"
               >
                 <User className="w-5 h-5" />
+              </button>
+
+              {/* Admin */}
+              <button
+                onClick={onOpenAdmin}
+                className="p-2 rounded-lg hover:bg-white/20 transition-colors text-white cursor-pointer"
+                aria-label="Admin panel"
+                title="Admin panel"
+              >
+                <Building2 className="w-5 h-5" />
               </button>
 
               {/* Help (Opens Help Center on Mobile) */}

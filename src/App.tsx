@@ -13,6 +13,7 @@ import { CheckoutModal } from './components/CheckoutModal';
 import { PaymentSuccessModal } from './components/PaymentSuccessModal';
 import { LoginModal } from './components/LoginModal';
 import { HelpCenterModal } from './components/HelpCenterModal';
+import { AdminOrdersModal } from './components/AdminOrdersModal';
 import { OrderTrackingModal } from './components/TrackingModal';
 import { Footer } from './components/Footer';
 import { Toast } from './components/Toast';
@@ -110,6 +111,7 @@ export default function App() {
   const [lastPaymentMethod, setLastPaymentMethod] = useState<PaymentMethodType>('bank');
 
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [activeHelpSection, setActiveHelpSection] = useState<HelpSectionType>('place-order');
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -229,6 +231,15 @@ export default function App() {
   const handleOpenHelpSection = (section: HelpSectionType) => {
     setActiveHelpSection(section);
     setIsHelpOpen(true);
+  };
+
+  const handleConfirmOrderPayment = (orderId: string) => {
+    setOrders((prev) =>
+      prev.map((order) =>
+        order.id === orderId ? { ...order, status: 'Order Confirmed' } : order
+      )
+    );
+    showToast('Payment confirmed successfully');
   };
 
   // Checkout flow
@@ -376,6 +387,7 @@ export default function App() {
         onSelectProduct={handleSelectProduct}
         onOpenTrackOrder={() => handleOpenLiveTracking()}
         onSelectCategory={handleSelectCategory}
+        onOpenAdmin={() => setIsAdminOpen(true)}
       />
 
       {/* 2. Top Category Pills Bar */}
@@ -729,10 +741,27 @@ export default function App() {
         showToast={showToast}
       />
 
-      {/* 11. Global Toast Alert */}
+      {/* 11. Admin Orders and Payment Manager */}
+      <AdminOrdersModal
+        isOpen={isAdminOpen}
+        onClose={() => setIsAdminOpen(false)}
+        orders={orders}
+        onConfirmOrderPayment={handleConfirmOrderPayment}
+        onUpdateOrderStatus={(orderId, status) => {
+          setOrders((prev) =>
+            prev.map((order) =>
+              order.id === orderId
+                ? { ...order, status: status === 'Paid' ? 'Order Confirmed' : status }
+                : order
+            )
+          );
+        }}
+      />
+
+      {/* 12. Global Toast Alert */}
       <Toast message={toastMessage} />
 
-      {/* 12. Initial Loading / Splash Screen */}
+      {/* 13. Initial Loading / Splash Screen */}
       {showSplash && (
         <SplashScreen
           onFinish={() => setShowSplash(false)}
