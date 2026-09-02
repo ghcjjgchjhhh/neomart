@@ -106,7 +106,7 @@ export const sampleOrders: Order[] = [
   {
     id: 'NM-10492',
     phone: '08135642842',
-    email: 'ifeanyianoma198@gmail.com',
+    email: 'ifeanyianoma2@gmail.com',
     date: '2026-08-31',
     eta: '2026-09-04',
     status: 'Processing',

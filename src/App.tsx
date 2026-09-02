@@ -19,7 +19,7 @@ import { Footer } from './components/Footer';
 import { Toast } from './components/Toast';
 import { SplashScreen } from './components/SplashScreen';
 
-const ADMIN_EMAIL = 'ifeanyianoma198@gmail.com';
+const ADMIN_EMAIL = 'ifeanyianoma2@gmail.com';
 
 import { allProducts, flashProductIds } from './data/products';
 import { initialReviews, sampleOrders } from './data/ordersAndReviews';
@@ -296,7 +296,7 @@ export default function App() {
     const newOrder: Order = {
       id: newOrderId,
       phone: _deliveryDetails?.phone || '08135642842',
-      email: 'ifeanyianoma198@gmail.com',
+      email: currentUserEmail || ADMIN_EMAIL,
       date: new Date().toISOString().split('T')[0],
       eta: new Date(Date.now() + 2 * 86400000).toISOString().split('T')[0],
       status: method === 'delivery' ? 'Order Placed' : 'Processing',

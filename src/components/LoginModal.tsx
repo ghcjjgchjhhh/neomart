@@ -26,7 +26,7 @@ const SAVED_ACCOUNTS_KEY = 'neomart_google_accounts_list';
 const INITIAL_GOOGLE_ACCOUNTS: GoogleAccount[] = [
   {
     name: 'Ifeanyi Anoma',
-    email: 'ifeanyianoma198@gmail.com',
+    email: 'ifeanyianoma2@gmail.com',
     avatarBg: 'bg-[#f68b1e]',
     avatarLetter: 'I',
     avatarColor: 'text-white',
@@ -143,7 +143,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                   }
                 })
                 .catch(() => {
-                  onLoginSuccess('ifeanyianoma198@gmail.com');
+                  onLoginSuccess('ifeanyianoma2@gmail.com');
                   showToast('Signed in with Google!');
                   onClose();
                 });
