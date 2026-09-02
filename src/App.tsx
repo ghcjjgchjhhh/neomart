@@ -19,6 +19,8 @@ import { Footer } from './components/Footer';
 import { Toast } from './components/Toast';
 import { SplashScreen } from './components/SplashScreen';
 
+const ADMIN_EMAIL = 'ifeanyianoma198@gmail.com';
+
 import { allProducts, flashProductIds } from './data/products';
 import { initialReviews, sampleOrders } from './data/ordersAndReviews';
 import {
@@ -63,6 +65,9 @@ export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
     return localStorage.getItem('neomart_logged_in') === 'true';
   });
+  const [currentUserEmail, setCurrentUserEmail] = useState(() =>
+    localStorage.getItem('neomart_user_email') || ''
+  );
   const [isLoginOpen, setIsLoginOpen] = useState(false);
 
   // Cart state
@@ -388,6 +393,7 @@ export default function App() {
         onOpenTrackOrder={() => handleOpenLiveTracking()}
         onSelectCategory={handleSelectCategory}
         onOpenAdmin={() => setIsAdminOpen(true)}
+        isAdmin={isLoggedIn && currentUserEmail.toLowerCase() === ADMIN_EMAIL}
       />
 
       {/* 2. Top Category Pills Bar */}
@@ -708,11 +714,16 @@ export default function App() {
         isLoggedIn={isLoggedIn}
         onLoginSuccess={(id) => {
           setIsLoggedIn(true);
+          setCurrentUserEmail(id);
           localStorage.setItem('neomart_logged_in', 'true');
+          localStorage.setItem('neomart_user_email', id);
         }}
         onLogout={() => {
           setIsLoggedIn(false);
+          setCurrentUserEmail('');
+          setIsAdminOpen(false);
           localStorage.removeItem('neomart_logged_in');
+          localStorage.removeItem('neomart_user_email');
         }}
         showToast={showToast}
       />

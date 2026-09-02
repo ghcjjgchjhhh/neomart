@@ -38,6 +38,7 @@ interface HeaderProps {
   onOpenTrackOrder: () => void;
   onSelectCategory: (category: string) => void;
   onOpenAdmin: () => void;
+  isAdmin: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -55,7 +56,8 @@ export const Header: React.FC<HeaderProps> = ({
   onSelectProduct,
   onOpenTrackOrder,
   onSelectCategory,
-  onOpenAdmin
+  onOpenAdmin,
+  isAdmin
 }) => {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -172,13 +174,17 @@ export const Header: React.FC<HeaderProps> = ({
             >
               Contact Us
             </button>
-            <span className="text-gray-600">|</span>
-            <button
-              onClick={onOpenAdmin}
-              className="hover:text-[#f68b1e] transition-colors cursor-pointer"
-            >
-              Admin
-            </button>
+            {isAdmin && (
+              <>
+                <span className="text-gray-600">|</span>
+                <button
+                  onClick={onOpenAdmin}
+                  className="hover:text-[#f68b1e] transition-colors cursor-pointer"
+                >
+                  Admin
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -236,14 +242,16 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
 
               {/* Admin */}
-              <button
-                onClick={onOpenAdmin}
-                className="p-2 rounded-lg hover:bg-white/20 transition-colors text-white cursor-pointer"
-                aria-label="Admin panel"
-                title="Admin panel"
-              >
-                <Building2 className="w-5 h-5" />
-              </button>
+              {isAdmin && (
+                <button
+                  onClick={onOpenAdmin}
+                  className="p-2 rounded-lg hover:bg-white/20 transition-colors text-white cursor-pointer"
+                  aria-label="Admin panel"
+                  title="Admin panel"
+                >
+                  <Building2 className="w-5 h-5" />
+                </button>
+              )}
 
               {/* Help (Opens Help Center on Mobile) */}
               <div className="relative">
