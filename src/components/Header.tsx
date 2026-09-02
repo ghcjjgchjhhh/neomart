@@ -57,6 +57,17 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenTrackOrder,
   onSelectCategory,
   onOpenAdmin,
+  isAdmin
+}) => {
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [badgeBouncing, setBadgeBouncing] = useState(false);
+  const helpMenuRef = useRef<HTMLDivElement>(null);
+  const searchWrapRef = useRef<HTMLDivElement>(null);
+
+  // Trigger bounce when cartCount increases
+  useEffect(() => {
+    if (cartCount > 0) {
       setBadgeBouncing(true);
       const t = setTimeout(() => setBadgeBouncing(false), 500);
       return () => clearTimeout(t);
