@@ -26,6 +26,9 @@ export interface Product {
   img?: string;
   category: string;
   tags: string[];
+  images?: string[];
+  featured?: boolean;
+  lowStockThreshold?: number;
 }
 
 export interface CartItem extends Product {

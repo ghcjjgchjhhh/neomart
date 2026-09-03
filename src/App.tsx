@@ -28,7 +28,7 @@ import { SplashScreen } from './components/SplashScreen';
 const ADMIN_EMAIL = 'ifeanyianoma2@gmail.com';
 const SUPPORT_PHONE = '08135642842';
 
-import { allProducts, flashProductIds } from './data/products';
+import { allProducts as initialProducts, flashProductIds } from './data/products';
 import { initialReviews, sampleOrders } from './data/ordersAndReviews';
 import { confirmOrderPayment, getOrders, saveOrder, saveCustomerProfile, subscribeToOrders, updateOrderStatus, updateOrderDelivery, saveStockLevel, subscribeToStock } from './config/ordersService';
 import { auth } from './config/firebase';
@@ -61,6 +61,20 @@ import {
 } from 'lucide-react';
 
 export default function App() {
+  const [products, setProducts] = useState<Product[]>(() => {
+    try {
+      const saved = localStorage.getItem('neomart_products');
+      return saved ? JSON.parse(saved) : initialProducts;
+    } catch {
+      return initialProducts;
+    }
+  });
+  const allProducts = products;
+
+  useEffect(() => {
+    localStorage.setItem('neomart_products', JSON.stringify(products));
+  }, [products]);
+
   // Theme state
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     const saved = localStorage.getItem('neomart_theme');
@@ -1057,6 +1071,20 @@ export default function App() {
         onClose={() => setIsStockOpen(false)}
         stockLevels={stockLevels}
         onUpdateStock={handleUpdateStock}
+        products={products}
+        onSaveProduct={(product) => {
+          setProducts((previous) => {
+            const updated = previous.some((item) => item.id === product.id)
+              ? previous.map((item) => item.id === product.id ? product : item)
+              : [product, ...previous];
+            return updated;
+          });
+          showToast('Product saved');
+        }}
+        onDeleteProduct={(productId) => {
+          setProducts((previous) => previous.filter((product) => product.id !== productId));
+          showToast('Product deleted');
+        }}
       />
 
       <AdminSalesReportModal
