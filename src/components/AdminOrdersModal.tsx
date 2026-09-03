@@ -140,7 +140,7 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
           </form>
         </div>
       )}
-      <div className="bg-white dark:bg-[#18181b] border border-gray-200 dark:border-gray-800 rounded-3xl max-w-5xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+      <div className="bg-white dark:bg-[#18181b] border border-gray-200 dark:border-gray-800 rounded-3xl max-w-5xl w-full shadow-2xl overflow-y-auto overscroll-contain flex flex-col max-h-[92vh]">
         
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-800 bg-[#222222] text-white">
@@ -232,7 +232,7 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
         </div>
 
         {/* Orders List */}
-        <div className="p-4 overflow-y-auto flex-1 space-y-3.5 text-xs">
+        <div className="p-4 space-y-3.5 text-xs">
           {filteredOrders.length === 0 ? (
             <div className="p-8 text-center text-gray-500">
               <Package className="w-10 h-10 mx-auto mb-2 opacity-40 text-gray-400" />
