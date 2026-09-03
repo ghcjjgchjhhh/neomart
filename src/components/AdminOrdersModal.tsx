@@ -18,6 +18,7 @@ interface AdminOrdersModalProps {
   orders: Order[];
   onConfirmOrderPayment: (orderId: string) => void;
   onUpdateOrderStatus: (orderId: string, status: FulfillmentStatus) => void;
+  onUpdateOrderDelivery: (orderId: string, delivery: Partial<Order>) => void;
   onOpenStockManagement: () => void;
   onOpenLiveGps: (orderId: string) => void;
   onOpenSalesReport: () => void;
@@ -31,6 +32,7 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
   orders,
   onConfirmOrderPayment,
   onUpdateOrderStatus,
+  onUpdateOrderDelivery,
   onOpenStockManagement,
   onOpenLiveGps,
   onOpenSalesReport,
@@ -39,12 +41,22 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
 }) => {
   const [search, setSearch] = useState('');
   const [orderToConfirm, setOrderToConfirm] = useState<Order | null>(null);
+  const [deliveryOrder, setDeliveryOrder] = useState<Order | null>(null);
+  const [deliveryForm, setDeliveryForm] = useState({ driverName: '', driverPhone: '', trackingNumber: '', deliveryZone: '', deliveryFee: '', estimatedDelivery: '' });
 
   if (!isOpen) return null;
 
   const handleConfirm = (id: string) => {
     const order = orders.find((item) => item.id === id);
     if (order) setOrderToConfirm(order);
+  };
+
+  const openDelivery = (order: Order) => {
+    setDeliveryOrder(order);
+    setDeliveryForm({
+      driverName: order.driverName || '', driverPhone: order.driverPhone || '', trackingNumber: order.trackingNumber || '',
+      deliveryZone: order.deliveryZone || '', deliveryFee: order.deliveryFee?.toString() || '', estimatedDelivery: order.estimatedDelivery || order.eta || '',
+    });
   };
 
   const filteredOrders = orders.filter((ord) => {
@@ -111,6 +123,17 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
               </button>
             </div>
           </div>
+        </div>
+      )}
+      {deliveryOrder && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4">
+          <form onSubmit={(event) => { event.preventDefault(); onUpdateOrderDelivery(deliveryOrder.id, { ...deliveryForm, deliveryFee: deliveryForm.deliveryFee ? Number(deliveryForm.deliveryFee) : undefined }); setDeliveryOrder(null); }} className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl dark:bg-[#18181b]">
+            <div className="mb-4 flex items-start justify-between"><div><h3 className="font-extrabold">Delivery assignment</h3><p className="mt-1 text-xs text-gray-500">Order #{deliveryOrder.id}</p></div><button type="button" onClick={() => setDeliveryOrder(null)} aria-label="Close delivery assignment"><X className="h-4 w-4" /></button></div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {([['driverName', 'Driver / rider name'], ['driverPhone', 'Driver phone'], ['trackingNumber', 'Tracking number'], ['deliveryZone', 'Delivery zone'], ['deliveryFee', 'Delivery fee (NGN)'], ['estimatedDelivery', 'Estimated delivery']] as const).map(([key, label]) => <label key={key} className="text-[11px] font-bold text-gray-600 dark:text-gray-300">{label}<input value={deliveryForm[key]} onChange={(event) => setDeliveryForm((current) => ({ ...current, [key]: event.target.value }))} type={key === 'deliveryFee' ? 'number' : key === 'estimatedDelivery' ? 'datetime-local' : 'text'} className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-normal outline-none focus:border-[#f68b1e] dark:border-gray-700 dark:bg-[#202024]" /></label>)}
+            </div>
+            <div className="mt-4 flex gap-2"><button type="button" onClick={() => setDeliveryOrder(null)} className="flex-1 rounded-xl border border-gray-300 px-3 py-2.5 text-xs font-bold">Cancel</button><button type="submit" className="flex-1 rounded-xl bg-[#f68b1e] px-3 py-2.5 text-xs font-bold text-white">Save delivery</button></div>
+          </form>
         </div>
       )}
       <div className="bg-white dark:bg-[#18181b] border border-gray-200 dark:border-gray-800 rounded-3xl max-w-2xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
@@ -251,6 +274,7 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
                   </div>
 
                   <div className="flex items-center gap-2">
+                    <button onClick={() => openDelivery(ord)} className="rounded-xl border border-[#f68b1e] px-3 py-2 text-xs font-bold text-[#f68b1e] hover:bg-orange-50">Delivery</button>
                     <button
                       onClick={() => onOpenLiveGps(ord.id)}
                       className="px-3 py-2 rounded-xl border border-blue-500 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 font-bold text-xs flex items-center gap-1.5 transition-colors"
@@ -281,6 +305,12 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
                       <option value="Delivered">Delivered</option>
                     </select>
                   </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 border-t border-gray-200 pt-2 text-[10px] text-gray-500 dark:border-gray-800 sm:grid-cols-4">
+                  <span>Tracking: <strong className="text-gray-700 dark:text-gray-300">{ord.trackingNumber || 'Unassigned'}</strong></span>
+                  <span>Rider: <strong className="text-gray-700 dark:text-gray-300">{ord.driverName || 'Unassigned'}</strong></span>
+                  <span>Zone: <strong className="text-gray-700 dark:text-gray-300">{ord.deliveryZone || 'Not set'}</strong></span>
+                  <span>Fee: <strong className="text-gray-700 dark:text-gray-300">{ord.deliveryFee !== undefined ? `₦${ord.deliveryFee.toLocaleString()}` : 'Not set'}</strong></span>
                 </div>
               </div>
             ))

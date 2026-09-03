@@ -72,6 +72,12 @@ export interface Order {
   address: string;
   total: number;
   items: OrderItem[];
+  trackingNumber?: string;
+  driverName?: string;
+  driverPhone?: string;
+  deliveryZone?: string;
+  deliveryFee?: number;
+  estimatedDelivery?: string;
 }
 
 export type FulfillmentStatus = 'Processing' | 'Packed' | 'Shipped' | 'Out for Delivery' | 'Delivered';

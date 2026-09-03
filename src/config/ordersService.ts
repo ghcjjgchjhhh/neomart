@@ -57,6 +57,14 @@ export async function updateOrderStatus(orderId: string, status: FulfillmentStat
   return true;
 }
 
+export async function updateOrderDelivery(orderId: string, delivery: Partial<Order>) {
+  if (!db || !(await ensureFirebaseAuth())) {
+    throw new Error('Firebase delivery sync is not configured');
+  }
+  await updateDoc(doc(db, 'orders', orderId), delivery);
+  return true;
+}
+
 export async function saveStockLevel(productId: number, quantity: number) {
   if (!db || !(await ensureFirebaseAuth())) {
     throw new Error('Firebase stock sync is not configured');

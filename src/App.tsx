@@ -29,7 +29,7 @@ const ADMIN_EMAIL = 'ifeanyianoma2@gmail.com';
 
 import { allProducts, flashProductIds } from './data/products';
 import { initialReviews, sampleOrders } from './data/ordersAndReviews';
-import { confirmOrderPayment, getOrders, saveOrder, saveCustomerProfile, subscribeToOrders, updateOrderStatus, saveStockLevel, subscribeToStock } from './config/ordersService';
+import { confirmOrderPayment, getOrders, saveOrder, saveCustomerProfile, subscribeToOrders, updateOrderStatus, updateOrderDelivery, saveStockLevel, subscribeToStock } from './config/ordersService';
 import {
   Product,
   CartItem,
@@ -1005,9 +1005,7 @@ export default function App() {
         isOpen={isAdminOpen}
         onClose={() => setIsAdminOpen(false)}
         onEnableNotifications={enableAdminNotifications}
-        orders={orders.filter(
-          (order) => order.orderSource === 'customer' && order.paymentConfirmed !== true
-        )}
+        orders={orders.filter((order) => order.orderSource === 'customer')}
         onConfirmOrderPayment={handleConfirmOrderPayment}
         onOpenStockManagement={() => setIsStockOpen(true)}
         onOpenSalesReport={() => setIsSalesReportOpen(true)}
@@ -1027,6 +1025,13 @@ export default function App() {
           void updateOrderStatus(orderId, status).catch(() => {
             showToast('Could not sync status. Check Firebase connection.');
           });
+        }}
+        onUpdateOrderDelivery={(orderId, delivery) => {
+          setOrders((prev) => prev.map((order) => order.id === orderId ? { ...order, ...delivery } : order));
+          void updateOrderDelivery(orderId, delivery).catch(() => {
+            showToast('Could not sync delivery details. Check Firebase connection.');
+          });
+          showToast('Delivery assignment saved');
         }}
       />
       <ConfirmOrdersModal
