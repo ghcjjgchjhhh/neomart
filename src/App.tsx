@@ -14,9 +14,12 @@ import { PaymentSuccessModal } from './components/PaymentSuccessModal';
 import { LoginModal } from './components/LoginModal';
 import { HelpCenterModal } from './components/HelpCenterModal';
 import { AdminOrdersModal } from './components/AdminOrdersModal';
+import { ConfirmOrdersModal } from './components/ConfirmOrdersModal';
+import { AdminOrderAlert } from './components/AdminOrderAlert';
 import { AdminStockModal } from './components/AdminStockModal';
 import { OrderHistoryModal } from './components/OrderHistoryModal';
 import { AdminSalesReportModal } from './components/AdminSalesReportModal';
+import { AdminCustomersModal } from './components/AdminCustomersModal';
 import { OrderTrackingModal } from './components/TrackingModal';
 import { Footer } from './components/Footer';
 import { Toast } from './components/Toast';
@@ -26,7 +29,7 @@ const ADMIN_EMAIL = 'ifeanyianoma2@gmail.com';
 
 import { allProducts, flashProductIds } from './data/products';
 import { initialReviews, sampleOrders } from './data/ordersAndReviews';
-import { confirmOrderPayment, saveOrder, subscribeToOrders, updateOrderStatus, saveStockLevel, subscribeToStock } from './config/ordersService';
+import { confirmOrderPayment, getOrders, saveOrder, saveCustomerProfile, subscribeToOrders, updateOrderStatus, saveStockLevel, subscribeToStock } from './config/ordersService';
 import {
   Product,
   CartItem,
@@ -71,6 +74,9 @@ export default function App() {
   });
   const [currentUserEmail, setCurrentUserEmail] = useState(() =>
     localStorage.getItem('neomart_user_email') || ''
+  );
+  const [accountName, setAccountName] = useState(() =>
+    localStorage.getItem('neomart_account_name') || ''
   );
   const [isLoginOpen, setIsLoginOpen] = useState(false);
 
@@ -121,6 +127,7 @@ export default function App() {
   const lastPlacedOrderIdRef = useRef<string | null>(null);
   const remoteStatusesRef = useRef<Record<string, string>>({});
   const hasReceivedOrdersRef = useRef(false);
+  const knownOrderIdsRef = useRef<Set<string>>(new Set());
 
   // UI Views & Modals state
   const [selectedCategory, setSelectedCategory] = useState<CategoryId>('all');
@@ -135,9 +142,11 @@ export default function App() {
 
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [isConfirmOrdersOpen, setIsConfirmOrdersOpen] = useState(false);
   const [isStockOpen, setIsStockOpen] = useState(false);
       const [isOrderHistoryOpen, setIsOrderHistoryOpen] = useState(false);
       const [isSalesReportOpen, setIsSalesReportOpen] = useState(false);
+      const [isCustomerManagementOpen, setIsCustomerManagementOpen] = useState(false);
       const [customerOrderIds, setCustomerOrderIds] = useState<string[]>(() => {
         try {
           const saved = localStorage.getItem('neomart_customer_order_ids');
@@ -157,6 +166,7 @@ export default function App() {
   const [activeHelpSection, setActiveHelpSection] = useState<HelpSectionType>('place-order');
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [adminOrderAlert, setAdminOrderAlert] = useState<Order | null>(null);
   const [showSplash, setShowSplash] = useState(true);
 
   // Sync theme
@@ -191,6 +201,21 @@ export default function App() {
           order.orderSource === 'customer' &&
           !sampleOrders.some((sampleOrder) => sampleOrder.id === order.id)
       );
+      const newOrders = realOrders.filter((order) => !knownOrderIdsRef.current.has(order.id));
+      const isAdmin = localStorage.getItem('neomart_user_email')?.toLowerCase() === ADMIN_EMAIL;
+      if (hasReceivedOrdersRef.current && isAdmin) {
+        const newOrder = newOrders.find((order) => order.id !== lastPlacedOrderIdRef.current);
+        if (newOrder) {
+          setAdminOrderAlert(newOrder);
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('New NeoMart order', {
+              body: `Order #${newOrder.id} for ₦${newOrder.total.toLocaleString()} is waiting for review.`,
+              icon: '/favicon.ico',
+            });
+          }
+        }
+      }
+      knownOrderIdsRef.current = new Set(realOrders.map((order) => order.id));
       if (hasReceivedOrdersRef.current && lastPlacedOrderIdRef.current) {
         const order = realOrders.find((item) => item.id === lastPlacedOrderIdRef.current);
         const previousStatus = remoteStatusesRef.current[lastPlacedOrderIdRef.current];
@@ -232,6 +257,24 @@ export default function App() {
     return () => unsubscribe?.();
   }, []);
 
+  useEffect(() => {
+    if (!isLoggedIn || currentUserEmail.toLowerCase() !== ADMIN_EMAIL) return;
+
+    const refreshOrders = () => {
+      void getOrders().then((remoteOrders) => {
+        const realOrders = remoteOrders.filter(
+          (order) =>
+            order.orderSource === 'customer' &&
+            !sampleOrders.some((sampleOrder) => sampleOrder.id === order.id)
+        );
+        setOrders(realOrders);
+      }).catch(() => {});
+    };
+
+    const refreshTimer = window.setInterval(refreshOrders, 3000);
+    return () => window.clearInterval(refreshTimer);
+  }, [currentUserEmail, isLoggedIn]);
+
   const toggleTheme = () => {
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
   };
@@ -241,6 +284,19 @@ export default function App() {
     setTimeout(() => {
       setToastMessage(null);
     }, 3000);
+  };
+
+  const enableAdminNotifications = async () => {
+    if (!('Notification' in window)) {
+      showToast('This browser does not support phone alerts.');
+      return;
+    }
+    const permission = await Notification.requestPermission();
+    showToast(
+      permission === 'granted'
+        ? 'Phone alerts enabled for new orders.'
+        : 'Phone alerts were not enabled.'
+    );
   };
 
   // Cart Operations
@@ -449,6 +505,17 @@ export default function App() {
     void saveOrder(newOrder).catch(() => {
       showToast('Order saved locally. Firebase sync is unavailable.');
     });
+    void saveCustomerProfile({
+      email: newOrder.email,
+      phone: newOrder.phone,
+      savedAddresses: [newOrder.address],
+      lastOrderId: newOrder.id,
+    }).catch(() => {});
+    void fetch('/api/notify-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId: newOrder.id, total: newOrder.total }),
+    }).catch(() => {});
 
     try {
       const saved = localStorage.getItem('neomart_stock_levels');
@@ -528,6 +595,14 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f5f5f5] dark:bg-[#0f0f0f] text-gray-900 dark:text-gray-100 transition-colors">
+      <AdminOrderAlert
+        order={adminOrderAlert}
+        onOpenOrders={() => {
+          setAdminOrderAlert(null);
+          setIsAdminOpen(true);
+        }}
+        onDismiss={() => setAdminOrderAlert(null)}
+      />
       {/* 1. Header */}
       <Header
         theme={theme}
@@ -536,6 +611,7 @@ export default function App() {
         onOpenCart={() => setIsCartOpen(true)}
         onOpenLogin={() => setIsLoginOpen(true)}
         isLoggedIn={isLoggedIn}
+        accountName={accountName}
         onOpenHelpSection={handleOpenHelpSection}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -546,6 +622,7 @@ export default function App() {
         onOpenOrderHistory={() => setIsOrderHistoryOpen(true)}
         onSelectCategory={handleSelectCategory}
         onOpenAdmin={() => setIsAdminOpen(true)}
+        onOpenConfirmOrders={() => setIsConfirmOrdersOpen(true)}
         isAdmin={isLoggedIn && currentUserEmail.toLowerCase() === ADMIN_EMAIL}
       />
 
@@ -869,18 +946,22 @@ export default function App() {
         isOpen={isLoginOpen}
         onClose={() => setIsLoginOpen(false)}
         isLoggedIn={isLoggedIn}
-        onLoginSuccess={(id) => {
+        onLoginSuccess={(id, name) => {
           setIsLoggedIn(true);
           setCurrentUserEmail(id);
+          setAccountName(name || id.split('@')[0]);
           localStorage.setItem('neomart_logged_in', 'true');
           localStorage.setItem('neomart_user_email', id);
+          localStorage.setItem('neomart_account_name', name || id.split('@')[0]);
         }}
         onLogout={() => {
           setIsLoggedIn(false);
           setCurrentUserEmail('');
+          setAccountName('');
           setIsAdminOpen(false);
           localStorage.removeItem('neomart_logged_in');
           localStorage.removeItem('neomart_user_email');
+          localStorage.removeItem('neomart_account_name');
         }}
         showToast={showToast}
       />
@@ -923,12 +1004,14 @@ export default function App() {
       <AdminOrdersModal
         isOpen={isAdminOpen}
         onClose={() => setIsAdminOpen(false)}
+        onEnableNotifications={enableAdminNotifications}
         orders={orders.filter(
           (order) => order.orderSource === 'customer' && order.paymentConfirmed !== true
         )}
         onConfirmOrderPayment={handleConfirmOrderPayment}
         onOpenStockManagement={() => setIsStockOpen(true)}
         onOpenSalesReport={() => setIsSalesReportOpen(true)}
+        onOpenCustomerManagement={() => setIsCustomerManagementOpen(true)}
         onOpenLiveGps={(orderId) => {
           setIsAdminOpen(false);
           handleOpenLiveTracking(orderId);
@@ -946,6 +1029,14 @@ export default function App() {
           });
         }}
       />
+      <ConfirmOrdersModal
+        isOpen={isConfirmOrdersOpen}
+        onClose={() => setIsConfirmOrdersOpen(false)}
+        orders={orders.filter(
+          (order) => order.orderSource === 'customer' && order.paymentConfirmed !== true
+        )}
+        onConfirmOrder={handleConfirmOrderPayment}
+      />
       <AdminStockModal
         isOpen={isStockOpen}
         onClose={() => setIsStockOpen(false)}
@@ -957,6 +1048,13 @@ export default function App() {
         isOpen={isSalesReportOpen}
         onClose={() => setIsSalesReportOpen(false)}
         orders={orders.filter((order) => order.orderSource === 'customer')}
+      />
+
+      <AdminCustomersModal
+        isOpen={isCustomerManagementOpen}
+        onClose={() => setIsCustomerManagementOpen(false)}
+        orders={orders.filter((order) => order.orderSource === 'customer')}
+        onToast={showToast}
       />
 
       {/* 12. Global Toast Alert */}

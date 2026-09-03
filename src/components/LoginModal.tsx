@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
 import { X, Check, UserPlus, ArrowLeft, ShieldCheck } from 'lucide-react';
 import { NeoMartLogo } from './NeoMartLogo';
-
-const GOOGLE_CLIENT_ID = '555347475634-5h2aet6j3ikpvfnfkur3l0togrdhpb19.apps.googleusercontent.com';
+import { signInWithGoogle } from '../config/firebase';
 
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
   isLoggedIn: boolean;
-  onLoginSuccess: (identifier: string) => void;
+  onLoginSuccess: (identifier: string, displayName?: string) => void;
   onLogout: () => void;
   showToast: (msg: string) => void;
 }
@@ -59,7 +58,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     setSigningInAccount(acc.email);
     setTimeout(() => {
       setSigningInAccount(null);
-      onLoginSuccess(acc.email);
+      onLoginSuccess(acc.email, acc.name);
       showToast(`Signed in as ${acc.name} (${acc.email})`);
       onClose();
     }, 400);
@@ -100,56 +99,18 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     handleSelectGoogleAccount(newAcc);
   };
 
-  const handleGoogleIconClick = () => {
+  const handleGoogleIconClick = async () => {
+    setLoading(true);
     try {
-      if (window.google?.accounts?.oauth2?.initTokenClient) {
-        const client = window.google.accounts.oauth2.initTokenClient({
-          client_id: GOOGLE_CLIENT_ID,
-          scope: 'email profile openid',
-          callback: (tokenResponse: { access_token?: string }) => {
-            if (tokenResponse?.access_token) {
-              fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-                headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
-              })
-                .then((r) => r.json())
-                .then((userInfo) => {
-                  if (userInfo?.email) {
-                    const userName = userInfo.name || 'Google User';
-                    const newAcc: GoogleAccount = {
-                      name: userName,
-                      email: userInfo.email,
-                      avatarBg: 'bg-[#f68b1e]',
-                      avatarLetter: userName.charAt(0).toUpperCase(),
-                      avatarColor: 'text-white',
-                    };
-                    const updated = [newAcc, ...accountsList.filter((a) => a.email !== userInfo.email)];
-                    setAccountsList(updated);
-                    try {
-                      localStorage.setItem(SAVED_ACCOUNTS_KEY, JSON.stringify(updated));
-                    } catch {}
-                    onLoginSuccess(userInfo.email);
-                    showToast(`Signed in with Google as ${userInfo.email}`);
-                    onClose();
-                  }
-                })
-                .catch(() => {
-                  showToast('Google sign-in failed. Please try again.');
-                });
-            }
-          },
-        });
-        client.requestAccessToken();
-        return;
-      }
-
-      // Quick 1-tap sign-in with the primary account
-      if (accountsList.length > 0) {
-        handleSelectGoogleAccount(accountsList[0]);
-      }
+      const user = await signInWithGoogle();
+      const userName = user.displayName || user.email?.split('@')[0] || 'Google User';
+      onLoginSuccess(user.email || user.uid, user.displayName || user.email?.split('@')[0]);
+      showToast(`Signed in with Google as ${user.email || userName}`);
+      onClose();
     } catch {
-      if (accountsList.length > 0) {
-        handleSelectGoogleAccount(accountsList[0]);
-      }
+      showToast('Google sign-in failed. Enable Google in Firebase, then try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -173,7 +134,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      onLoginSuccess(val);
+      onLoginSuccess(val, val.includes('@') ? val.split('@')[0] : undefined);
       showToast('Login successful! Welcome back 😊');
       onClose();
     }, 500);

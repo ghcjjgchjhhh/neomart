@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInAnonymously, signInWithPopup } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -16,6 +16,12 @@ export const isFirebaseConfigured = Boolean(firebaseConfig.projectId && firebase
 const app = isFirebaseConfigured ? initializeApp(firebaseConfig) : null;
 export const db = app ? getFirestore(app) : null;
 export const auth = app ? getAuth(app) : null;
+
+export async function signInWithGoogle() {
+  if (!auth) throw new Error('Firebase authentication is not configured');
+  const result = await signInWithPopup(auth, new GoogleAuthProvider());
+  return result.user;
+}
 
 export async function ensureFirebaseAuth() {
   if (!auth) return false;

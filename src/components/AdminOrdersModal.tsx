@@ -21,6 +21,8 @@ interface AdminOrdersModalProps {
   onOpenStockManagement: () => void;
   onOpenLiveGps: (orderId: string) => void;
   onOpenSalesReport: () => void;
+  onOpenCustomerManagement: () => void;
+  onEnableNotifications: () => void;
 }
 
 export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
@@ -32,13 +34,17 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
   onOpenStockManagement,
   onOpenLiveGps,
   onOpenSalesReport,
+  onOpenCustomerManagement,
+  onEnableNotifications,
 }) => {
   const [search, setSearch] = useState('');
+  const [orderToConfirm, setOrderToConfirm] = useState<Order | null>(null);
 
   if (!isOpen) return null;
 
   const handleConfirm = (id: string) => {
-    onConfirmOrderPayment(id);
+    const order = orders.find((item) => item.id === id);
+    if (order) setOrderToConfirm(order);
   };
 
   const filteredOrders = orders.filter((ord) => {
@@ -63,6 +69,50 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
   }).format(openOrderValue);
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
+      {orderToConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-5 shadow-2xl dark:border-gray-700 dark:bg-[#18181b]">
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-base font-extrabold text-gray-900 dark:text-white">Confirm this order?</h3>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Review the details before confirming payment.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOrderToConfirm(null)}
+                className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                aria-label="Close confirmation"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="space-y-2 rounded-xl bg-gray-50 p-3 text-xs dark:bg-[#202024]">
+              <div className="flex justify-between gap-3"><span className="text-gray-500">Order</span><strong>#{orderToConfirm.id}</strong></div>
+              <div className="flex justify-between gap-3"><span className="text-gray-500">Customer</span><strong className="truncate">{orderToConfirm.phone}</strong></div>
+              <div className="flex justify-between gap-3"><span className="text-gray-500">Total</span><strong className="text-[#f68b1e]">₦{orderToConfirm.total.toLocaleString()}</strong></div>
+            </div>
+            <div className="mt-4 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setOrderToConfirm(null)}
+                className="flex-1 rounded-xl border border-gray-300 px-3 py-2.5 text-xs font-bold text-gray-700 dark:border-gray-700 dark:text-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onConfirmOrderPayment(orderToConfirm.id);
+                  setOrderToConfirm(null);
+                }}
+                className="flex-1 rounded-xl bg-emerald-600 px-3 py-2.5 text-xs font-bold text-white hover:bg-emerald-700"
+              >
+                Confirm order
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="bg-white dark:bg-[#18181b] border border-gray-200 dark:border-gray-800 rounded-3xl max-w-2xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
         
         {/* Header */}
@@ -82,9 +132,13 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
                   </span>
                 )}
               </div>
-              <p className="text-xs text-gray-300">
-                Account: <strong>8135648242</strong> (OPay - IFEANYICHUKWU FRANKLIN ANOMA)
-              </p>
+              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-300">
+                <span>Account</span>
+                <strong className="text-white">8135648242</strong>
+                <span className="text-gray-500">•</span>
+                <span>OPay</span>
+                <strong className="text-[#f68b1e]">IFEANYICHUKWU FRANKLIN ANOMA</strong>
+              </div>
             </div>
           </div>
 
@@ -116,10 +170,23 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
 
         <div className="mx-4 mt-4">
           <button
+            type="button"
+            onClick={onEnableNotifications}
+            className="mb-2 flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-500 px-4 py-2.5 text-xs font-bold text-emerald-600 transition-colors hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
+          >
+            Enable phone alerts for new orders
+          </button>
+          <button
             onClick={onOpenSalesReport}
             className="w-full px-4 py-2.5 rounded-xl border border-blue-500 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 font-bold text-xs transition-colors"
           >
             Open Sales Report
+          </button>
+          <button
+            onClick={onOpenCustomerManagement}
+            className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-[#f68b1e] px-4 py-2.5 text-xs font-bold text-[#f68b1e] transition-colors hover:bg-orange-50 dark:hover:bg-orange-950/20"
+          >
+            Manage Customers
           </button>
         </div>
 

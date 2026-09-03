@@ -29,6 +29,7 @@ interface HeaderProps {
   onOpenCart: () => void;
   onOpenLogin: () => void;
   isLoggedIn: boolean;
+  accountName: string;
   onOpenHelpSection: (section: HelpSectionType) => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
@@ -39,6 +40,7 @@ interface HeaderProps {
   onOpenOrderHistory: () => void;
   onSelectCategory: (category: string) => void;
   onOpenAdmin: () => void;
+  onOpenConfirmOrders: () => void;
   isAdmin: boolean;
 }
 
@@ -49,6 +51,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenCart,
   onOpenLogin,
   isLoggedIn,
+  accountName,
   onOpenHelpSection,
   searchQuery,
   onSearchChange,
@@ -59,6 +62,7 @@ export const Header: React.FC<HeaderProps> = ({
     onOpenOrderHistory,
   onSelectCategory,
   onOpenAdmin,
+  onOpenConfirmOrders,
   isAdmin
 }) => {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
@@ -228,10 +232,13 @@ export const Header: React.FC<HeaderProps> = ({
               {/* Account */}
               <button
                 onClick={onOpenLogin}
-                className="p-2 rounded-lg hover:bg-white/20 transition-colors text-white cursor-pointer"
+                className="flex max-w-21.5 flex-col items-center rounded-lg px-1 py-1 hover:bg-white/20 transition-colors text-white cursor-pointer"
                 aria-label="Account"
               >
                 <User className="w-5 h-5" />
+                <span className="max-w-20 truncate text-[9px] font-medium">
+                  {isLoggedIn ? `Welcome, ${accountName || 'Account'}` : 'Account'}
+                </span>
               </button>
 
               {/* Help (Opens Help Center on Mobile) */}
@@ -466,7 +473,7 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <User className="w-5 h-5" />
               <span className="text-[11px] font-medium">
-                {isLoggedIn ? 'Hi, Account' : 'Account'}
+                {isLoggedIn ? `Welcome, ${accountName || 'Account'}` : 'Account'}
               </span>
             </button>
 
@@ -605,15 +612,26 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
       {isAdmin && (
-        <button
-          onClick={onOpenAdmin}
-          className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full bg-[#222222] px-4 py-3 text-xs font-bold text-white shadow-xl transition-transform hover:scale-105 cursor-pointer"
-          aria-label="Open admin panel"
-          title="Open admin panel"
-        >
-          <Building2 className="w-4 h-4 text-[#f68b1e]" />
-          <span>Admin</span>
-        </button>
+        <div className="fixed bottom-5 right-5 z-40 flex flex-col items-end gap-2">
+          <button
+            onClick={onOpenConfirmOrders}
+            className="flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-3 text-xs font-bold text-white shadow-xl transition-transform hover:scale-105 cursor-pointer"
+            aria-label="Open confirm orders"
+            title="Open confirm orders"
+          >
+            <Building2 className="w-4 h-4" />
+            <span>Confirm Orders</span>
+          </button>
+          <button
+            onClick={onOpenAdmin}
+            className="flex items-center gap-2 rounded-full bg-[#222222] px-4 py-3 text-xs font-bold text-white shadow-xl transition-transform hover:scale-105 cursor-pointer"
+            aria-label="Open admin panel"
+            title="Open admin panel"
+          >
+            <Building2 className="w-4 h-4 text-[#f68b1e]" />
+            <span>Admin</span>
+          </button>
+        </div>
       )}
     </header>
   );

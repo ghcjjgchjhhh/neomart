@@ -34,10 +34,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
   // Delivery state
   const [delivery, setDelivery] = useState<DeliveryDetails>({
-    state: 'Lagos',
-    city: 'Lekki',
-    address: 'Plot 12, Admiralty Way, Lekki Phase 1',
-    phone: '08135642842',
+    state: '',
+    city: '',
+    address: '',
+    phone: '',
     notes: ''
   });
 

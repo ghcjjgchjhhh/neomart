@@ -1,12 +1,15 @@
 import {
   collection,
   doc,
+  getDocs,
   onSnapshot,
+  arrayUnion,
   setDoc,
   updateDoc,
+  type DocumentData,
   type Unsubscribe,
 } from 'firebase/firestore';
-import { db, ensureFirebaseAuth } from './firebase';
+import { db, ensureFirebaseAuth, auth } from './firebase';
 import { Order } from '../types';
 import { FulfillmentStatus } from '../types';
 
@@ -15,6 +18,24 @@ export async function saveOrder(order: Order) {
     throw new Error('Firebase orders sync is not configured');
   }
   await setDoc(doc(db, 'orders', order.id), order);
+  return true;
+}
+
+export async function saveCustomerProfile(profile: DocumentData) {
+  if (!db || !(await ensureFirebaseAuth()) || !auth?.currentUser) {
+    throw new Error('Firebase customer profiles are not configured');
+  }
+  await setDoc(
+    doc(db, 'users', auth.currentUser.uid),
+    {
+      ...profile,
+      ...(profile.savedAddresses?.length
+        ? { savedAddresses: arrayUnion(...profile.savedAddresses) }
+        : {}),
+      updatedAt: new Date().toISOString(),
+    },
+    { merge: true }
+  );
   return true;
 }
 
@@ -87,4 +108,10 @@ export async function subscribeToOrders(onOrders: (orders: Order[]) => void): Pr
   }, (error) => {
     console.error('Firebase orders connection failed:', error);
   });
+}
+
+export async function getOrders(): Promise<Order[]> {
+  if (!db || !(await ensureFirebaseAuth())) return [];
+  const snapshot = await getDocs(collection(db, 'orders'));
+  return snapshot.docs.map((item) => item.data() as Order);
 }
