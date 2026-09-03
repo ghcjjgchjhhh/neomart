@@ -47,6 +47,9 @@ export const AdminCustomersModal: React.FC<AdminCustomersModalProps> = ({
 }) => {
   const [search, setSearch] = useState('');
   const [selectedEmail, setSelectedEmail] = useState<string | null>(null);
+  const [showEmailComposer, setShowEmailComposer] = useState(false);
+  const [emailSubject, setEmailSubject] = useState('NeoMart order update');
+  const [emailMessage, setEmailMessage] = useState('Hello,\n\nWe have an update about your NeoMart order.\n\nRegards,\nNeoMart Support');
   const [accountStates, setAccountStates] = useState<Record<string, AccountState>>(() => {
     try {
       return JSON.parse(localStorage.getItem(ACCOUNT_STATES_KEY) || '{}');
@@ -98,6 +101,23 @@ export const AdminCustomersModal: React.FC<AdminCustomersModalProps> = ({
     setSelectedEmail(null);
   };
 
+  const openEmailComposer = () => {
+    setEmailSubject('NeoMart order update');
+    setEmailMessage('Hello,\n\nWe have an update about your NeoMart order.\n\nRegards,\nNeoMart Support');
+    setShowEmailComposer(true);
+  };
+
+  const sendEmail = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!selectedCustomer || selectedCustomer.email === 'Email not provided') {
+      onToast('This customer has no email address');
+      return;
+    }
+    const mailto = `mailto:${selectedCustomer.email}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailMessage)}`;
+    window.location.href = mailto;
+    setShowEmailComposer(false);
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -133,7 +153,8 @@ export const AdminCustomersModal: React.FC<AdminCustomersModalProps> = ({
             {!selectedCustomer ? <div className="flex h-full min-h-64 flex-col items-center justify-center text-center text-gray-400"><UserRound className="mb-3 h-10 w-10 opacity-40" /><p className="text-sm font-bold">Select a customer</p><p className="mt-1 text-xs">Search by name, email or phone to open their profile.</p></div> : (() => {
               const state = accountStates[selectedCustomer.email] || {};
               return <div className="space-y-4">
-                <div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="text-lg font-extrabold text-gray-900 dark:text-white">{selectedCustomer.name}</h3><p className="mt-1 text-xs text-gray-500">{selectedCustomer.email !== 'Email not provided' ? selectedCustomer.email : selectedCustomer.phone} · Last activity: {selectedCustomer.lastActivity}</p></div><div className="flex gap-2"><button type="button" onClick={() => updateState(selectedCustomer.email, { revokedAt: new Date().toISOString() }, 'All customer sessions revoked')} className="flex items-center gap-1.5 rounded-lg border border-amber-500 px-3 py-2 text-[11px] font-bold text-amber-600 hover:bg-amber-50"><ShieldOff className="h-3.5 w-3.5" />Force logout</button><button type="button" onClick={() => deleteCustomer(selectedCustomer.email)} className="flex items-center gap-1.5 rounded-lg border border-red-500 px-3 py-2 text-[11px] font-bold text-red-600 hover:bg-red-50"><Trash2 className="h-3.5 w-3.5" />Delete</button></div></div>
+                {showEmailComposer && <form onSubmit={sendEmail} className="rounded-2xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-900/60 dark:bg-blue-950/20"><div className="mb-3 flex items-center justify-between"><div><h4 className="font-extrabold">Email customer</h4><p className="text-[11px] text-gray-500">To: {selectedCustomer.email}</p></div><button type="button" onClick={() => setShowEmailComposer(false)} aria-label="Close email composer"><X className="h-4 w-4" /></button></div><div className="space-y-2"><input value={emailSubject} onChange={(event) => setEmailSubject(event.target.value)} placeholder="Subject" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs dark:border-gray-700 dark:bg-[#202024]" required /><textarea value={emailMessage} onChange={(event) => setEmailMessage(event.target.value)} rows={6} placeholder="Write your message" className="w-full resize-y rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs dark:border-gray-700 dark:bg-[#202024]" required /></div><button type="submit" className="mt-3 flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700"><Mail className="h-4 w-4" />Open email app</button></form>}
+                <div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="text-lg font-extrabold text-gray-900 dark:text-white">{selectedCustomer.name}</h3><p className="mt-1 text-xs text-gray-500">{selectedCustomer.email !== 'Email not provided' ? selectedCustomer.email : selectedCustomer.phone} · Last activity: {selectedCustomer.lastActivity}</p></div><div className="flex flex-wrap gap-2"><button type="button" onClick={openEmailComposer} disabled={selectedCustomer.email === 'Email not provided'} className="flex items-center gap-1.5 rounded-lg border border-blue-500 px-3 py-2 text-[11px] font-bold text-blue-600 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-40"><Mail className="h-3.5 w-3.5" />Email customer</button><button type="button" onClick={() => updateState(selectedCustomer.email, { revokedAt: new Date().toISOString() }, 'All customer sessions revoked')} className="flex items-center gap-1.5 rounded-lg border border-amber-500 px-3 py-2 text-[11px] font-bold text-amber-600 hover:bg-amber-50"><ShieldOff className="h-3.5 w-3.5" />Force logout</button><button type="button" onClick={() => deleteCustomer(selectedCustomer.email)} className="flex items-center gap-1.5 rounded-lg border border-red-500 px-3 py-2 text-[11px] font-bold text-red-600 hover:bg-red-50"><Trash2 className="h-3.5 w-3.5" />Delete</button></div></div>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-3"><div className="rounded-xl border border-gray-200 p-3 dark:border-gray-800"><Phone className="mb-2 h-4 w-4 text-[#f68b1e]" /><p className="text-[10px] text-gray-500">Phone</p><strong className="text-xs">{selectedCustomer.phone}</strong></div><div className="rounded-xl border border-gray-200 p-3 dark:border-gray-800"><History className="mb-2 h-4 w-4 text-blue-500" /><p className="text-[10px] text-gray-500">Purchases</p><strong className="text-xs">{selectedCustomer.orders.length} orders</strong></div><div className="rounded-xl border border-gray-200 p-3 dark:border-gray-800"><Mail className="mb-2 h-4 w-4 text-emerald-500" /><p className="text-[10px] text-gray-500">Spent</p><strong className="text-xs">₦{selectedCustomer.orders.reduce((sum, order) => sum + order.total, 0).toLocaleString()}</strong></div></div>
                 <div className="flex flex-wrap gap-2 rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-[#202024]"><button type="button" onClick={() => updateState(selectedCustomer.email, { disabled: !state.disabled }, state.disabled ? 'Customer account enabled' : 'Customer account disabled')} className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-bold text-white ${state.disabled ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-gray-700 hover:bg-gray-800'}`}>{state.disabled ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Ban className="h-3.5 w-3.5" />}{state.disabled ? 'Enable account' : 'Disable account'}</button>{state.revokedAt && <span className="flex items-center gap-1 text-[10px] text-amber-600"><Clock3 className="h-3.5 w-3.5" />Sessions revoked {new Date(state.revokedAt).toLocaleString()}</span>}{state.deletedAt && <span className="text-[10px] font-bold text-red-600">Deletion requested</span>}</div>
                 <div><h4 className="mb-2 text-sm font-extrabold">Saved addresses</h4>{selectedCustomer.addresses.length ? <div className="grid gap-2 sm:grid-cols-2">{selectedCustomer.addresses.map((address) => <div key={address} className="flex gap-2 rounded-xl border border-gray-200 p-3 text-xs dark:border-gray-800"><MapPin className="h-4 w-4 shrink-0 text-[#f68b1e]" /><span>{address}</span></div>)}</div> : <p className="text-xs text-gray-500">No saved addresses.</p>}</div>
