@@ -17,6 +17,10 @@ export const AdminStockModal: React.FC<AdminStockModalProps> = ({ isOpen, onClos
   const filteredProducts = allProducts.filter((product) =>
     product.name.toLowerCase().includes(search.toLowerCase())
   );
+  const lowStockProducts = allProducts.filter((product) => {
+    const stock = stockLevels[product.id] ?? 10;
+    return stock > 0 && stock < 5;
+  });
 
   const updateStock = (productId: number, value: string) => {
     const nextValue = Math.max(0, Number.parseInt(value, 10) || 0);
@@ -42,6 +46,17 @@ export const AdminStockModal: React.FC<AdminStockModalProps> = ({ isOpen, onClos
         </div>
 
         <div className="p-4 overflow-y-auto space-y-3">
+          {lowStockProducts.length > 0 && (
+            <div className="rounded-xl border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 p-3">
+              <div className="font-extrabold text-amber-800 dark:text-amber-300">
+                Low-stock alert: {lowStockProducts.length} product{lowStockProducts.length === 1 ? '' : 's'}
+              </div>
+              <div className="mt-1 text-[11px] text-amber-700 dark:text-amber-400">
+                {lowStockProducts.map((product) => `${product.name} (${stockLevels[product.id] ?? 10} left)`).join(', ')}
+              </div>
+            </div>
+          )}
+
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
