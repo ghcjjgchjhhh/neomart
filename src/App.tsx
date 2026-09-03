@@ -26,6 +26,7 @@ import { Toast } from './components/Toast';
 import { SplashScreen } from './components/SplashScreen';
 
 const ADMIN_EMAIL = 'ifeanyianoma2@gmail.com';
+const SUPPORT_PHONE = '08135642842';
 
 import { allProducts, flashProductIds } from './data/products';
 import { initialReviews, sampleOrders } from './data/ordersAndReviews';
@@ -112,6 +113,8 @@ export default function App() {
           )
         : [];
       return storedOrders.map((order) =>
+        order.phone === SUPPORT_PHONE ? { ...order, phone: '' } : order
+      ).map((order) =>
         !order.paymentConfirmed &&
         order.paymentMethod !== 'Payment on Delivery' &&
         (order.status === 'Out for Delivery' || order.status === 'Order Confirmed')
@@ -468,7 +471,7 @@ export default function App() {
     const newOrder: Order = {
       id: newOrderId,
       orderSource: 'customer',
-      phone: _deliveryDetails?.phone || '',
+      phone: _deliveryDetails?.phone?.trim() || '',
       email: currentUserEmail.includes('@') ? currentUserEmail : '',
       customerName: accountName || undefined,
       date: new Date().toISOString().split('T')[0],

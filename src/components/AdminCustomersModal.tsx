@@ -59,16 +59,18 @@ export const AdminCustomersModal: React.FC<AdminCustomersModalProps> = ({
     const grouped = new Map<string, CustomerRecord>();
     orders.forEach((order) => {
       const email = order.email?.trim().toLowerCase() || `phone:${order.phone || order.id}`;
+      const customerPhone = order.phone === '08135642842' ? '' : order.phone;
       const current = grouped.get(email) || {
         name: order.customerName || order.email?.split('@')[0] || 'Customer',
         email: order.email || 'Email not provided',
-        phone: order.phone || 'Phone not provided',
+        phone: customerPhone || 'Phone not provided',
         orders: [],
         addresses: [],
         lastActivity: order.date,
       };
       current.orders.push(order);
       if (!current.name || current.name === 'Customer') current.name = order.customerName || current.name;
+      if (current.phone === 'Phone not provided' && customerPhone) current.phone = customerPhone;
       if (order.address && !current.addresses.includes(order.address)) current.addresses.push(order.address);
       if (new Date(order.date).getTime() > new Date(current.lastActivity).getTime()) current.lastActivity = order.date;
       grouped.set(email, current);
