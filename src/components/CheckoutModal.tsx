@@ -16,7 +16,7 @@ interface CheckoutModalProps {
   isOpen: boolean;
   onClose: () => void;
   cart: CartItem[];
-  onCompleteOrder: (method: PaymentMethodType, deliveryDetails?: DeliveryDetails) => void;
+  onCompleteOrder: (method: PaymentMethodType, deliveryDetails?: DeliveryDetails, discountAmount?: number) => void;
   showToast: (msg: string) => void;
 }
 
@@ -29,6 +29,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 }) => {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>('delivery');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
+  const [couponApplied, setCouponApplied] = useState(false);
 
   // Delivery state
   const [delivery, setDelivery] = useState<DeliveryDetails>({
@@ -47,7 +49,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
   if (!isOpen) return null;
 
-  const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const discount = couponApplied ? Math.round(subtotal * 0.1) : 0;
+  const total = subtotal - discount;
 
   const formatPrice = (amount: number) => {
     return '₦' + amount.toLocaleString('en-NG');
@@ -86,11 +90,15 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       showToast('Please provide a valid Nigerian contact phone number');
       return;
     }
+    if (couponCode.trim() && !couponApplied) {
+      showToast('Apply a valid coupon before confirming the order');
+      return;
+    }
 
     setIsProcessing(true);
     setTimeout(() => {
       setIsProcessing(false);
-      onCompleteOrder(paymentMethod, delivery);
+      onCompleteOrder(paymentMethod, paymentMethod === 'delivery' ? delivery : undefined, discount);
     }, 1000);
   };
 
@@ -162,7 +170,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                     {filteredStates.map((st) => (
                       <button
                         key={st}
-                        type="button"
                         onClick={() => {
                           setDelivery({ ...delivery, state: st, city: '' });
                           setShowStateDropdown(false);
@@ -297,12 +304,49 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             </div>
           </div>
 
+          <div className="border border-gray-200 dark:border-gray-700 rounded-xl p-3 space-y-2">
+            <label className="font-bold text-gray-700 dark:text-gray-300">Coupon code</label>
+            <div className="flex gap-2">
+              <input
+                value={couponCode}
+                onChange={(event) => {
+                  setCouponCode(event.target.value.toUpperCase());
+                  setCouponApplied(false);
+                }}
+                placeholder="Enter coupon code"
+                className="min-w-0 flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#18181b] text-gray-800 dark:text-gray-200"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (couponCode.trim() === 'NEO10') {
+                    setCouponApplied(true);
+                    showToast('Coupon applied: 10% off');
+                  } else {
+                    setCouponApplied(false);
+                    showToast('Invalid coupon code');
+                  }
+                }}
+                className="px-3 py-2 rounded-lg bg-gray-900 text-white font-bold"
+              >
+                Apply
+              </button>
+            </div>
+            {couponApplied && <div className="text-emerald-600 font-bold">NEO10 applied: 10% off</div>}
+          </div>
+
           {/* Summary Box */}
           <div className="bg-gray-50 dark:bg-[#222222] border border-gray-200 dark:border-gray-800 rounded-xl p-4 space-y-2">
             <div className="flex justify-between text-gray-600 dark:text-gray-400">
               <span>Subtotal ({cart.reduce((s, i) => s + i.qty, 0)} items)</span>
               <strong className="text-gray-800 dark:text-gray-200 font-bold">{formatPrice(total)}</strong>
             </div>
+            {discount > 0 && (
+              <div className="flex justify-between text-emerald-600">
+                <span>Coupon discount</span>
+                <strong>-{formatPrice(discount)}</strong>
+              </div>
+            )}
             <div className="flex justify-between text-gray-600 dark:text-gray-400">
               <span>Express Delivery ({delivery.state || 'Lagos'})</span>
               <strong className="text-emerald-600 font-bold">Free</strong>

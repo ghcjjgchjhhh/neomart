@@ -383,7 +383,8 @@ export default function App() {
 
   const handleCompleteOrder = (
     method: PaymentMethodType,
-    _deliveryDetails?: DeliveryDetails
+    _deliveryDetails?: DeliveryDetails,
+    discountAmount = 0
   ) => {
     setLastPaymentMethod(method);
 
@@ -423,7 +424,7 @@ export default function App() {
           ? 'Card Payment'
           : 'Bank Transfer (GTBank)',
       address: fullAddress,
-      total: calculatedTotal > 0 ? calculatedTotal : 150000,
+      total: Math.max(0, (calculatedTotal > 0 ? calculatedTotal : 150000) - discountAmount),
       items:
         orderItems.length > 0
           ? orderItems
