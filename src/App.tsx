@@ -30,6 +30,7 @@ const ADMIN_EMAIL = 'ifeanyianoma2@gmail.com';
 import { allProducts, flashProductIds } from './data/products';
 import { initialReviews, sampleOrders } from './data/ordersAndReviews';
 import { confirmOrderPayment, getOrders, saveOrder, saveCustomerProfile, subscribeToOrders, updateOrderStatus, updateOrderDelivery, saveStockLevel, subscribeToStock } from './config/ordersService';
+import { auth } from './config/firebase';
 import {
   Product,
   CartItem,
@@ -467,8 +468,9 @@ export default function App() {
     const newOrder: Order = {
       id: newOrderId,
       orderSource: 'customer',
-      phone: _deliveryDetails?.phone || '08135642842',
-      email: currentUserEmail || ADMIN_EMAIL,
+      phone: _deliveryDetails?.phone || '',
+      email: currentUserEmail.includes('@') ? currentUserEmail : '',
+      customerName: accountName || undefined,
       date: new Date().toISOString().split('T')[0],
       eta: new Date(Date.now() + 2 * 86400000).toISOString().split('T')[0],
       status: method === 'delivery' ? 'Order Placed' : 'Processing',
@@ -953,6 +955,11 @@ export default function App() {
           localStorage.setItem('neomart_logged_in', 'true');
           localStorage.setItem('neomart_user_email', id);
           localStorage.setItem('neomart_account_name', name || id.split('@')[0]);
+          void saveCustomerProfile({
+            email: id.includes('@') ? id : undefined,
+            displayName: name || id.split('@')[0],
+            phone: auth?.currentUser?.phoneNumber || undefined,
+          }).catch(() => {});
         }}
         onLogout={() => {
           setIsLoggedIn(false);

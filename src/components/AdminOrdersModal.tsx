@@ -273,7 +273,7 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] bg-white dark:bg-[#18181b] p-3 rounded-xl border border-gray-200 dark:border-gray-800">
                   <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
                     <Phone className="w-3.5 h-3.5 text-[#f68b1e]" />
-                    <span>Customer Phone: <strong>{ord.phone || '08135642842'}</strong></span>
+                    <span>Customer Phone: <strong>{ord.phone || 'Not provided'}</strong></span>
                   </div>
                   <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
                     <MapPin className="w-3.5 h-3.5 text-[#f68b1e]" />

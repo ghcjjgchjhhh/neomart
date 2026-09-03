@@ -56,6 +56,7 @@ export interface Order {
   orderSource?: 'customer';
   phone: string;
   email: string;
+  customerName?: string;
   date: string;
   eta: string;
   status:

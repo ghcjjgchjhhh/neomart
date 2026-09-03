@@ -16,6 +16,7 @@ import {
 import { Order } from '../types';
 
 interface CustomerRecord {
+  name: string;
   email: string;
   phone: string;
   orders: Order[];
@@ -57,8 +58,9 @@ export const AdminCustomersModal: React.FC<AdminCustomersModalProps> = ({
   const customers = useMemo<CustomerRecord[]>(() => {
     const grouped = new Map<string, CustomerRecord>();
     orders.forEach((order) => {
-      const email = order.email?.trim().toLowerCase() || `phone:${order.phone}`;
+      const email = order.email?.trim().toLowerCase() || `phone:${order.phone || order.id}`;
       const current = grouped.get(email) || {
+        name: order.customerName || order.email?.split('@')[0] || 'Customer',
         email: order.email || 'Email not provided',
         phone: order.phone || 'Phone not provided',
         orders: [],
@@ -66,6 +68,7 @@ export const AdminCustomersModal: React.FC<AdminCustomersModalProps> = ({
         lastActivity: order.date,
       };
       current.orders.push(order);
+      if (!current.name || current.name === 'Customer') current.name = order.customerName || current.name;
       if (order.address && !current.addresses.includes(order.address)) current.addresses.push(order.address);
       if (new Date(order.date).getTime() > new Date(current.lastActivity).getTime()) current.lastActivity = order.date;
       grouped.set(email, current);
@@ -77,7 +80,7 @@ export const AdminCustomersModal: React.FC<AdminCustomersModalProps> = ({
 
   const filteredCustomers = customers.filter((customer) => {
     const query = search.toLowerCase().trim();
-    return !query || [customer.email, customer.phone, ...customer.addresses].some((value) => value.toLowerCase().includes(query));
+    return !query || [customer.name, customer.email, customer.phone, ...customer.addresses].some((value) => value.toLowerCase().includes(query));
   });
   const selectedCustomer = customers.find((customer) => customer.email.toLowerCase() === selectedEmail?.toLowerCase()) || null;
 
@@ -115,7 +118,8 @@ export const AdminCustomersModal: React.FC<AdminCustomersModalProps> = ({
                 const state = accountStates[customer.email];
                 const active = selectedEmail?.toLowerCase() === customer.email.toLowerCase();
                 return <button type="button" key={customer.email} onClick={() => setSelectedEmail(customer.email)} className={`w-full rounded-xl border p-3 text-left transition-colors ${active ? 'border-[#f68b1e] bg-orange-50 dark:bg-orange-950/20' : 'border-gray-200 hover:border-gray-300 dark:border-gray-800 dark:hover:border-gray-700'}`}>
-                  <div className="flex items-start justify-between gap-2"><strong className="truncate text-xs text-gray-900 dark:text-white">{customer.email}</strong>{state?.disabled && <Ban className="h-3.5 w-3.5 shrink-0 text-red-500" />}</div>
+                  <div className="flex items-start justify-between gap-2"><strong className="truncate text-xs text-gray-900 dark:text-white">{customer.name}</strong>{state?.disabled && <Ban className="h-3.5 w-3.5 shrink-0 text-red-500" />}</div>
+                  <div className="mt-0.5 truncate text-[10px] text-gray-500">{customer.email !== 'Email not provided' ? customer.email : customer.phone}</div>
                   <div className="mt-1 flex items-center justify-between text-[10px] text-gray-500"><span>{customer.orders.length} order{customer.orders.length === 1 ? '' : 's'}</span><span>{customer.lastActivity}</span></div>
                 </button>;
               })}
@@ -127,7 +131,7 @@ export const AdminCustomersModal: React.FC<AdminCustomersModalProps> = ({
             {!selectedCustomer ? <div className="flex h-full min-h-64 flex-col items-center justify-center text-center text-gray-400"><UserRound className="mb-3 h-10 w-10 opacity-40" /><p className="text-sm font-bold">Select a customer</p><p className="mt-1 text-xs">Search by name, email or phone to open their profile.</p></div> : (() => {
               const state = accountStates[selectedCustomer.email] || {};
               return <div className="space-y-4">
-                <div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="text-lg font-extrabold text-gray-900 dark:text-white">{selectedCustomer.email}</h3><p className="mt-1 text-xs text-gray-500">Last activity: {selectedCustomer.lastActivity}</p></div><div className="flex gap-2"><button type="button" onClick={() => updateState(selectedCustomer.email, { revokedAt: new Date().toISOString() }, 'All customer sessions revoked')} className="flex items-center gap-1.5 rounded-lg border border-amber-500 px-3 py-2 text-[11px] font-bold text-amber-600 hover:bg-amber-50"><ShieldOff className="h-3.5 w-3.5" />Force logout</button><button type="button" onClick={() => deleteCustomer(selectedCustomer.email)} className="flex items-center gap-1.5 rounded-lg border border-red-500 px-3 py-2 text-[11px] font-bold text-red-600 hover:bg-red-50"><Trash2 className="h-3.5 w-3.5" />Delete</button></div></div>
+                <div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="text-lg font-extrabold text-gray-900 dark:text-white">{selectedCustomer.name}</h3><p className="mt-1 text-xs text-gray-500">{selectedCustomer.email !== 'Email not provided' ? selectedCustomer.email : selectedCustomer.phone} · Last activity: {selectedCustomer.lastActivity}</p></div><div className="flex gap-2"><button type="button" onClick={() => updateState(selectedCustomer.email, { revokedAt: new Date().toISOString() }, 'All customer sessions revoked')} className="flex items-center gap-1.5 rounded-lg border border-amber-500 px-3 py-2 text-[11px] font-bold text-amber-600 hover:bg-amber-50"><ShieldOff className="h-3.5 w-3.5" />Force logout</button><button type="button" onClick={() => deleteCustomer(selectedCustomer.email)} className="flex items-center gap-1.5 rounded-lg border border-red-500 px-3 py-2 text-[11px] font-bold text-red-600 hover:bg-red-50"><Trash2 className="h-3.5 w-3.5" />Delete</button></div></div>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-3"><div className="rounded-xl border border-gray-200 p-3 dark:border-gray-800"><Phone className="mb-2 h-4 w-4 text-[#f68b1e]" /><p className="text-[10px] text-gray-500">Phone</p><strong className="text-xs">{selectedCustomer.phone}</strong></div><div className="rounded-xl border border-gray-200 p-3 dark:border-gray-800"><History className="mb-2 h-4 w-4 text-blue-500" /><p className="text-[10px] text-gray-500">Purchases</p><strong className="text-xs">{selectedCustomer.orders.length} orders</strong></div><div className="rounded-xl border border-gray-200 p-3 dark:border-gray-800"><Mail className="mb-2 h-4 w-4 text-emerald-500" /><p className="text-[10px] text-gray-500">Spent</p><strong className="text-xs">₦{selectedCustomer.orders.reduce((sum, order) => sum + order.total, 0).toLocaleString()}</strong></div></div>
                 <div className="flex flex-wrap gap-2 rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-[#202024]"><button type="button" onClick={() => updateState(selectedCustomer.email, { disabled: !state.disabled }, state.disabled ? 'Customer account enabled' : 'Customer account disabled')} className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-bold text-white ${state.disabled ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-gray-700 hover:bg-gray-800'}`}>{state.disabled ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Ban className="h-3.5 w-3.5" />}{state.disabled ? 'Enable account' : 'Disable account'}</button>{state.revokedAt && <span className="flex items-center gap-1 text-[10px] text-amber-600"><Clock3 className="h-3.5 w-3.5" />Sessions revoked {new Date(state.revokedAt).toLocaleString()}</span>}{state.deletedAt && <span className="text-[10px] font-bold text-red-600">Deletion requested</span>}</div>
                 <div><h4 className="mb-2 text-sm font-extrabold">Saved addresses</h4>{selectedCustomer.addresses.length ? <div className="grid gap-2 sm:grid-cols-2">{selectedCustomer.addresses.map((address) => <div key={address} className="flex gap-2 rounded-xl border border-gray-200 p-3 text-xs dark:border-gray-800"><MapPin className="h-4 w-4 shrink-0 text-[#f68b1e]" /><span>{address}</span></div>)}</div> : <p className="text-xs text-gray-500">No saved addresses.</p>}</div>
