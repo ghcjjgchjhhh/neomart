@@ -195,3 +195,36 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+.admin-dashboard {
+  background-image: radial-gradient(circle at 88% 0%, rgba(246, 139, 30, 0.08), transparent 28rem);
+}
+
+.admin-dashboard main .bg-white {
+  background-color: #151a1f;
+}
+
+.admin-dashboard main .border-gray-200 {
+  border-color: #273039;
+}
+
+.admin-dashboard main .text-gray-950,
+.admin-dashboard main .text-gray-900 {
+  color: #f4f6f8;
+}
+
+.admin-dashboard main .text-gray-700,
+.admin-dashboard main .text-gray-600,
+.admin-dashboard main .text-gray-500 {
+  color: #9ba6b2;
+}
+
+.admin-dashboard main .bg-gray-50 {
+  background-color: #20272e;
+}
+
+@media (max-width: 1023px) {
+  .admin-dashboard main {
+    padding-bottom: 2rem;
+  }
+}

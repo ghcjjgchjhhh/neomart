@@ -19,7 +19,7 @@ import { AdminOrderAlert } from './components/AdminOrderAlert';
 import { AdminStockModal } from './components/AdminStockModal';
 import { OrderHistoryModal } from './components/OrderHistoryModal';
 import { AdminSalesReportModal } from './components/AdminSalesReportModal';
-import { AdminCustomersModal } from './components/AdminCustomersModal';
+import { AdminCustomersModal, type AccountState } from './components/AdminCustomersModal';
 import { OrderTrackingModal } from './components/TrackingModal';
 import { Footer } from './components/Footer';
 import { Toast } from './components/Toast';
@@ -30,8 +30,8 @@ const SUPPORT_PHONE = '08135642842';
 
 import { allProducts as initialProducts, flashProductIds } from './data/products';
 import { initialReviews, sampleOrders } from './data/ordersAndReviews';
-import { confirmOrderPayment, getOrders, saveOrder, saveCustomerProfile, subscribeToOrders, updateOrderStatus, updateOrderDelivery, saveStockLevel, subscribeToStock } from './config/ordersService';
-import { auth } from './config/firebase';
+import { confirmOrderPayment, getOrders, saveOrder, saveCustomerProfile, subscribeToOrders, updateOrderStatus, updateOrderDelivery, saveStockLevel, subscribeToStock, subscribeToCustomerAccountState, updateCustomerAccountState, getCustomerAccountState } from './config/ordersService';
+import { auth, getGoogleRedirectUser } from './config/firebase';
 import {
   Product,
   CartItem,
@@ -57,10 +57,23 @@ import {
   Headphones,
   Footprints,
   SlidersHorizontal,
-  ArrowUpDown
+  ArrowUpDown,
+  Package,
+  Warehouse,
+  BarChart3,
+  Users,
+  MessageCircle,
+  Send,
+  TrendingUp,
+  AlertTriangle,
+  LayoutDashboard
 } from 'lucide-react';
 
 export default function App() {
+  const trackingPathMatch = window.location.pathname.match(/^\/track\/([^/]+)$/i);
+  const trackingPathOrderId = trackingPathMatch ? decodeURIComponent(trackingPathMatch[1]) : null;
+  const isAdminPath = /^\/admin\/?$/i.test(window.location.pathname);
+
   const [products, setProducts] = useState<Product[]>(() => {
     try {
       const saved = localStorage.getItem('neomart_products');
@@ -91,10 +104,14 @@ export default function App() {
   const [currentUserEmail, setCurrentUserEmail] = useState(() =>
     localStorage.getItem('neomart_user_email') || ''
   );
+  const [sessionStartedAt, setSessionStartedAt] = useState(() =>
+    Number(localStorage.getItem('neomart_session_started_at')) || Date.now()
+  );
   const [accountName, setAccountName] = useState(() =>
     localStorage.getItem('neomart_account_name') || ''
   );
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [isCustomerAccessBlocked, setIsCustomerAccessBlocked] = useState(false);
 
   // Cart state
   const [cart, setCart] = useState<CartItem[]>(() => {
@@ -139,8 +156,8 @@ export default function App() {
       return [];
     }
   });
-  const [isOrderTrackingOpen, setIsOrderTrackingOpen] = useState(false);
-  const [trackingOrderId, setTrackingOrderId] = useState<string | null>(null);
+  const [isOrderTrackingOpen, setIsOrderTrackingOpen] = useState(Boolean(trackingPathOrderId));
+  const [trackingOrderId, setTrackingOrderId] = useState<string | null>(trackingPathOrderId);
   const [lastPlacedOrderId, setLastPlacedOrderId] = useState<string | null>(null);
   const lastPlacedOrderIdRef = useRef<string | null>(null);
   const remoteStatusesRef = useRef<Record<string, string>>({});
@@ -159,7 +176,7 @@ export default function App() {
   const [lastPaymentMethod, setLastPaymentMethod] = useState<PaymentMethodType>('delivery');
 
   const [isHelpOpen, setIsHelpOpen] = useState(false);
-  const [currentView, setCurrentView] = useState<'store' | 'admin'>('store');
+  const [currentView, setCurrentView] = useState<'store' | 'admin'>(isAdminPath ? 'admin' : 'store');
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isConfirmOrdersOpen, setIsConfirmOrdersOpen] = useState(false);
   const [isStockOpen, setIsStockOpen] = useState(false);
@@ -186,7 +203,68 @@ export default function App() {
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [adminOrderAlert, setAdminOrderAlert] = useState<Order | null>(null);
+  const [adminChatInput, setAdminChatInput] = useState('');
+  const [adminChatMessages, setAdminChatMessages] = useState([
+    { from: 'support', text: 'Good morning. I am watching today\'s orders with you.' },
+    { from: 'support', text: 'Ask me to surface pending payments or stock risks.' },
+  ]);
   const [showSplash, setShowSplash] = useState(true);
+
+  useEffect(() => {
+    void getGoogleRedirectUser().then((user) => {
+      if (!user) return;
+      const email = user.email || user.uid;
+      const name = user.displayName || email.split('@')[0];
+      return getCustomerAccountState(email).then((state) => {
+        if (state.revokedAt || state.disabled || state.deletedAt) {
+          setIsCustomerAccessBlocked(true);
+          setIsLoginOpen(true);
+          showToast('This account is blocked by NeoMart support.');
+          return;
+        }
+        setIsCustomerAccessBlocked(false);
+      setIsLoggedIn(true);
+      setCurrentUserEmail(email);
+      setAccountName(name);
+      const startedAt = Date.now();
+      setSessionStartedAt(startedAt);
+      localStorage.setItem('neomart_logged_in', 'true');
+      localStorage.setItem('neomart_user_email', email);
+      localStorage.setItem('neomart_account_name', name);
+      localStorage.setItem('neomart_session_started_at', String(startedAt));
+      if (email.toLowerCase() === ADMIN_EMAIL) {
+        setCurrentView('admin');
+        window.history.replaceState({}, '', '/admin');
+      }
+      showToast(`Signed in with Google as ${email}`);
+      });
+    }).catch(() => {
+      showToast('Google sign-in failed. Check Firebase Google sign-in settings.');
+    });
+  }, []);
+
+  useEffect(() => {
+    const email = currentUserEmail.trim().toLowerCase();
+    if (!email || email === ADMIN_EMAIL) return;
+    let unsubscribe: (() => void) | null = null;
+    subscribeToCustomerAccountState(email, (state) => {
+      if (!state.revokedAt && !state.disabled && !state.deletedAt) {
+        setIsCustomerAccessBlocked(false);
+        return;
+      }
+      setIsCustomerAccessBlocked(true);
+      setIsLoggedIn(false);
+      setCurrentUserEmail('');
+      setAccountName('');
+      localStorage.removeItem('neomart_logged_in');
+      localStorage.removeItem('neomart_user_email');
+      localStorage.removeItem('neomart_account_name');
+      showToast('Your NeoMart session was signed out by support.');
+    }).then((cleanup) => {
+      unsubscribe = cleanup;
+    }).catch(() => {});
+    return () => unsubscribe?.();
+  }, [currentUserEmail, sessionStartedAt]);
 
   // Sync theme
   useEffect(() => {
@@ -428,14 +506,17 @@ export default function App() {
   const openAdminPortal = () => {
     setCurrentView('admin');
     setIsAdminOpen(true);
+    window.history.pushState({}, '', '/admin');
   };
 
   const openStorefront = () => {
     setCurrentView('store');
     setIsAdminOpen(false);
+    window.history.pushState({}, '', '/');
   };
 
-  const handleConfirmOrderPayment = (orderId: string) => {
+  const handleConfirmOrderPayment = async (orderId: string) => {
+    const previousOrders = orders;
     setOrders((prev) =>
       prev.map((order) =>
         order.id === orderId
@@ -443,10 +524,15 @@ export default function App() {
           : order
       )
     );
-    void confirmOrderPayment(orderId).catch(() => {
-      showToast('Could not sync confirmation. Check Firebase connection.');
-    });
-    showToast('Order confirmed successfully');
+    try {
+      const saved = await confirmOrderPayment(orderId);
+      if (!saved) throw new Error('Firebase authentication is unavailable');
+      showToast('Order confirmed successfully');
+    } catch (error) {
+      setOrders(previousOrders);
+      const message = error instanceof Error ? error.message : 'Firebase could not save the confirmation';
+      showToast(`Confirmation failed: ${message}`);
+    }
   };
 
   // Checkout flow
@@ -456,11 +542,15 @@ export default function App() {
   };
 
   const handleOpenLiveTracking = (orderId?: string) => {
-    setTrackingOrderId(orderId || null);
+    const nextOrderId = orderId || null;
+    setTrackingOrderId(nextOrderId);
     setIsOrderTrackingOpen(true);
+    if (nextOrderId) {
+      window.history.pushState({}, '', `/track/${encodeURIComponent(nextOrderId)}`);
+    }
   };
 
-  const customerOrders = orders.filter(
+  const customerOrdersForAccount = orders.filter(
     (order) =>
       order.orderSource === 'customer' &&
       (order.email === currentUserEmail || customerOrderIds.includes(order.id))
@@ -607,6 +697,17 @@ export default function App() {
     .filter((p): p is Product => Boolean(p));
 
   const totalCartCount = cart.reduce((sum, item) => sum + item.qty, 0);
+  const allCustomerOrders = orders.filter((order) => order.orderSource === 'customer');
+  const customerOrders = allCustomerOrders;
+  const confirmedCustomerOrders = allCustomerOrders.filter((order) => order.paymentConfirmed === true);
+  const pendingCustomerOrders = allCustomerOrders.filter((order) => order.paymentConfirmed !== true);
+  const processingCustomerOrders = allCustomerOrders.filter((order) => order.status === 'Processing');
+  const deliveredCustomerOrders = allCustomerOrders.filter((order) => order.status === 'Delivered');
+  const confirmedRevenue = confirmedCustomerOrders.reduce((total, order) => total + order.total, 0);
+  const pieTotal = Math.max(allCustomerOrders.length, 1);
+  const pieConfirmed = Math.round((confirmedCustomerOrders.length / pieTotal) * 100);
+  const pieProcessing = Math.round((processingCustomerOrders.length / pieTotal) * 100);
+  const pieDelivered = Math.max(0, 100 - pieConfirmed - pieProcessing);
 
   const categoryCards = [
     { id: 'phone', label: 'Phones', icon: <Smartphone className="w-6 h-6 text-[#f68b1e]" /> },
@@ -625,80 +726,19 @@ export default function App() {
 
   if (currentView === 'admin') {
     return (
-      <div className="min-h-screen bg-[#f5f5f5] dark:bg-[#0f0f0f] text-gray-900 dark:text-gray-100 transition-colors">
-        <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
-          <div className="mb-6 flex flex-col gap-4 rounded-3xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-[#18181b] sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f68b1e]">NeoMart admin</p>
-              <h1 className="mt-1 text-2xl font-black text-gray-900 dark:text-white">Operations dashboard</h1>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={openStorefront}
-                className="rounded-xl border border-gray-300 px-4 py-2 text-sm font-bold text-gray-700 transition hover:border-[#f68b1e] hover:text-[#f68b1e] dark:border-gray-700 dark:text-gray-200"
-              >
-                Back to store
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsAdminOpen(true)}
-                className="rounded-xl bg-[#f68b1e] px-4 py-2 text-sm font-bold text-white transition hover:bg-orange-600"
-              >
-                Open orders
-              </button>
-            </div>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <button
-              type="button"
-              onClick={() => setIsAdminOpen(true)}
-              className="rounded-2xl border border-gray-200 bg-white p-5 text-left shadow-sm transition hover:border-[#f68b1e] dark:border-gray-800 dark:bg-[#18181b]"
-            >
-              <div className="mb-3 inline-flex rounded-xl bg-[#f68b1e]/10 p-2 text-[#f68b1e]">
-                <Package className="h-5 w-5" />
-              </div>
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white">Orders</h2>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Review, confirm, and dispatch customer orders.</p>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setIsStockOpen(true)}
-              className="rounded-2xl border border-gray-200 bg-white p-5 text-left shadow-sm transition hover:border-[#f68b1e] dark:border-gray-800 dark:bg-[#18181b]"
-            >
-              <div className="mb-3 inline-flex rounded-xl bg-emerald-500/10 p-2 text-emerald-600">
-                <Warehouse className="h-5 w-5" />
-              </div>
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white">Inventory</h2>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Update stock levels and manage product listings.</p>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setIsSalesReportOpen(true)}
-              className="rounded-2xl border border-gray-200 bg-white p-5 text-left shadow-sm transition hover:border-[#f68b1e] dark:border-gray-800 dark:bg-[#18181b]"
-            >
-              <div className="mb-3 inline-flex rounded-xl bg-blue-500/10 p-2 text-blue-600">
-                <BarChart3 className="h-5 w-5" />
-              </div>
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white">Sales</h2>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Track confirmed sales and revenue performance.</p>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setIsCustomerManagementOpen(true)}
-              className="rounded-2xl border border-gray-200 bg-white p-5 text-left shadow-sm transition hover:border-[#f68b1e] dark:border-gray-800 dark:bg-[#18181b]"
-            >
-              <div className="mb-3 inline-flex rounded-xl bg-violet-500/10 p-2 text-violet-600">
-                <Users className="h-5 w-5" />
-              </div>
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white">Customers</h2>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Review customer activity and order history.</p>
-            </button>
-          </div>
+      <div className="admin-dashboard min-h-screen bg-[#0d1012] text-gray-100 transition-colors">
+        <div className="mx-auto grid min-h-screen max-w-[1500px] lg:grid-cols-[220px_1fr]">
+          <aside className="hidden border-r border-gray-200 bg-[#171b1d] p-5 text-white lg:flex lg:flex-col dark:border-gray-800">
+            <div className="flex items-center gap-2 border-b border-white/10 pb-6"><div className="grid h-9 w-9 place-items-center rounded-xl bg-[#f68b1e] font-black">N</div><div><div className="font-black">NeoMart</div><div className="text-[10px] uppercase tracking-[0.18em] text-gray-400">Control room</div></div></div>
+            <nav className="mt-8 space-y-2 text-sm font-bold"><div className="flex items-center gap-3 rounded-xl bg-[#f68b1e] px-3 py-3"><LayoutDashboard className="h-4 w-4" />Overview</div><button onClick={() => setIsAdminOpen(true)} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-gray-400 transition hover:bg-white/10 hover:text-white"><Package className="h-4 w-4" />Orders <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-[10px] text-white">{pendingCustomerOrders.length}</span></button><button onClick={() => setIsStockOpen(true)} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-gray-400 transition hover:bg-white/10 hover:text-white"><Warehouse className="h-4 w-4" />Inventory</button><button onClick={() => setIsCustomerManagementOpen(true)} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-gray-400 transition hover:bg-white/10 hover:text-white"><Users className="h-4 w-4" />Customers</button></nav>
+            <div className="mt-auto rounded-2xl border border-white/10 bg-white/5 p-4"><div className="mb-2 flex items-center gap-2 text-xs font-bold text-emerald-300"><span className="h-2 w-2 rounded-full bg-emerald-400" />All systems operational</div><p className="text-[11px] leading-5 text-gray-400">Orders, payments and inventory are syncing.</p></div>
+          </aside>
+          <main className="min-w-0 px-4 py-5 sm:px-7 lg:px-9 lg:py-8">
+            <div className="mb-7 flex flex-wrap items-center justify-between gap-4"><div><p className="text-xs font-black uppercase tracking-[0.22em] text-[#f68b1e]">Friday, September 04</p><h1 className="mt-1 text-3xl font-black tracking-tight text-gray-950 dark:text-white">Good morning, Franklin</h1><p className="mt-1 text-sm text-gray-500">Here is what is happening across your store.</p></div><div className="flex items-center gap-2"><button type="button" onClick={openStorefront} className="rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-bold text-gray-700 transition hover:border-[#f68b1e] hover:text-[#f68b1e] dark:border-gray-700 dark:bg-[#18181b] dark:text-gray-200">Back to store</button><button type="button" onClick={() => setIsAdminOpen(true)} className="rounded-xl bg-[#f68b1e] px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-orange-500/20 transition hover:bg-orange-600"><Package className="mr-2 inline h-4 w-4" />Open orders</button></div></div>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><div className="rounded-2xl bg-[#171b1d] p-5 text-white shadow-xl"><div className="flex items-center justify-between text-xs text-gray-400">Confirmed revenue <TrendingUp className="h-4 w-4 text-emerald-400" /></div><div className="mt-3 text-2xl font-black">NGN {confirmedRevenue.toLocaleString()}</div><div className="mt-2 text-[11px] text-emerald-300">+12.8% from last week</div></div><div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-[#18181b]"><div className="text-xs font-bold text-gray-500">All orders</div><div className="mt-3 text-2xl font-black">{customerOrders.length}</div><div className="mt-2 text-[11px] text-gray-500">{deliveredCustomerOrders.length} delivered</div></div><div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-[#18181b]"><div className="text-xs font-bold text-gray-500">Needs attention</div><div className="mt-3 text-2xl font-black text-red-500">{pendingCustomerOrders.length}</div><div className="mt-2 text-[11px] text-red-500">Pending payment review</div></div><div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-[#18181b]"><div className="text-xs font-bold text-gray-500">Live customers</div><div className="mt-3 text-2xl font-black">{new Set(customerOrders.map((order) => order.phone)).size}</div><div className="mt-2 text-[11px] text-gray-500">Unique shoppers</div></div></div>
+            <div className="mt-5 grid gap-5 xl:grid-cols-[1.15fr_0.85fr]"><section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-[#18181b]"><div className="flex items-center justify-between"><div><h2 className="font-black">Order health</h2><p className="mt-1 text-xs text-gray-500">Payment and fulfilment mix</p></div><button onClick={() => setIsSalesReportOpen(true)} className="text-xs font-bold text-[#f68b1e]">View report</button></div><div className="mt-6 flex items-center gap-8"><div className="relative grid h-36 w-36 shrink-0 place-items-center rounded-full" style={{ background: `conic-gradient(#f68b1e 0 ${pieConfirmed}%, #4f8cff ${pieConfirmed}% ${pieConfirmed + pieProcessing}%, #19a974 ${pieConfirmed + pieProcessing}% 100%)` }}><div className="grid h-24 w-24 place-items-center rounded-full bg-white text-center dark:bg-[#18181b]"><strong className="text-2xl">{customerOrders.length}</strong><span className="text-[10px] text-gray-500">total orders</span></div></div><div className="space-y-4 text-xs"><div><span className="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-[#f68b1e]" />Confirmed <strong className="ml-4">{pieConfirmed}%</strong></div><div><span className="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-[#4f8cff]" />Processing <strong className="ml-4">{pieProcessing}%</strong></div><div><span className="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-[#19a974]" />Delivered <strong className="ml-4">{pieDelivered}%</strong></div></div></div></section><section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-[#18181b]"><div className="flex items-center justify-between"><div><h2 className="font-black">Admin chat</h2><p className="mt-1 text-xs text-gray-500">Your operations copilot</p></div><MessageCircle className="h-5 w-5 text-[#f68b1e]" /></div><div className="mt-4 h-28 space-y-2 overflow-y-auto rounded-xl bg-gray-50 p-3 text-xs dark:bg-[#202024]">{adminChatMessages.map((message, index) => <div key={`${message.text}-${index}`} className={message.from === 'admin' ? 'ml-8 rounded-lg bg-[#f68b1e] p-2 text-white' : 'mr-8 rounded-lg bg-white p-2 text-gray-600 shadow-sm dark:bg-[#303035] dark:text-gray-200'}>{message.text}</div>)}</div><form className="mt-3 flex gap-2" onSubmit={(event) => { event.preventDefault(); const text = adminChatInput.trim(); if (!text) return; setAdminChatMessages((messages) => [...messages, { from: 'admin', text }, { from: 'support', text: 'I have noted that. Open Live Support for a team response.' }]); setAdminChatInput(''); }}><input value={adminChatInput} onChange={(event) => setAdminChatInput(event.target.value)} placeholder="Ask about an order..." className="min-w-0 flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs outline-none focus:border-[#f68b1e] dark:border-gray-700 dark:bg-[#202024]" /><button aria-label="Send chat message" className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#f68b1e] text-white"><Send className="h-4 w-4" /></button></form><button onClick={() => handleOpenHelpSection('live-chat')} className="mt-3 text-xs font-bold text-[#f68b1e]">Open live support</button></section></div>
+            <section className="mt-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-[#18181b]"><div className="mb-4 flex items-center justify-between"><div><h2 className="font-black">Priority queue</h2><p className="mt-1 text-xs text-gray-500">Orders that may need your attention</p></div><button onClick={() => setIsAdminOpen(true)} className="text-xs font-bold text-[#f68b1e]">Manage all</button></div>{pendingCustomerOrders.length === 0 ? <div className="rounded-xl bg-emerald-50 p-4 text-sm font-bold text-emerald-700">You are all caught up.</div> : <div className="divide-y divide-gray-100 dark:divide-gray-800">{pendingCustomerOrders.slice(0, 3).map((order) => <button key={order.id} onClick={() => setIsAdminOpen(true)} className="flex w-full items-center justify-between gap-4 py-3 text-left transition hover:bg-gray-50 dark:hover:bg-[#202024]"><div className="flex min-w-0 items-center gap-3"><div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-red-50 text-red-500 dark:bg-red-950/30"><AlertTriangle className="h-4 w-4" /></div><div className="min-w-0"><div className="truncate text-sm font-bold">Order #{order.id}</div><div className="text-xs text-gray-500">{order.phone || 'Customer'} · {order.date}</div></div></div><span className="shrink-0 rounded-full bg-red-50 px-3 py-1 text-[10px] font-black text-red-600 dark:bg-red-950/30">Review payment</span></button>)}</div>}</section>
+          </main>
         </div>
 
         <AdminOrderAlert
@@ -783,6 +823,7 @@ export default function App() {
           onClose={() => setIsCustomerManagementOpen(false)}
           orders={orders.filter((order) => order.orderSource === 'customer')}
           onToast={showToast}
+          onUpdateCustomerState={(email, state: AccountState) => updateCustomerAccountState(email, state)}
         />
 
         <Toast message={toastMessage} />
@@ -1143,15 +1184,26 @@ export default function App() {
         isOpen={isLoginOpen}
         onClose={() => setIsLoginOpen(false)}
         isLoggedIn={isLoggedIn}
-        onLoginSuccess={(id, name) => {
+          isAccessBlocked={isCustomerAccessBlocked}
+        onLoginSuccess={async (id, name) => {
+          const state = await getCustomerAccountState(id);
+          if (state.revokedAt || state.disabled || state.deletedAt) {
+            setIsCustomerAccessBlocked(true);
+            showToast('This account is blocked by NeoMart support.');
+            return;
+          }
+          const startedAt = Date.now();
           setIsLoggedIn(true);
           setCurrentUserEmail(id);
           setAccountName(name || id.split('@')[0]);
+          setSessionStartedAt(startedAt);
           localStorage.setItem('neomart_logged_in', 'true');
           localStorage.setItem('neomart_user_email', id);
           localStorage.setItem('neomart_account_name', name || id.split('@')[0]);
+          localStorage.setItem('neomart_session_started_at', String(startedAt));
           if (id.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
             setCurrentView('admin');
+            window.history.pushState({}, '', '/admin');
           }
           void saveCustomerProfile({
             email: id.includes('@') ? id : undefined,
@@ -1167,6 +1219,7 @@ export default function App() {
           localStorage.removeItem('neomart_logged_in');
           localStorage.removeItem('neomart_user_email');
           localStorage.removeItem('neomart_account_name');
+          localStorage.removeItem('neomart_session_started_at');
         }}
         showToast={showToast}
       />
@@ -1198,7 +1251,7 @@ export default function App() {
       <OrderHistoryModal
         isOpen={isOrderHistoryOpen}
         onClose={() => setIsOrderHistoryOpen(false)}
-        orders={customerOrders}
+        orders={customerOrdersForAccount}
         onTrackOrder={(orderId) => {
           setIsOrderHistoryOpen(false);
           handleOpenLiveTracking(orderId);
@@ -1279,6 +1332,7 @@ export default function App() {
         onClose={() => setIsCustomerManagementOpen(false)}
         orders={orders.filter((order) => order.orderSource === 'customer')}
         onToast={showToast}
+        onUpdateCustomerState={(email, state: AccountState) => updateCustomerAccountState(email, state)}
       />
 
       {/* 12. Global Toast Alert */}
