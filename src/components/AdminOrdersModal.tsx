@@ -140,7 +140,7 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
           </form>
         </div>
       )}
-      <div className="bg-white dark:bg-[#18181b] border border-gray-200 dark:border-gray-800 rounded-3xl max-w-5xl w-full shadow-2xl overflow-y-auto overscroll-contain flex flex-col max-h-[92vh]">
+      <div className="bg-white dark:bg-[#18181b] border border-gray-200 dark:border-gray-800 rounded-3xl max-w-5xl w-full shadow-2xl overflow-y-scroll overscroll-contain flex flex-col max-h-[88vh]">
         
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-800 bg-[#222222] text-white">
@@ -226,7 +226,7 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
             className="flex min-h-[86px] flex-col items-start justify-between rounded-2xl border border-violet-200 bg-violet-50 p-4 text-left text-violet-700 transition-colors hover:border-violet-400 dark:border-violet-900/60 dark:bg-violet-950/20 dark:text-violet-400"
           >
             <Warehouse className="h-5 w-5" />
-            <span className="text-xs font-extrabold">Stock management</span>
+            <span className="text-xs font-extrabold">Open Stock Management</span>
             <span className="text-[10px] font-normal opacity-80">Update inventory quantities</span>
           </button>
         </div>
