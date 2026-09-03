@@ -159,6 +159,7 @@ export default function App() {
   const [lastPaymentMethod, setLastPaymentMethod] = useState<PaymentMethodType>('delivery');
 
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [currentView, setCurrentView] = useState<'store' | 'admin'>('store');
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isConfirmOrdersOpen, setIsConfirmOrdersOpen] = useState(false);
   const [isStockOpen, setIsStockOpen] = useState(false);
@@ -424,6 +425,16 @@ export default function App() {
     setIsHelpOpen(true);
   };
 
+  const openAdminPortal = () => {
+    setCurrentView('admin');
+    setIsAdminOpen(true);
+  };
+
+  const openStorefront = () => {
+    setCurrentView('store');
+    setIsAdminOpen(false);
+  };
+
   const handleConfirmOrderPayment = (orderId: string) => {
     setOrders((prev) =>
       prev.map((order) =>
@@ -612,6 +623,173 @@ export default function App() {
     { id: 'baby', label: 'Baby', icon: <Baby className="w-6 h-6 text-[#f68b1e]" /> }
   ];
 
+  if (currentView === 'admin') {
+    return (
+      <div className="min-h-screen bg-[#f5f5f5] dark:bg-[#0f0f0f] text-gray-900 dark:text-gray-100 transition-colors">
+        <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+          <div className="mb-6 flex flex-col gap-4 rounded-3xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-[#18181b] sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f68b1e]">NeoMart admin</p>
+              <h1 className="mt-1 text-2xl font-black text-gray-900 dark:text-white">Operations dashboard</h1>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={openStorefront}
+                className="rounded-xl border border-gray-300 px-4 py-2 text-sm font-bold text-gray-700 transition hover:border-[#f68b1e] hover:text-[#f68b1e] dark:border-gray-700 dark:text-gray-200"
+              >
+                Back to store
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsAdminOpen(true)}
+                className="rounded-xl bg-[#f68b1e] px-4 py-2 text-sm font-bold text-white transition hover:bg-orange-600"
+              >
+                Open orders
+              </button>
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <button
+              type="button"
+              onClick={() => setIsAdminOpen(true)}
+              className="rounded-2xl border border-gray-200 bg-white p-5 text-left shadow-sm transition hover:border-[#f68b1e] dark:border-gray-800 dark:bg-[#18181b]"
+            >
+              <div className="mb-3 inline-flex rounded-xl bg-[#f68b1e]/10 p-2 text-[#f68b1e]">
+                <Package className="h-5 w-5" />
+              </div>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white">Orders</h2>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Review, confirm, and dispatch customer orders.</p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsStockOpen(true)}
+              className="rounded-2xl border border-gray-200 bg-white p-5 text-left shadow-sm transition hover:border-[#f68b1e] dark:border-gray-800 dark:bg-[#18181b]"
+            >
+              <div className="mb-3 inline-flex rounded-xl bg-emerald-500/10 p-2 text-emerald-600">
+                <Warehouse className="h-5 w-5" />
+              </div>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white">Inventory</h2>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Update stock levels and manage product listings.</p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsSalesReportOpen(true)}
+              className="rounded-2xl border border-gray-200 bg-white p-5 text-left shadow-sm transition hover:border-[#f68b1e] dark:border-gray-800 dark:bg-[#18181b]"
+            >
+              <div className="mb-3 inline-flex rounded-xl bg-blue-500/10 p-2 text-blue-600">
+                <BarChart3 className="h-5 w-5" />
+              </div>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white">Sales</h2>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Track confirmed sales and revenue performance.</p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsCustomerManagementOpen(true)}
+              className="rounded-2xl border border-gray-200 bg-white p-5 text-left shadow-sm transition hover:border-[#f68b1e] dark:border-gray-800 dark:bg-[#18181b]"
+            >
+              <div className="mb-3 inline-flex rounded-xl bg-violet-500/10 p-2 text-violet-600">
+                <Users className="h-5 w-5" />
+              </div>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white">Customers</h2>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Review customer activity and order history.</p>
+            </button>
+          </div>
+        </div>
+
+        <AdminOrderAlert
+          order={adminOrderAlert}
+          onOpenOrders={() => {
+            setAdminOrderAlert(null);
+            setIsAdminOpen(true);
+          }}
+          onDismiss={() => setAdminOrderAlert(null)}
+        />
+
+        <AdminOrdersModal
+          isOpen={isAdminOpen}
+          onClose={() => setIsAdminOpen(false)}
+          onEnableNotifications={enableAdminNotifications}
+          orders={orders.filter((order) => order.orderSource === 'customer')}
+          onConfirmOrderPayment={handleConfirmOrderPayment}
+          onOpenStockManagement={() => setIsStockOpen(true)}
+          onOpenSalesReport={() => setIsSalesReportOpen(true)}
+          onOpenCustomerManagement={() => setIsCustomerManagementOpen(true)}
+          onOpenLiveGps={(orderId) => {
+            setIsAdminOpen(false);
+            handleOpenLiveTracking(orderId);
+          }}
+          onUpdateOrderStatus={(orderId, status) => {
+            setOrders((prev) =>
+              prev.map((order) =>
+                order.id === orderId
+                  ? { ...order, status }
+                  : order
+              )
+            );
+            void updateOrderStatus(orderId, status).catch(() => {
+              showToast('Could not sync status. Check Firebase connection.');
+            });
+          }}
+          onUpdateOrderDelivery={(orderId, delivery) => {
+            setOrders((prev) => prev.map((order) => order.id === orderId ? { ...order, ...delivery } : order));
+            void updateOrderDelivery(orderId, delivery).catch(() => {
+              showToast('Could not sync delivery details. Check Firebase connection.');
+            });
+            showToast('Delivery assignment saved');
+          }}
+        />
+        <ConfirmOrdersModal
+          isOpen={isConfirmOrdersOpen}
+          onClose={() => setIsConfirmOrdersOpen(false)}
+          orders={orders.filter(
+            (order) => order.orderSource === 'customer' && order.paymentConfirmed !== true
+          )}
+          onConfirmOrder={handleConfirmOrderPayment}
+        />
+        <AdminStockModal
+          isOpen={isStockOpen}
+          onClose={() => setIsStockOpen(false)}
+          stockLevels={stockLevels}
+          onUpdateStock={handleUpdateStock}
+          products={products}
+          onSaveProduct={(product) => {
+            setProducts((previous) => {
+              const updated = previous.some((item) => item.id === product.id)
+                ? previous.map((item) => item.id === product.id ? product : item)
+                : [product, ...previous];
+              return updated;
+            });
+            showToast('Product saved');
+          }}
+          onDeleteProduct={(productId) => {
+            setProducts((previous) => previous.filter((product) => product.id !== productId));
+            showToast('Product deleted');
+          }}
+        />
+
+        <AdminSalesReportModal
+          isOpen={isSalesReportOpen}
+          onClose={() => setIsSalesReportOpen(false)}
+          orders={orders.filter((order) => order.orderSource === 'customer')}
+        />
+
+        <AdminCustomersModal
+          isOpen={isCustomerManagementOpen}
+          onClose={() => setIsCustomerManagementOpen(false)}
+          orders={orders.filter((order) => order.orderSource === 'customer')}
+          onToast={showToast}
+        />
+
+        <Toast message={toastMessage} />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-[#f5f5f5] dark:bg-[#0f0f0f] text-gray-900 dark:text-gray-100 transition-colors">
       <AdminOrderAlert
@@ -640,7 +818,7 @@ export default function App() {
         onOpenTrackOrder={() => handleOpenLiveTracking()}
         onOpenOrderHistory={() => setIsOrderHistoryOpen(true)}
         onSelectCategory={handleSelectCategory}
-        onOpenAdmin={() => setIsAdminOpen(true)}
+        onOpenAdmin={openAdminPortal}
         onOpenConfirmOrders={() => setIsConfirmOrdersOpen(true)}
         isAdmin={isLoggedIn && currentUserEmail.toLowerCase() === ADMIN_EMAIL}
       />
@@ -972,6 +1150,9 @@ export default function App() {
           localStorage.setItem('neomart_logged_in', 'true');
           localStorage.setItem('neomart_user_email', id);
           localStorage.setItem('neomart_account_name', name || id.split('@')[0]);
+          if (id.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+            setCurrentView('admin');
+          }
           void saveCustomerProfile({
             email: id.includes('@') ? id : undefined,
             displayName: name || id.split('@')[0],
