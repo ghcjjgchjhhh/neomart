@@ -16,6 +16,7 @@ import { HelpCenterModal } from './components/HelpCenterModal';
 import { AdminOrdersModal } from './components/AdminOrdersModal';
 import { AdminStockModal } from './components/AdminStockModal';
 import { OrderHistoryModal } from './components/OrderHistoryModal';
+import { AdminSalesReportModal } from './components/AdminSalesReportModal';
 import { OrderTrackingModal } from './components/TrackingModal';
 import { Footer } from './components/Footer';
 import { Toast } from './components/Toast';
@@ -136,6 +137,7 @@ export default function App() {
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isStockOpen, setIsStockOpen] = useState(false);
       const [isOrderHistoryOpen, setIsOrderHistoryOpen] = useState(false);
+      const [isSalesReportOpen, setIsSalesReportOpen] = useState(false);
       const [customerOrderIds, setCustomerOrderIds] = useState<string[]>(() => {
         try {
           const saved = localStorage.getItem('neomart_customer_order_ids');
@@ -923,9 +925,9 @@ export default function App() {
         orders={orders.filter(
           (order) => order.orderSource === 'customer' && order.paymentConfirmed !== true
         )}
-        reportOrders={orders.filter((order) => order.orderSource === 'customer')}
         onConfirmOrderPayment={handleConfirmOrderPayment}
         onOpenStockManagement={() => setIsStockOpen(true)}
+        onOpenSalesReport={() => setIsSalesReportOpen(true)}
         onOpenLiveGps={(orderId) => {
           setIsAdminOpen(false);
           handleOpenLiveTracking(orderId);
@@ -948,6 +950,12 @@ export default function App() {
         onClose={() => setIsStockOpen(false)}
         stockLevels={stockLevels}
         onUpdateStock={handleUpdateStock}
+      />
+
+      <AdminSalesReportModal
+        isOpen={isSalesReportOpen}
+        onClose={() => setIsSalesReportOpen(false)}
+        orders={orders.filter((order) => order.orderSource === 'customer')}
       />
 
       {/* 12. Global Toast Alert */}

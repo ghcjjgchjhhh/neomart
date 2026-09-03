@@ -16,22 +16,22 @@ interface AdminOrdersModalProps {
   isOpen: boolean;
   onClose: () => void;
   orders: Order[];
-  reportOrders: Order[];
   onConfirmOrderPayment: (orderId: string) => void;
   onUpdateOrderStatus: (orderId: string, status: FulfillmentStatus) => void;
   onOpenStockManagement: () => void;
   onOpenLiveGps: (orderId: string) => void;
+  onOpenSalesReport: () => void;
 }
 
 export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
   isOpen,
   onClose,
   orders,
-  reportOrders,
   onConfirmOrderPayment,
   onUpdateOrderStatus,
   onOpenStockManagement,
   onOpenLiveGps,
+  onOpenSalesReport,
 }) => {
   const [search, setSearch] = useState('');
 
@@ -61,15 +61,6 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
     notation: 'compact',
     maximumFractionDigits: 1,
   }).format(openOrderValue);
-  const confirmedOrders = reportOrders.filter((order) => order.paymentConfirmed === true);
-  const confirmedSales = confirmedOrders.reduce((total, order) => total + order.total, 0);
-  const formattedConfirmedSales = new Intl.NumberFormat('en-NG', {
-    style: 'currency',
-    currency: 'NGN',
-    notation: 'compact',
-    maximumFractionDigits: 1,
-  }).format(confirmedSales);
-
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
       <div className="bg-white dark:bg-[#18181b] border border-gray-200 dark:border-gray-800 rounded-3xl max-w-2xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
@@ -123,23 +114,13 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
           </div>
         </div>
 
-        <div className="mx-4 mt-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#202024] p-3">
-          <div className="flex items-center justify-between gap-2">
-            <h4 className="font-extrabold text-sm text-gray-900 dark:text-white">Sales Report</h4>
-            <span className="text-[10px] text-gray-500 dark:text-gray-400">All synced orders</span>
-          </div>
-          <div className="grid grid-cols-2 gap-2 mt-3">
-            <div>
-              <div className="text-[10px] uppercase font-bold text-gray-500 dark:text-gray-400">Confirmed orders</div>
-              <div className="text-lg font-black text-gray-900 dark:text-white">{confirmedOrders.length}</div>
-            </div>
-            <div className="min-w-0">
-              <div className="text-[10px] uppercase font-bold text-gray-500 dark:text-gray-400">Confirmed sales</div>
-              <div className="text-sm font-black text-gray-900 dark:text-white truncate" title={confirmedSales.toLocaleString('en-NG', { style: 'currency', currency: 'NGN' })}>
-                {formattedConfirmedSales}
-              </div>
-            </div>
-          </div>
+        <div className="mx-4 mt-4">
+          <button
+            onClick={onOpenSalesReport}
+            className="w-full px-4 py-2.5 rounded-xl border border-blue-500 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 font-bold text-xs transition-colors"
+          >
+            Open Sales Report
+          </button>
         </div>
 
         {/* Orders List */}
