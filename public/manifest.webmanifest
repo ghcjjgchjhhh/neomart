@@ -1,0 +1,14 @@
+{
+  "name": "NeoMart - Shop Smart, Live Better",
+  "short_name": "NeoMart",
+  "description": "Shop phones, electronics, fashion, appliances and more across Nigeria.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f5f5",
+  "theme_color": "#f68b1e",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "/icons/neomart-192.svg", "sizes": "192x192", "type": "image/svg+xml", "purpose": "any maskable" },
+    { "src": "/icons/neomart-512.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
