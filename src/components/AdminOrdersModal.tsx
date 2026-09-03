@@ -45,6 +45,7 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
 }) => {
   const [search, setSearch] = useState('');
   const [orderToConfirm, setOrderToConfirm] = useState<Order | null>(null);
+  const [confirmingOrderId, setConfirmingOrderId] = useState<string | null>(null);
   const [deliveryOrder, setDeliveryOrder] = useState<Order | null>(null);
   const [deliveryForm, setDeliveryForm] = useState({ driverName: '', driverPhone: '', trackingNumber: '', deliveryZone: '', deliveryFee: '', estimatedDelivery: '' });
 
@@ -117,13 +118,19 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  onConfirmOrderPayment(orderToConfirm.id);
-                  setOrderToConfirm(null);
+                disabled={confirmingOrderId === orderToConfirm.id}
+                onClick={async () => {
+                  setConfirmingOrderId(orderToConfirm.id);
+                  try {
+                    await onConfirmOrderPayment(orderToConfirm.id);
+                    setOrderToConfirm(null);
+                  } finally {
+                    setConfirmingOrderId(null);
+                  }
                 }}
-                className="flex-1 rounded-xl bg-emerald-600 px-3 py-2.5 text-xs font-bold text-white hover:bg-emerald-700"
+                className="flex-1 rounded-xl bg-emerald-600 px-3 py-2.5 text-xs font-bold text-white hover:bg-emerald-700 disabled:cursor-wait disabled:opacity-60"
               >
-                Confirm order
+                {confirmingOrderId === orderToConfirm.id ? 'Saving...' : 'Confirm order'}
               </button>
             </div>
           </div>

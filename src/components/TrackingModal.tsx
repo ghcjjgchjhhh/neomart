@@ -55,7 +55,8 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
       const found = ordersList.find((o) => o.id.toLowerCase() === orderId.toLowerCase());
       if (found) return found;
     }
-    return ordersList[0] || sampleOrders[0];
+    const fallback = ordersList[0] || sampleOrders[0];
+    return orderId ? { ...fallback, id: orderId } : fallback;
   });
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -305,10 +306,10 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
       navigator.share({
         title: `NeoMart Order #${selectedOrder.id} Live Tracking`,
         text: `Live courier tracking for NeoMart order #${selectedOrder.id}. ETA: ~${etaMinutes} mins (${distanceKm} km away).`,
-        url: window.location.href,
+        url: `${window.location.origin}/track/${encodeURIComponent(selectedOrder.id)}`,
       }).catch(() => {});
     } else {
-      navigator.clipboard?.writeText?.(window.location.href);
+      navigator.clipboard?.writeText?.(`${window.location.origin}/track/${encodeURIComponent(selectedOrder.id)}`);
       showToast('Live tracking link copied to clipboard!');
     }
   };

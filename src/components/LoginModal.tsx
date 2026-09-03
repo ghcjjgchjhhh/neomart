@@ -7,9 +7,10 @@ interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
   isLoggedIn: boolean;
-  onLoginSuccess: (identifier: string, displayName?: string) => void;
+  onLoginSuccess: (identifier: string, displayName?: string) => void | Promise<void>;
   onLogout: () => void;
   showToast: (msg: string) => void;
+  isAccessBlocked?: boolean;
 }
 
 interface GoogleAccount {
@@ -31,6 +32,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   onLoginSuccess,
   onLogout,
   showToast,
+  isAccessBlocked = false,
 }) => {
   if (!isOpen) return null;
 
@@ -103,8 +105,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     setLoading(true);
     try {
       const user = await signInWithGoogle();
+      if (!user) return;
       const userName = user.displayName || user.email?.split('@')[0] || 'Google User';
-      onLoginSuccess(user.email || user.uid, user.displayName || user.email?.split('@')[0]);
+      await onLoginSuccess(user.email || user.uid, user.displayName || user.email?.split('@')[0]);
       showToast(`Signed in with Google as ${user.email || userName}`);
       onClose();
     } catch {
@@ -132,9 +135,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     }
 
     setLoading(true);
-    setTimeout(() => {
+    setTimeout(async () => {
       setLoading(false);
-      onLoginSuccess(val, val.includes('@') ? val.split('@')[0] : undefined);
+      await onLoginSuccess(val, val.includes('@') ? val.split('@')[0] : undefined);
       showToast('Login successful! Welcome back 😊');
       onClose();
     }, 500);
@@ -178,7 +181,16 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           </div>
         </div>
 
-        {isLoggedIn ? (
+        {isAccessBlocked ? (
+          <div className="space-y-4 py-5 text-center">
+            <ShieldCheck className="mx-auto h-10 w-10 text-red-500" />
+            <div>
+              <h3 className="font-extrabold text-lg text-red-600 dark:text-red-400">Login disabled</h3>
+              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">Your account access has been disabled by NeoMart support.</p>
+            </div>
+            <a href="tel:08135642842" className="block rounded-xl bg-[#f68b1e] px-4 py-3 text-xs font-bold text-white">Contact customer care: 08135642842</a>
+          </div>
+        ) : isLoggedIn ? (
           <div className="space-y-4 py-4 text-center">
             <h3 className="font-extrabold text-lg text-gray-900 dark:text-gray-100">
               Your Account

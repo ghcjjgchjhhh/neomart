@@ -1,7 +1,9 @@
 import {
   collection,
   doc,
+  deleteField,
   getDocs,
+  getDoc,
   onSnapshot,
   arrayUnion,
   setDoc,
@@ -122,4 +124,36 @@ export async function getOrders(): Promise<Order[]> {
   if (!db || !(await ensureFirebaseAuth())) return [];
   const snapshot = await getDocs(collection(db, 'orders'));
   return snapshot.docs.map((item) => item.data() as Order);
+}
+
+export interface CustomerAccountState {
+  disabled?: boolean;
+  revokedAt?: string | null;
+  deletedAt?: string | null;
+}
+
+const customerStateDocument = (email: string) => encodeURIComponent(email.trim().toLowerCase());
+
+export async function updateCustomerAccountState(email: string, state: CustomerAccountState) {
+  if (!db || !(await ensureFirebaseAuth())) throw new Error('Firebase account controls are not configured');
+  const update = Object.fromEntries(
+    Object.entries(state).map(([key, value]) => [key, value === null ? deleteField() : value])
+  );
+  await setDoc(doc(db, 'customerStates', customerStateDocument(email)), update, { merge: true });
+}
+
+export async function getCustomerAccountState(email: string): Promise<CustomerAccountState> {
+  if (!db || !(await ensureFirebaseAuth())) return {};
+  const snapshot = await getDoc(doc(db, 'customerStates', customerStateDocument(email)));
+  return snapshot.exists() ? snapshot.data() as CustomerAccountState : {};
+}
+
+export async function subscribeToCustomerAccountState(
+  email: string,
+  onState: (state: CustomerAccountState) => void
+): Promise<Unsubscribe | null> {
+  if (!db || !(await ensureFirebaseAuth())) return null;
+  return onSnapshot(doc(db, 'customerStates', customerStateDocument(email)), (snapshot) => {
+    if (snapshot.exists()) onState(snapshot.data() as CustomerAccountState);
+  });
 }
