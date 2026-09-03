@@ -8,7 +8,11 @@ import {
   Phone,
   MapPin,
   Search,
-  Check
+  Check,
+  BellRing,
+  BarChart3,
+  Users,
+  Warehouse
 } from 'lucide-react';
 import { FulfillmentStatus, Order } from '../types';
 
@@ -136,7 +140,7 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
           </form>
         </div>
       )}
-      <div className="bg-white dark:bg-[#18181b] border border-gray-200 dark:border-gray-800 rounded-3xl max-w-2xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+      <div className="bg-white dark:bg-[#18181b] border border-gray-200 dark:border-gray-800 rounded-3xl max-w-5xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
         
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-800 bg-[#222222] text-white">
@@ -191,25 +195,39 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
           </div>
         </div>
 
-        <div className="mx-4 mt-4">
+        <div className="grid grid-cols-1 gap-3 border-b border-gray-200 p-4 dark:border-gray-800 sm:grid-cols-2 lg:grid-cols-4">
           <button
             type="button"
             onClick={onEnableNotifications}
-            className="mb-2 flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-500 px-4 py-2.5 text-xs font-bold text-emerald-600 transition-colors hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
+            className="flex min-h-[86px] flex-col items-start justify-between rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-left text-emerald-700 transition-colors hover:border-emerald-400 dark:border-emerald-900/60 dark:bg-emerald-950/20 dark:text-emerald-400"
           >
-            Enable phone alerts for new orders
+            <BellRing className="h-5 w-5" />
+            <span className="text-xs font-extrabold">Phone alerts</span>
+            <span className="text-[10px] font-normal opacity-80">Get notified about new orders</span>
           </button>
           <button
             onClick={onOpenSalesReport}
-            className="w-full px-4 py-2.5 rounded-xl border border-blue-500 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 font-bold text-xs transition-colors"
+            className="flex min-h-[86px] flex-col items-start justify-between rounded-2xl border border-blue-200 bg-blue-50 p-4 text-left text-blue-700 transition-colors hover:border-blue-400 dark:border-blue-900/60 dark:bg-blue-950/20 dark:text-blue-400"
           >
-            Open Sales Report
+            <BarChart3 className="h-5 w-5" />
+            <span className="text-xs font-extrabold">Sales report</span>
+            <span className="text-[10px] font-normal opacity-80">Review revenue and orders</span>
           </button>
           <button
             onClick={onOpenCustomerManagement}
-            className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-[#f68b1e] px-4 py-2.5 text-xs font-bold text-[#f68b1e] transition-colors hover:bg-orange-50 dark:hover:bg-orange-950/20"
+            className="flex min-h-[86px] flex-col items-start justify-between rounded-2xl border border-orange-200 bg-orange-50 p-4 text-left text-[#f68b1e] transition-colors hover:border-[#f68b1e] dark:border-orange-900/60 dark:bg-orange-950/20"
           >
-            Manage Customers
+            <Users className="h-5 w-5" />
+            <span className="text-xs font-extrabold">Customers</span>
+            <span className="text-[10px] font-normal opacity-80">Profiles, history and access</span>
+          </button>
+          <button
+            onClick={onOpenStockManagement}
+            className="flex min-h-[86px] flex-col items-start justify-between rounded-2xl border border-violet-200 bg-violet-50 p-4 text-left text-violet-700 transition-colors hover:border-violet-400 dark:border-violet-900/60 dark:bg-violet-950/20 dark:text-violet-400"
+          >
+            <Warehouse className="h-5 w-5" />
+            <span className="text-xs font-extrabold">Stock management</span>
+            <span className="text-[10px] font-normal opacity-80">Update inventory quantities</span>
           </button>
         </div>
 
@@ -273,7 +291,7 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
                       : '⏳ Order is waiting for confirmation.'}
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 lg:w-auto lg:grid-cols-4">
                     <button onClick={() => openDelivery(ord)} className="rounded-xl border border-[#f68b1e] px-3 py-2 text-xs font-bold text-[#f68b1e] hover:bg-orange-50">Delivery</button>
                     <button
                       onClick={() => onOpenLiveGps(ord.id)}
@@ -317,14 +335,6 @@ export const AdminOrdersModal: React.FC<AdminOrdersModalProps> = ({
           )}
         </div>
 
-        <div className="border-t border-gray-200 dark:border-gray-800 p-4 bg-white dark:bg-[#18181b]">
-          <button
-            onClick={onOpenStockManagement}
-            className="w-full px-4 py-2.5 rounded-xl border border-[#f68b1e] text-[#f68b1e] hover:bg-[#fff3e0] dark:hover:bg-[#2a1a00] font-bold text-xs transition-colors"
-          >
-            Open Stock Management
-          </button>
-        </div>
       </div>
     </div>
   );
