@@ -1,1 +1,5 @@
-{}
+{
+	"projects": {
+		"default": "neomart-f8686"
+	}
+}
