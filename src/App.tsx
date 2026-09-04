@@ -149,6 +149,34 @@ const ProductThumb: React.FC<{ type: string; className?: string }> = ({ type, cl
   );
 };
 
+const AdminStatCard: React.FC<{ label: string; value: string | number; detail?: string; tone?: 'orange' | 'green' | 'blue' | 'red' }> = ({ label, value, detail, tone = 'orange' }) => {
+  const toneStyles = {
+    orange: 'border-orange-500/30 bg-orange-500/10 text-orange-200',
+    green: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200',
+    blue: 'border-sky-500/30 bg-sky-500/10 text-sky-200',
+    red: 'border-red-500/30 bg-red-500/10 text-red-200',
+  };
+
+  return (
+    <div className={`rounded-2xl border p-5 ${toneStyles[tone]}`}>
+      <p className="text-[11px] uppercase tracking-[0.2em] opacity-80">{label}</p>
+      <p className="mt-4 text-3xl font-black text-white">{value}</p>
+      {detail && <p className="mt-2 text-xs text-gray-400">{detail}</p>}
+    </div>
+  );
+};
+
+const AdminSectionHeader: React.FC<{ eyebrow: string; title: string; description?: string; action?: React.ReactNode }> = ({ eyebrow, title, description, action }) => (
+  <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f97316]">{eyebrow}</p>
+      <h1 className="mt-2 text-3xl font-black text-white">{title}</h1>
+      {description && <p className="mt-2 text-sm text-gray-400">{description}</p>}
+    </div>
+    {action}
+  </div>
+);
+
 export default function App() {
   const trackingPathMatch = window.location.pathname.match(/^\/track\/([^/]+)$/i);
   const trackingPathOrderId = trackingPathMatch ? decodeURIComponent(trackingPathMatch[1]) : null;
@@ -834,6 +862,36 @@ export default function App() {
       { id: 'settings', label: 'Settings', icon: Settings },
     ] as const;
 
+    const renderAdminNav = () => (
+      <nav className="space-y-1.5 text-sm font-semibold">
+        {adminSidebarItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = adminSection === item.id;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => {
+                setAdminSection(item.id);
+                setMobileMenuOpen(false);
+              }}
+              className={`group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left transition-all duration-200 ${
+                isActive
+                  ? 'bg-gradient-to-r from-[#f97316] to-[#fb923c] text-white shadow-lg shadow-orange-500/30'
+                  : 'text-gray-300 hover:bg-white/5 hover:text-white'
+              }`}
+            >
+              <Icon className="h-5 w-5 shrink-0" />
+              <span className="flex-1">{item.label}</span>
+              {typeof item.badge === 'number' && item.badge > 0 && (
+                <span className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white">{item.badge}</span>
+              )}
+            </button>
+          );
+        })}
+      </nav>
+    );
+
     const renderAdminContent = () => {
       if (adminSection === 'orders') {
         return (
@@ -865,26 +923,25 @@ export default function App() {
               ))}
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {customerOrders.map((order) => (
-                <button
-                  key={order.id}
-                  onClick={() => setIsAdminOpen(true)}
-                  className="rounded-2xl border border-gray-800 bg-gradient-to-br from-gray-900/70 to-gray-950/50 p-5 text-left transition hover:border-[#f97316]/60 hover:shadow-lg hover:shadow-orange-500/10"
-                >
-                  <div className="mb-4 flex items-center justify-between gap-3">
-                    <span className="text-sm font-black text-white">#{order.id}</span>
-                    <span className="rounded-full bg-orange-500/15 px-2 py-1 text-[10px] font-bold text-orange-300">
-                      {String(order.status).replace(/_/g, ' ')}
-                    </span>
-                  </div>
-                  <div className="space-y-2 text-xs text-gray-300">
-                    <p><span className="text-gray-500">Customer:</span> {order.customerName}</p>
-                    <p><span className="text-gray-500">Amount:</span> ₦{order.total.toLocaleString()}</p>
-                    <p><span className="text-gray-500">Date:</span> {order.date}</p>
-                  </div>
-                </button>
-              ))}
+            <div className="overflow-hidden rounded-2xl border border-gray-800 bg-gray-950/40">
+              <div className="overflow-x-auto">
+                <table className="min-w-[980px] w-full text-left text-xs">
+                  <thead className="border-b border-gray-800 bg-gray-900/70 text-gray-500"><tr><th className="px-5 py-4 font-semibold">Order</th><th className="px-5 py-4 font-semibold">Customer</th><th className="px-5 py-4 font-semibold">Amount</th><th className="px-5 py-4 font-semibold">Date</th><th className="px-5 py-4 font-semibold">Status</th><th className="px-5 py-4 font-semibold">Delivery</th><th className="px-5 py-4 font-semibold">Actions</th></tr></thead>
+                  <tbody className="divide-y divide-gray-800/70">
+                    {customerOrders.map((order) => (
+                      <tr key={order.id} className="text-gray-300 hover:bg-white/[0.03]">
+                        <td className="px-5 py-4"><button type="button" onClick={() => setIsAdminOpen(true)} className="font-bold text-white hover:text-orange-300">#{order.id}</button><p className="mt-1 text-[11px] text-gray-500">{order.items.length} item{order.items.length === 1 ? '' : 's'}</p></td>
+                        <td className="px-5 py-4"><p className="font-semibold text-white">{order.customerName || 'Guest customer'}</p><p className="mt-1 text-[11px] text-gray-500">{order.phone || order.email || 'No contact saved'}</p></td>
+                        <td className="px-5 py-4 font-bold text-emerald-300">₦{order.total.toLocaleString()}</td>
+                        <td className="px-5 py-4 whitespace-nowrap">{order.date}</td>
+                        <td className="px-5 py-4"><select value={order.status === 'Order Confirmed' ? 'Processing' : order.status} onChange={(event) => { const status = event.target.value as Order['status']; setOrders((items) => items.map((item) => item.id === order.id ? { ...item, status } : item)); void updateOrderStatus(order.id, status).catch(() => showToast('Could not sync status. Check Firebase connection.')); }} className="rounded-lg border border-gray-700 bg-gray-900 px-2 py-2 text-[11px] text-gray-200 outline-none focus:border-orange-500"><option value="Processing">Processing</option><option value="Packed">Packed</option><option value="Shipped">Shipped</option><option value="Out for Delivery">Out for Delivery</option><option value="Delivered">Delivered</option><option value="Cancelled">Cancelled</option></select></td>
+                        <td className="px-5 py-4"><p className="font-semibold text-gray-200">{order.driverName || 'Unassigned'}</p><p className="mt-1 text-[11px] text-gray-500">{order.trackingNumber || 'No tracking number'}</p></td>
+                        <td className="px-5 py-4"><div className="flex items-center gap-2"><button type="button" onClick={() => setIsAdminOpen(true)} className="rounded-lg border border-gray-700 px-2.5 py-2 font-bold text-gray-300 hover:border-orange-500/60 hover:text-orange-300">Details</button><button type="button" onClick={() => handleOpenLiveTracking(order.id)} className="rounded-lg border border-cyan-500/40 px-2.5 py-2 font-bold text-cyan-300 hover:bg-cyan-500/10">Track</button></div></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         );
@@ -1334,31 +1391,7 @@ export default function App() {
               </div>
             </div>
 
-            <nav className="mt-8 flex-1 space-y-1.5 overflow-y-auto pr-1 text-sm font-semibold">
-              {adminSidebarItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = adminSection === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => setAdminSection(item.id)}
-                    className={`group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left transition-all duration-200 ${
-                      isActive
-                        ? 'bg-gradient-to-r from-[#f97316] to-[#fb923c] text-white shadow-lg shadow-orange-500/30'
-                        : 'text-gray-300 hover:bg-white/5 hover:text-white'
-                    }`}
-                  >
-                    <Icon className="h-5 w-5 shrink-0" />
-                    <span className="flex-1">{item.label}</span>
-                    {typeof item.badge === 'number' && item.badge > 0 && (
-                      <span className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white">
-                        {item.badge}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </nav>
+            <div className="mt-8 flex-1 overflow-y-auto pr-1">{renderAdminNav()}</div>
 
             <div className="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950/50 to-emerald-900/20 p-4 backdrop-blur-sm shadow-lg shadow-emerald-500/10">
               <div className="mb-3 flex items-center gap-2.5 text-xs font-bold text-emerald-300">
@@ -1370,9 +1403,24 @@ export default function App() {
           </aside>
 
           <main className="min-w-0 px-4 py-6 sm:px-8 lg:px-10 lg:py-8">
+            <div className="mb-6 flex items-center justify-between gap-3 lg:hidden">
+              <div><p className="text-xs font-bold uppercase tracking-[0.2em] text-orange-400">neoMart admin</p><p className="mt-1 text-sm font-bold text-white">{adminSidebarItems.find((item) => item.id === adminSection)?.label}</p></div>
+              <button type="button" onClick={() => setMobileMenuOpen(true)} aria-label="Open admin navigation" className="grid h-11 w-11 place-items-center rounded-xl border border-gray-700 bg-gray-900 text-gray-200"><Menu className="h-5 w-5" /></button>
+            </div>
             {renderAdminContent()}
           </main>
         </div>
+
+        {mobileMenuOpen && (
+          <div className="fixed inset-0 z-50 lg:hidden">
+            <button type="button" aria-label="Close admin navigation" onClick={() => setMobileMenuOpen(false)} className="absolute inset-0 bg-black/70" />
+            <aside className="relative flex h-full w-[min(86vw,300px)] flex-col border-r border-gray-800 bg-[#0d1015] p-6 text-white shadow-2xl">
+              <div className="mb-8 flex items-center justify-between"><div className="flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-orange-500 font-black">N</div><div><p className="font-bold">neoMart</p><p className="text-[9px] uppercase tracking-widest text-gray-500">admin hub</p></div></div><button type="button" onClick={() => setMobileMenuOpen(false)} aria-label="Close admin navigation" className="text-gray-400 hover:text-white"><X className="h-5 w-5" /></button></div>
+              <div className="flex-1 overflow-y-auto">{renderAdminNav()}</div>
+              <div className="mt-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-xs text-emerald-300">All systems online</div>
+            </aside>
+          </div>
+        )}
 
         <AdminOrderAlert
           order={adminOrderAlert}
