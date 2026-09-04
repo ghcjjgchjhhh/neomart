@@ -290,7 +290,7 @@ export default function App() {
   ]);
   const [showSplash, setShowSplash] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [adminSection, setAdminSection] = useState<'overview' | 'orders' | 'inventory' | 'customers'>('overview');
+  const [adminSection, setAdminSection] = useState<'overview' | 'orders' | 'confirmations' | 'inventory' | 'reports' | 'customers' | 'notifications' | 'support' | 'storefront' | 'settings'>('overview');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dateRange] = useState('May 12, 2025 - May 19, 2025');
   const [isOrdersModalOpen, setIsOrdersModalOpen] = useState(false);
@@ -824,8 +824,14 @@ export default function App() {
     const adminSidebarItems = [
       { id: 'overview', label: 'Overview', icon: LayoutDashboard },
       { id: 'orders', label: 'Orders', icon: Package, badge: pendingCustomerOrders.length },
+      { id: 'confirmations', label: 'Payment review', icon: CheckCheck, badge: pendingCustomerOrders.length },
       { id: 'inventory', label: 'Inventory', icon: Warehouse },
+      { id: 'reports', label: 'Sales reports', icon: BarChart3 },
       { id: 'customers', label: 'Customers', icon: Users },
+      { id: 'notifications', label: 'Notifications', icon: Bell, badge: notifications.filter((notification) => !notification.read).length },
+      { id: 'support', label: 'Support chat', icon: MessageCircle },
+      { id: 'storefront', label: 'Storefront', icon: Store },
+      { id: 'settings', label: 'Settings', icon: Settings },
     ] as const;
 
     const renderAdminContent = () => {
@@ -934,6 +940,92 @@ export default function App() {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        );
+      }
+
+      if (adminSection === 'confirmations') {
+        return (
+          <div className="space-y-6">
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f97316]">Finance</p>
+                <h1 className="mt-2 text-3xl font-black text-white">Payment Review</h1>
+                <p className="mt-2 text-sm text-gray-400">Check customer payments before orders move forward.</p>
+              </div>
+              <button type="button" onClick={() => setIsConfirmOrdersOpen(true)} className="rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-2.5 text-sm font-bold text-cyan-200 hover:border-cyan-300/60">
+                Open review queue
+              </button>
+            </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="rounded-2xl border border-orange-500/30 bg-orange-500/10 p-5"><p className="text-xs uppercase tracking-[0.2em] text-orange-200">Awaiting review</p><p className="mt-4 text-3xl font-black text-white">{pendingCustomerOrders.length}</p></div>
+              <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5"><p className="text-xs uppercase tracking-[0.2em] text-emerald-200">Confirmed value</p><p className="mt-4 text-3xl font-black text-white">₦{confirmedRevenue.toLocaleString()}</p></div>
+              <div className="rounded-2xl border border-sky-500/30 bg-sky-500/10 p-5"><p className="text-xs uppercase tracking-[0.2em] text-sky-200">Completed checks</p><p className="mt-4 text-3xl font-black text-white">{confirmedCustomerOrders.length}</p></div>
+            </div>
+            <div className="rounded-2xl border border-gray-800 bg-gradient-to-br from-gray-900/70 to-gray-950/50 p-6">
+              <div className="mb-4 flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-emerald-400" /><h2 className="text-lg font-bold text-white">Review workflow</h2></div>
+              <p className="text-sm leading-6 text-gray-400">Pending orders stay visible here until payment is confirmed. Use the review queue to approve payments and keep fulfillment accurate.</p>
+            </div>
+          </div>
+        );
+      }
+
+      if (adminSection === 'reports') {
+        return (
+          <div className="space-y-6">
+            <div className="flex items-end justify-between gap-4">
+              <div><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f97316]">Analytics</p><h1 className="mt-2 text-3xl font-black text-white">Sales Reports</h1><p className="mt-2 text-sm text-gray-400">Revenue and order performance at a glance.</p></div>
+              <button type="button" onClick={() => setIsSalesReportOpen(true)} className="rounded-xl border border-blue-500/40 bg-blue-500/10 px-4 py-2.5 text-sm font-bold text-blue-200 hover:border-blue-300/60">Open full report</button>
+            </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5"><TrendingUp className="h-5 w-5 text-emerald-300" /><p className="mt-4 text-xs uppercase tracking-[0.2em] text-emerald-200">Revenue</p><p className="mt-2 text-2xl font-black text-white">₦{confirmedRevenue.toLocaleString()}</p></div>
+              <div className="rounded-2xl border border-blue-500/30 bg-blue-500/10 p-5"><BarChart3 className="h-5 w-5 text-blue-300" /><p className="mt-4 text-xs uppercase tracking-[0.2em] text-blue-200">Orders</p><p className="mt-2 text-2xl font-black text-white">{customerOrders.length}</p></div>
+              <div className="rounded-2xl border border-violet-500/30 bg-violet-500/10 p-5"><Star className="h-5 w-5 text-violet-300" /><p className="mt-4 text-xs uppercase tracking-[0.2em] text-violet-200">Average order</p><p className="mt-2 text-2xl font-black text-white">₦{customerOrders.length ? Math.round(confirmedRevenue / customerOrders.length).toLocaleString() : '0'}</p></div>
+            </div>
+            <div className="rounded-2xl border border-gray-800 bg-gradient-to-br from-gray-900/70 to-gray-950/50 p-6"><h2 className="text-lg font-bold text-white">Order mix</h2><div className="mt-5 space-y-4">{[['Confirmed', pieConfirmed, 'bg-orange-400'], ['Processing', pieProcessing, 'bg-blue-400'], ['Delivered', pieDelivered, 'bg-emerald-400']].map(([label, value, color]) => <div key={String(label)}><div className="mb-2 flex justify-between text-xs"><span className="text-gray-300">{label}</span><span className="font-bold text-white">{value}%</span></div><div className="h-2 rounded-full bg-gray-800"><div className={`h-2 rounded-full ${color}`} style={{ width: `${value}%` }} /></div></div>)}</div></div>
+          </div>
+        );
+      }
+
+      if (adminSection === 'notifications') {
+        return (
+          <div className="space-y-6">
+            <div className="flex items-end justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f97316]">Inbox</p><h1 className="mt-2 text-3xl font-black text-white">Notifications</h1><p className="mt-2 text-sm text-gray-400">Recent activity that needs your attention.</p></div><button type="button" onClick={() => setNotifications((items) => items.map((item) => ({ ...item, read: true })))} className="rounded-xl border border-gray-700 px-4 py-2.5 text-sm font-bold text-gray-300 hover:border-gray-500 hover:text-white">Mark all read</button></div>
+            <div className="space-y-3">{notifications.map((notification) => <button key={notification.id} type="button" onClick={() => setNotifications((items) => items.map((item) => item.id === notification.id ? { ...item, read: true } : item))} className={`flex w-full items-start gap-4 rounded-2xl border p-5 text-left transition ${notification.read ? 'border-gray-800 bg-gray-900/40' : 'border-orange-500/30 bg-orange-500/10 hover:border-orange-400/60'}`}><div className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${notification.read ? 'bg-gray-600' : 'bg-orange-400'}`} /><div className="min-w-0"><p className="font-bold text-white">{notification.title}</p><p className="mt-1 text-sm text-gray-400">{notification.description}</p><p className="mt-3 text-[11px] text-gray-500">{notification.time}</p></div></button>)}</div>
+          </div>
+        );
+      }
+
+      if (adminSection === 'support') {
+        return (
+          <div className="space-y-6">
+            <div><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f97316]">Operations</p><h1 className="mt-2 text-3xl font-black text-white">Support chat</h1><p className="mt-2 text-sm text-gray-400">Keep customer and order support in one place.</p></div>
+            <div className="rounded-2xl border border-gray-800 bg-gradient-to-br from-gray-900/70 to-gray-950/50 p-6"><div className="mb-5 flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-500/15"><MessageCircle className="h-5 w-5 text-emerald-300" /></div><div><p className="font-bold text-white">NeoMart support assistant</p><p className="text-xs text-emerald-300">Online and monitoring orders</p></div></div><div className="max-h-72 space-y-3 overflow-y-auto">{adminChatMessages.map((message, index) => <div key={`${message.text}-${index}`} className={`max-w-[85%] rounded-xl px-4 py-3 text-sm ${message.from === 'admin' ? 'ml-auto bg-orange-500/15 text-orange-100' : 'bg-gray-800 text-gray-300'}`}>{message.text}</div>)}</div><form className="mt-5 flex gap-2" onSubmit={(event) => { event.preventDefault(); const message = adminChatInput.trim(); if (!message) return; setAdminChatMessages((items) => [...items, { from: 'admin', text: message }]); setAdminChatInput(''); }}><input value={adminChatInput} onChange={(event) => setAdminChatInput(event.target.value)} placeholder="Write a support note..." className="min-w-0 flex-1 rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-sm text-white outline-none placeholder:text-gray-600 focus:border-orange-500" /><button type="submit" aria-label="Send support message" className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-orange-500 text-white hover:bg-orange-400"><Send className="h-4 w-4" /></button></form></div>
+          </div>
+        );
+      }
+
+      if (adminSection === 'storefront') {
+        return (
+          <div className="space-y-6">
+            <div><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f97316]">Public store</p><h1 className="mt-2 text-3xl font-black text-white">Storefront</h1><p className="mt-2 text-sm text-gray-400">Preview the customer experience and keep selling in reach.</p></div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-2xl border border-orange-500/30 bg-gradient-to-br from-orange-500/15 to-gray-900/60 p-6"><Store className="h-6 w-6 text-orange-300" /><h2 className="mt-5 text-xl font-black text-white">Customer storefront</h2><p className="mt-2 text-sm leading-6 text-gray-400">Open the live shopping experience to inspect products, categories, checkout, and delivery tracking.</p><button type="button" onClick={openStorefront} className="mt-5 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-bold text-white hover:bg-orange-400">Open storefront</button></div>
+              <div className="rounded-2xl border border-gray-800 bg-gradient-to-br from-gray-900/70 to-gray-950/50 p-6"><ShoppingBag className="h-6 w-6 text-cyan-300" /><h2 className="mt-5 text-xl font-black text-white">Catalog snapshot</h2><p className="mt-2 text-sm leading-6 text-gray-400">Your storefront currently has products ready for customers across {new Set(products.map((product) => product.category)).size} categories.</p><div className="mt-5 flex items-center gap-3"><span className="text-3xl font-black text-white">{products.length}</span><span className="text-xs uppercase tracking-[0.18em] text-gray-500">products live</span></div></div>
+            </div>
+          </div>
+        );
+      }
+
+      if (adminSection === 'settings') {
+        return (
+          <div className="space-y-6">
+            <div><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f97316]">Workspace</p><h1 className="mt-2 text-3xl font-black text-white">Settings</h1><p className="mt-2 text-sm text-gray-400">Adjust the admin workspace and connected services.</p></div>
+            <div className="divide-y divide-gray-800 overflow-hidden rounded-2xl border border-gray-800 bg-gradient-to-br from-gray-900/70 to-gray-950/50">
+              <div className="flex items-center justify-between gap-5 p-5"><div><p className="font-bold text-white">Appearance</p><p className="mt-1 text-sm text-gray-400">Choose the storefront theme used in this browser.</p></div><button type="button" onClick={toggleTheme} className="rounded-xl border border-gray-700 px-4 py-2.5 text-sm font-bold text-gray-200 hover:border-orange-500/60">{theme === 'dark' ? 'Dark mode' : 'Light mode'}</button></div>
+              <div className="flex items-center justify-between gap-5 p-5"><div><p className="font-bold text-white">Firebase connection</p><p className="mt-1 text-sm text-gray-400">Orders, stock, and customer updates sync in real time.</p></div><span className="inline-flex items-center gap-2 rounded-full bg-emerald-500/15 px-3 py-1.5 text-xs font-bold text-emerald-300"><span className="h-2 w-2 rounded-full bg-emerald-400" />Connected</span></div>
+              <div className="flex items-center justify-between gap-5 p-5"><div><p className="font-bold text-white">Admin session</p><p className="mt-1 text-sm text-gray-400">Signed in as {currentUserEmail || 'administrator'}.</p></div><button type="button" onClick={openStorefront} className="rounded-xl border border-gray-700 px-4 py-2.5 text-sm font-bold text-gray-200 hover:border-gray-500">Exit admin</button></div>
             </div>
           </div>
         );
@@ -1242,7 +1334,7 @@ export default function App() {
               </div>
             </div>
 
-            <nav className="mt-8 space-y-1.5 flex-1 text-sm font-semibold">
+            <nav className="mt-8 flex-1 space-y-1.5 overflow-y-auto pr-1 text-sm font-semibold">
               {adminSidebarItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = adminSection === item.id;
