@@ -1,15 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { ShoppingCart, Check, Star } from 'lucide-react';
-import { Product } from '../types';
+import { Product, Review } from '../types';
 
 interface ProductCardProps {
   product: Product;
+  reviews?: Review[];
   onAddToCart: (product: Product) => boolean | void;
   onSelectProduct: (productId: number) => void;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({
   product,
+  reviews = [],
   onAddToCart,
   onSelectProduct
 }) => {
@@ -46,6 +48,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const formatPrice = (amount: number) => {
     return '₦' + amount.toLocaleString('en-NG');
   };
+
+  const productReviews = reviews.filter((review) => review.productId === product.id);
+  const reviewCount = productReviews.length;
+  const rating = reviewCount
+    ? productReviews.reduce((sum, review) => sum + review.rating, 0) / reviewCount
+    : 0;
 
   const handleAddClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -126,9 +134,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </div>
 
           <div className="mt-1.5 flex items-center gap-1.5">
-            {renderStars(product.rating)}
+            {renderStars(rating)}
             <span className="text-[10px] text-gray-400">
-              ({product.reviews.toLocaleString()})
+              ({reviewCount.toLocaleString()})
             </span>
           </div>
         </div>

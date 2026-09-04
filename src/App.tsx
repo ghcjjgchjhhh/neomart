@@ -249,7 +249,8 @@ export default function App() {
   // Reviews state
   const [reviews, setReviews] = useState<Review[]>(() => {
     try {
-      const saved = localStorage.getItem('neomart_reviews');
+      localStorage.removeItem('neomart_reviews');
+      const saved = localStorage.getItem('neomart_customer_reviews');
       return saved ? JSON.parse(saved) : initialReviews;
     } catch {
       return initialReviews;
@@ -658,7 +659,7 @@ export default function App() {
 
   // Sync reviews
   useEffect(() => {
-    localStorage.setItem('neomart_reviews', JSON.stringify(reviews));
+    localStorage.setItem('neomart_customer_reviews', JSON.stringify(reviews));
   }, [reviews]);
 
   // Sync orders
@@ -1136,7 +1137,13 @@ export default function App() {
     } else if (sortOption === 'price-high') {
       list.sort((a, b) => b.price - a.price);
     } else if (sortOption === 'rating') {
-      list.sort((a, b) => b.rating - a.rating);
+      const getLiveRating = (product: Product) => {
+        const productReviews = reviews.filter((review) => review.productId === product.id);
+        return productReviews.length
+          ? productReviews.reduce((sum, review) => sum + review.rating, 0) / productReviews.length
+          : 0;
+      };
+      list.sort((a, b) => getLiveRating(b) - getLiveRating(a));
     }
 
     return list;
@@ -1833,6 +1840,7 @@ export default function App() {
                       <ProductCard
                         key={product.id}
                         product={product}
+                        reviews={reviews}
                         onAddToCart={handleAddToCart}
                         onSelectProduct={handleSelectProduct}
                       />
@@ -1906,6 +1914,7 @@ export default function App() {
                         <ProductCard
                           key={p.id}
                           product={p}
+                          reviews={reviews}
                           onAddToCart={handleAddToCart}
                           onSelectProduct={handleSelectProduct}
                         />
@@ -1934,6 +1943,7 @@ export default function App() {
                         <ProductCard
                           key={p.id}
                           product={p}
+                          reviews={reviews}
                           onAddToCart={handleAddToCart}
                           onSelectProduct={handleSelectProduct}
                         />
@@ -1962,6 +1972,7 @@ export default function App() {
                         <ProductCard
                           key={p.id}
                           product={p}
+                          reviews={reviews}
                           onAddToCart={handleAddToCart}
                           onSelectProduct={handleSelectProduct}
                         />
@@ -1990,6 +2001,7 @@ export default function App() {
                         <ProductCard
                           key={p.id}
                           product={p}
+                          reviews={reviews}
                           onAddToCart={handleAddToCart}
                           onSelectProduct={handleSelectProduct}
                         />
@@ -2018,6 +2030,7 @@ export default function App() {
                         <ProductCard
                           key={p.id}
                           product={p}
+                          reviews={reviews}
                           onAddToCart={handleAddToCart}
                           onSelectProduct={handleSelectProduct}
                         />

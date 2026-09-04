@@ -53,7 +53,7 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({
     ? (
         productReviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews
       ).toFixed(1)
-    : product.rating.toFixed(1);
+    : '0.0';
 
   const starCounts = [5, 4, 3, 2, 1].map((star) => ({
     star,
@@ -186,7 +186,7 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({
                 ))}
               </div>
               <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                {avgRating} ({totalReviews || product.reviews} verified ratings)
+                {totalReviews ? `${avgRating} (${totalReviews} verified ratings)` : 'No ratings yet'}
               </span>
             </div>
 

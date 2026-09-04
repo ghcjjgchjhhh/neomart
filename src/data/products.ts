@@ -153,7 +153,7 @@ export const allProducts: Product[] = [
     rating: 4.6,
     reviews: 987,
     emoji: '💻',
-    img: 'https://ng.jumia.is/unsafe/fit-in/300x300/filters:fill(white)/product/35/1512504/1.jpg?4316',
+    img: 'https://ng.jumia.is/unsafe/fit-in/300x300/filters:fill(white)/product/61/1088921/1.jpg?2759',
     category: 'laptop',
     tags: ['laptop', 'hp', 'computing']
   },
