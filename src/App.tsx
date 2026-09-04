@@ -196,7 +196,11 @@ export default function App() {
       if (!saved) return initialProducts;
       const savedProducts = JSON.parse(saved) as Product[];
       const savedIds = new Set(savedProducts.map((product) => product.id));
-      return [...savedProducts, ...initialProducts.filter((product) => !savedIds.has(product.id))];
+      return [...savedProducts, ...initialProducts.filter((product) => !savedIds.has(product.id))].map((product) =>
+        product.id === 12
+          ? { ...product, img: initialProducts.find((item) => item.id === 12)?.img, emoji: '💻', category: 'laptop', tags: ['laptop', 'hp', 'computing'] }
+          : product
+      );
     } catch {
       return initialProducts;
     }
