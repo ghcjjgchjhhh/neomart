@@ -201,24 +201,9 @@ body {
   overflow-x: hidden;
 }
 
-.admin-dashboard .admin-room,
-.admin-dashboard .admin-room * {
+.admin-dashboard .admin-room {
   min-width: 0;
-}
-
-.admin-dashboard .admin-room h1,
-.admin-dashboard .admin-room h2,
-.admin-dashboard .admin-room h3,
-.admin-dashboard .admin-room p,
-.admin-dashboard .admin-room span,
-.admin-dashboard .admin-room label {
-  overflow-wrap: anywhere;
-}
-
-.admin-dashboard .admin-room button,
-.admin-dashboard .admin-room input,
-.admin-dashboard .admin-room select {
-  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .admin-dashboard main .bg-white {
