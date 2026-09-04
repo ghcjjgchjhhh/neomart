@@ -16,7 +16,6 @@ import { HelpCenterModal } from './components/HelpCenterModal';
 import { AdminOrdersModal } from './components/AdminOrdersModal';
 import { ConfirmOrdersModal } from './components/ConfirmOrdersModal';
 import { AdminOrderAlert } from './components/AdminOrderAlert';
-import { AdminStockModal } from './components/AdminStockModal';
 import { OrderHistoryModal } from './components/OrderHistoryModal';
 import { AdminSalesReportModal } from './components/AdminSalesReportModal';
 import { AdminCustomersModal, type AccountState } from './components/AdminCustomersModal';
@@ -292,7 +291,6 @@ export default function App() {
   const [currentView, setCurrentView] = useState<'store' | 'admin'>(isAdminPath ? 'admin' : 'store');
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isConfirmOrdersOpen, setIsConfirmOrdersOpen] = useState(false);
-  const [isStockOpen, setIsStockOpen] = useState(false);
       const [isOrderHistoryOpen, setIsOrderHistoryOpen] = useState(false);
       const [isSalesReportOpen, setIsSalesReportOpen] = useState(false);
       const [isCustomerManagementOpen, setIsCustomerManagementOpen] = useState(false);
@@ -635,7 +633,6 @@ export default function App() {
   const openAdminPortal = () => {
     setAdminSection('overview');
     setIsAdminOpen(false);
-    setIsStockOpen(false);
     setIsConfirmOrdersOpen(false);
     setIsSalesReportOpen(false);
     setIsCustomerManagementOpen(false);
@@ -1846,7 +1843,12 @@ export default function App() {
         onEnableNotifications={enableAdminNotifications}
         orders={orders.filter((order) => order.orderSource === 'customer')}
         onConfirmOrderPayment={handleConfirmOrderPayment}
-        onOpenStockManagement={() => setIsStockOpen(true)}
+        onOpenStockManagement={() => {
+          setAdminSection('inventory');
+          setCurrentView('admin');
+          setIsAdminOpen(false);
+          window.history.pushState({}, '', '/admin');
+        }}
         onOpenSalesReport={() => setIsSalesReportOpen(true)}
         onOpenCustomerManagement={() => setIsCustomerManagementOpen(true)}
         onOpenLiveGps={(orderId) => {
@@ -1881,27 +1883,6 @@ export default function App() {
         )}
         onConfirmOrder={handleConfirmOrderPayment}
       />
-      <AdminStockModal
-        isOpen={isStockOpen}
-        onClose={() => setIsStockOpen(false)}
-        stockLevels={stockLevels}
-        onUpdateStock={handleUpdateStock}
-        products={products}
-        onSaveProduct={(product) => {
-          setProducts((previous) => {
-            const updated = previous.some((item) => item.id === product.id)
-              ? previous.map((item) => item.id === product.id ? product : item)
-              : [product, ...previous];
-            return updated;
-          });
-          showToast('Product saved');
-        }}
-        onDeleteProduct={(productId) => {
-          setProducts((previous) => previous.filter((product) => product.id !== productId));
-          showToast('Product deleted');
-        }}
-      />
-
       <AdminSalesReportModal
         isOpen={isSalesReportOpen}
         onClose={() => setIsSalesReportOpen(false)}
