@@ -875,10 +875,11 @@ export default function App() {
                 setAdminSection(item.id);
                 setMobileMenuOpen(false);
               }}
-              className={`group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left transition-all duration-200 ${
+              aria-current={isActive ? 'page' : undefined}
+              className={`group flex min-h-11 w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/80 ${
                 isActive
-                  ? 'bg-gradient-to-r from-[#f97316] to-[#fb923c] text-white shadow-lg shadow-orange-500/30'
-                  : 'text-gray-300 hover:bg-white/5 hover:text-white'
+                  ? 'border-orange-400/60 bg-gradient-to-r from-[#f97316] to-[#fb923c] text-white shadow-lg shadow-orange-500/30'
+                  : 'border-transparent text-gray-300 hover:border-gray-700 hover:bg-white/5 hover:text-white'
               }`}
             >
               <Icon className="h-5 w-5 shrink-0" />
