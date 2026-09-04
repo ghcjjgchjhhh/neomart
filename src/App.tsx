@@ -901,6 +901,19 @@ export default function App() {
       </nav>
     );
 
+    const exportOrdersCsv = () => {
+      const rows = customerOrders.map((order) => [order.id, order.customerName || 'Guest customer', order.phone || order.email, order.total, order.date, order.status, order.driverName || 'Unassigned']);
+      const csv = [['Order ID', 'Customer', 'Contact', 'Amount', 'Date', 'Status', 'Delivery'], ...rows]
+        .map((row) => row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(','))
+        .join('\n');
+      const downloadUrl = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+      const downloadLink = document.createElement('a');
+      downloadLink.href = downloadUrl;
+      downloadLink.download = `neomart-sales-${new Date().toISOString().slice(0, 10)}.csv`;
+      downloadLink.click();
+      URL.revokeObjectURL(downloadUrl);
+    };
+
     const renderAdminContent = () => {
       if (adminSection === 'orders') {
         return (
@@ -991,7 +1004,7 @@ export default function App() {
         return (
           <AdminRoom>
             <div className="flex items-end justify-between gap-4">
-              <div><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f97316]">Analytics</p><h1 className="mt-2 text-3xl font-black text-white">Sales Reports</h1><p className="mt-2 text-sm text-gray-400">Revenue and order performance at a glance.</p></div><button type="button" onClick={() => setIsSalesReportOpen(true)} className="rounded-xl border border-blue-500/40 bg-blue-500/10 px-4 py-2.5 text-sm font-bold text-blue-200 hover:border-blue-300">Open detailed report</button>
+              <div><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f97316]">Analytics</p><h1 className="mt-2 text-3xl font-black text-white">Sales Reports</h1><p className="mt-2 text-sm text-gray-400">Revenue and order performance at a glance.</p></div><button type="button" onClick={exportOrdersCsv} className="rounded-xl border border-blue-500/40 bg-blue-500/10 px-4 py-2.5 text-sm font-bold text-blue-200 hover:border-blue-300">Export CSV</button>
             </div>
             <div className="grid gap-4 md:grid-cols-3">
               <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5"><TrendingUp className="h-5 w-5 text-emerald-300" /><p className="mt-4 text-xs uppercase tracking-[0.2em] text-emerald-200">Revenue</p><p className="mt-2 text-2xl font-black text-white">₦{confirmedRevenue.toLocaleString()}</p></div>
