@@ -225,6 +225,9 @@ export default function App() {
   const [accountName, setAccountName] = useState(() =>
     localStorage.getItem('neomart_account_name') || ''
   );
+  const [accountPhotoUrl, setAccountPhotoUrl] = useState(() =>
+    localStorage.getItem('neomart_account_photo_url') || ''
+  );
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isCustomerAccessBlocked, setIsCustomerAccessBlocked] = useState(false);
 
@@ -369,11 +372,13 @@ export default function App() {
       setIsLoggedIn(true);
       setCurrentUserEmail(email);
       setAccountName(name);
+      setAccountPhotoUrl(user.photoURL || '');
       const startedAt = Date.now();
       setSessionStartedAt(startedAt);
       localStorage.setItem('neomart_logged_in', 'true');
       localStorage.setItem('neomart_user_email', email);
       localStorage.setItem('neomart_account_name', name);
+      if (user.photoURL) localStorage.setItem('neomart_account_photo_url', user.photoURL);
       localStorage.setItem('neomart_session_started_at', String(startedAt));
       if (email.toLowerCase() === ADMIN_EMAIL) {
         setAdminSection('overview');
@@ -400,6 +405,7 @@ export default function App() {
       setIsLoggedIn(false);
       setCurrentUserEmail('');
       setAccountName('');
+      setAccountPhotoUrl('');
       localStorage.removeItem('neomart_logged_in');
       localStorage.removeItem('neomart_user_email');
       localStorage.removeItem('neomart_account_name');
@@ -1454,6 +1460,7 @@ export default function App() {
         onOpenLogin={() => setIsLoginOpen(true)}
         isLoggedIn={isLoggedIn}
         accountName={accountName}
+        accountPhotoUrl={accountPhotoUrl}
         onOpenHelpSection={handleOpenHelpSection}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -1789,7 +1796,7 @@ export default function App() {
         onClose={() => setIsLoginOpen(false)}
         isLoggedIn={isLoggedIn}
           isAccessBlocked={isCustomerAccessBlocked}
-        onLoginSuccess={async (id, name) => {
+        onLoginSuccess={async (id, name, photoUrl) => {
           const state = await getCustomerAccountState(id);
           if (state.revokedAt || state.disabled || state.deletedAt) {
             setIsCustomerAccessBlocked(true);
@@ -1800,10 +1807,12 @@ export default function App() {
           setIsLoggedIn(true);
           setCurrentUserEmail(id);
           setAccountName(name || id.split('@')[0]);
+          setAccountPhotoUrl(photoUrl || '');
           setSessionStartedAt(startedAt);
           localStorage.setItem('neomart_logged_in', 'true');
           localStorage.setItem('neomart_user_email', id);
           localStorage.setItem('neomart_account_name', name || id.split('@')[0]);
+          if (photoUrl) localStorage.setItem('neomart_account_photo_url', photoUrl);
           localStorage.setItem('neomart_session_started_at', String(startedAt));
           if (id.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
             setAdminSection('overview');
@@ -1820,10 +1829,12 @@ export default function App() {
           setIsLoggedIn(false);
           setCurrentUserEmail('');
           setAccountName('');
+          setAccountPhotoUrl('');
           setIsAdminOpen(false);
           localStorage.removeItem('neomart_logged_in');
           localStorage.removeItem('neomart_user_email');
           localStorage.removeItem('neomart_account_name');
+          localStorage.removeItem('neomart_account_photo_url');
           localStorage.removeItem('neomart_session_started_at');
         }}
         showToast={showToast}

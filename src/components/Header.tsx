@@ -30,6 +30,7 @@ interface HeaderProps {
   onOpenLogin: () => void;
   isLoggedIn: boolean;
   accountName: string;
+  accountPhotoUrl?: string;
   onOpenHelpSection: (section: HelpSectionType) => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
@@ -52,6 +53,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenLogin,
   isLoggedIn,
   accountName,
+  accountPhotoUrl,
   onOpenHelpSection,
   searchQuery,
   onSearchChange,
@@ -235,7 +237,7 @@ export const Header: React.FC<HeaderProps> = ({
                 className="flex max-w-21.5 flex-col items-center rounded-lg px-1 py-1 hover:bg-white/20 transition-colors text-white cursor-pointer"
                 aria-label="Account"
               >
-                <User className="w-5 h-5" />
+                {accountPhotoUrl ? <img src={accountPhotoUrl} alt="" className="h-6 w-6 rounded-full object-cover" /> : <User className="w-5 h-5" />}
                 <span className="max-w-20 truncate text-[9px] font-medium">
                   {isLoggedIn ? `Welcome, ${accountName || 'Account'}` : 'Account'}
                 </span>
@@ -471,7 +473,7 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={onOpenLogin}
               className="flex flex-col items-center justify-center px-3 py-1 rounded-lg hover:bg-white/20 transition-colors text-white text-xs cursor-pointer"
             >
-              <User className="w-5 h-5" />
+              {accountPhotoUrl ? <img src={accountPhotoUrl} alt="" className="h-6 w-6 rounded-full object-cover" /> : <User className="w-5 h-5" />}
               <span className="text-[11px] font-medium">
                 {isLoggedIn ? `Welcome, ${accountName || 'Account'}` : 'Account'}
               </span>

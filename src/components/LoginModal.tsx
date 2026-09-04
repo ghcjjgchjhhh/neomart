@@ -7,7 +7,7 @@ interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
   isLoggedIn: boolean;
-  onLoginSuccess: (identifier: string, displayName?: string) => void | Promise<void>;
+  onLoginSuccess: (identifier: string, displayName?: string, photoUrl?: string) => void | Promise<void>;
   onLogout: () => void;
   showToast: (msg: string) => void;
   isAccessBlocked?: boolean;
@@ -107,7 +107,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       const user = await signInWithGoogle();
       if (!user) return;
       const userName = user.displayName || user.email?.split('@')[0] || 'Google User';
-      await onLoginSuccess(user.email || user.uid, user.displayName || user.email?.split('@')[0]);
+      await onLoginSuccess(user.email || user.uid, user.displayName || user.email?.split('@')[0], user.photoURL || undefined);
       showToast(`Signed in with Google as ${user.email || userName}`);
       onClose();
     } catch {
