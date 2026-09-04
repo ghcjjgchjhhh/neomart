@@ -320,6 +320,13 @@ export default function App() {
         return [];
       }
     });
+    const [adminActivityLog, setAdminActivityLog] = useState<Array<{ id: string; action: string; detail: string; createdAt: string }>>(() => {
+      try {
+        return JSON.parse(localStorage.getItem('neomart_admin_activity_log') || '[]');
+      } catch {
+        return [];
+      }
+    });
   const [activeHelpSection, setActiveHelpSection] = useState<HelpSectionType>('place-order');
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -331,7 +338,7 @@ export default function App() {
   ]);
   const [showSplash, setShowSplash] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [adminSection, setAdminSection] = useState<'overview' | 'orders' | 'confirmations' | 'inventory' | 'reports' | 'customers' | 'notifications' | 'support' | 'storefront' | 'settings'>('overview');
+  const [adminSection, setAdminSection] = useState<'overview' | 'orders' | 'confirmations' | 'inventory' | 'reports' | 'customers' | 'notifications' | 'support' | 'storefront' | 'settings' | 'activity'>('overview');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dateRange] = useState('May 12, 2025 - May 19, 2025');
   const [isOrdersModalOpen, setIsOrdersModalOpen] = useState(false);
@@ -539,6 +546,12 @@ export default function App() {
   };
 
   const handleUpdateStock = (productId: number, quantity: number) => {
+    const productName = products.find((product) => product.id === productId)?.name || `Product #${productId}`;
+    setAdminActivityLog((previous) => {
+      const updated = [{ id: crypto.randomUUID(), action: 'Stock updated', detail: `${productName} changed to ${quantity} units`, createdAt: new Date().toISOString() }, ...previous].slice(0, 100);
+      localStorage.setItem('neomart_admin_activity_log', JSON.stringify(updated));
+      return updated;
+    });
     const historyEntry = { productId, quantity, updatedAt: new Date().toISOString() };
     setStockHistory((previous) => {
       const updated = [historyEntry, ...previous].slice(0, 100);
@@ -663,6 +676,11 @@ export default function App() {
   };
 
   const handleConfirmOrderPayment = async (orderId: string) => {
+    setAdminActivityLog((previous) => {
+      const updated = [{ id: crypto.randomUUID(), action: 'Payment confirmed', detail: `Order #${orderId} was confirmed`, createdAt: new Date().toISOString() }, ...previous].slice(0, 100);
+      localStorage.setItem('neomart_admin_activity_log', JSON.stringify(updated));
+      return updated;
+    });
     const previousOrders = orders;
     setOrders((prev) =>
       prev.map((order) =>
@@ -884,6 +902,7 @@ export default function App() {
       { id: 'support', label: 'Support Chat', icon: MessageCircle },
       { id: 'storefront', label: 'Storefront', icon: Store },
       { id: 'settings', label: 'Settings', icon: Settings },
+      { id: 'activity', label: 'Activity Log', icon: ClipboardList, badge: adminActivityLog.length },
     ] as const;
 
     const renderAdminNav = () => (
@@ -1070,6 +1089,18 @@ export default function App() {
               <div className="flex items-center justify-between gap-5 p-5"><div><p className="font-bold text-white">Appearance</p><p className="mt-1 text-sm text-gray-400">Choose the storefront theme used in this browser.</p></div><button type="button" onClick={toggleTheme} className="rounded-xl border border-gray-700 px-4 py-2.5 text-sm font-bold text-gray-200 hover:border-orange-500/60">{theme === 'dark' ? 'Dark mode' : 'Light mode'}</button></div>
               <div className="flex items-center justify-between gap-5 p-5"><div><p className="font-bold text-white">Firebase connection</p><p className="mt-1 text-sm text-gray-400">Orders, stock, and customer updates sync in real time.</p></div><span className="inline-flex items-center gap-2 rounded-full bg-emerald-500/15 px-3 py-1.5 text-xs font-bold text-emerald-300"><span className="h-2 w-2 rounded-full bg-emerald-400" />Connected</span></div>
               <div className="flex items-center justify-between gap-5 p-5"><div><p className="font-bold text-white">Admin session</p><p className="mt-1 text-sm text-gray-400">Signed in as {currentUserEmail || 'administrator'}.</p></div><button type="button" onClick={openStorefront} className="rounded-xl border border-gray-700 px-4 py-2.5 text-sm font-bold text-gray-200 hover:border-gray-500">Exit admin</button></div>
+            </div>
+          </AdminRoom>
+        );
+      }
+
+      if (adminSection === 'activity') {
+        return (
+          <AdminRoom onBack={() => setAdminSection('overview')}>
+            <AdminSectionHeader eyebrow="Security" title="Admin Activity Log" description="A local record of important admin actions in this browser." />
+            <div className="rounded-2xl border border-gray-800 bg-gradient-to-br from-gray-900/70 to-gray-950/50 p-5">
+              <div className="mb-5 flex items-center justify-between gap-3"><h2 className="text-lg font-bold text-white">Recent actions</h2><button type="button" onClick={() => { setAdminActivityLog([]); localStorage.removeItem('neomart_admin_activity_log'); }} className="rounded-xl border border-red-500/40 px-3 py-2 text-xs font-bold text-red-300 hover:bg-red-500/10">Clear log</button></div>
+              {adminActivityLog.length === 0 ? <p className="py-10 text-center text-sm text-gray-500">No admin activity recorded yet.</p> : <div className="space-y-2">{adminActivityLog.map((entry) => <div key={entry.id} className="flex flex-col gap-2 rounded-xl border border-gray-800 bg-gray-900/60 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-bold text-white">{entry.action}</p><p className="mt-1 text-xs text-gray-400">{entry.detail}</p></div><time className="shrink-0 text-[11px] text-gray-500">{new Date(entry.createdAt).toLocaleString()}</time></div>)}</div>}
             </div>
           </AdminRoom>
         );
