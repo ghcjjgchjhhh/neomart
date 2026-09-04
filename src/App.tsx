@@ -310,6 +310,13 @@ export default function App() {
         return {};
       }
     });
+    const [stockHistory, setStockHistory] = useState<Array<{ productId: number; quantity: number; updatedAt: string }>>(() => {
+      try {
+        return JSON.parse(localStorage.getItem('neomart_stock_history') || '[]');
+      } catch {
+        return [];
+      }
+    });
   const [activeHelpSection, setActiveHelpSection] = useState<HelpSectionType>('place-order');
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -529,6 +536,12 @@ export default function App() {
   };
 
   const handleUpdateStock = (productId: number, quantity: number) => {
+    const historyEntry = { productId, quantity, updatedAt: new Date().toISOString() };
+    setStockHistory((previous) => {
+      const updated = [historyEntry, ...previous].slice(0, 100);
+      localStorage.setItem('neomart_stock_history', JSON.stringify(updated));
+      return updated;
+    });
     setStockLevels((previous) => {
       const updated = { ...previous, [productId]: quantity };
       localStorage.setItem('neomart_stock_levels', JSON.stringify(updated));
@@ -971,7 +984,7 @@ export default function App() {
               <AdminStatCard label="Healthy stock" value={products.filter((p) => (stockLevels[p.id] ?? 0) >= 10).length} tone="green" />
               <AdminStatCard label="Total SKUs" value={products.length} tone="blue" />
             </div>
-            <AdminInventoryRoom products={products} stockLevels={stockLevels} onUpdateStock={handleUpdateStock} onSaveProduct={(product) => { setProducts((previous) => previous.some((item) => item.id === product.id) ? previous.map((item) => item.id === product.id ? product : item) : [product, ...previous]); showToast('Product saved'); }} onDeleteProduct={(productId) => { setProducts((previous) => previous.filter((product) => product.id !== productId)); showToast('Product deleted'); }} />
+            <AdminInventoryRoom products={products} stockLevels={stockLevels} stockHistory={stockHistory} onUpdateStock={handleUpdateStock} onSaveProduct={(product) => { setProducts((previous) => previous.some((item) => item.id === product.id) ? previous.map((item) => item.id === product.id ? product : item) : [product, ...previous]); showToast('Product saved'); }} onDeleteProduct={(productId) => { setProducts((previous) => previous.filter((product) => product.id !== productId)); showToast('Product deleted'); }} />
           </AdminRoom>
         );
       }
