@@ -198,6 +198,27 @@ body {
 
 .admin-dashboard {
   background-image: radial-gradient(circle at 88% 0%, rgba(246, 139, 30, 0.08), transparent 28rem);
+  overflow-x: hidden;
+}
+
+.admin-dashboard .admin-room,
+.admin-dashboard .admin-room * {
+  min-width: 0;
+}
+
+.admin-dashboard .admin-room h1,
+.admin-dashboard .admin-room h2,
+.admin-dashboard .admin-room h3,
+.admin-dashboard .admin-room p,
+.admin-dashboard .admin-room span,
+.admin-dashboard .admin-room label {
+  overflow-wrap: anywhere;
+}
+
+.admin-dashboard .admin-room button,
+.admin-dashboard .admin-room input,
+.admin-dashboard .admin-room select {
+  max-width: 100%;
 }
 
 .admin-dashboard main .bg-white {
