@@ -901,13 +901,6 @@ export default function App() {
                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f97316]">Orders</p>
                 <h1 className="mt-2 text-3xl font-black text-white">Order Management</h1>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsAdminOpen(true)}
-                className="rounded-xl border border-orange-500/40 bg-gradient-to-r from-orange-500/15 to-orange-500/5 px-4 py-2.5 text-sm font-bold text-orange-200 shadow-lg shadow-orange-500/10 hover:border-orange-400/60"
-              >
-                Open full manager
-              </button>
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
@@ -955,13 +948,6 @@ export default function App() {
                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f97316]">Inventory</p>
                 <h1 className="mt-2 text-3xl font-black text-white">Product Stock</h1>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsStockOpen(true)}
-                className="rounded-xl border border-emerald-500/40 bg-gradient-to-r from-emerald-500/15 to-emerald-500/5 px-4 py-2.5 text-sm font-bold text-emerald-200 shadow-lg shadow-emerald-500/10 hover:border-emerald-400/60"
-              >
-                Manage inventory
-              </button>
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
@@ -1011,9 +997,6 @@ export default function App() {
                 <h1 className="mt-2 text-3xl font-black text-white">Payment Review</h1>
                 <p className="mt-2 text-sm text-gray-400">Check customer payments before orders move forward.</p>
               </div>
-              <button type="button" onClick={() => setIsConfirmOrdersOpen(true)} className="rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-2.5 text-sm font-bold text-cyan-200 hover:border-cyan-300/60">
-                Open review queue
-              </button>
             </div>
             <div className="grid gap-4 md:grid-cols-3">
               <div className="rounded-2xl border border-orange-500/30 bg-orange-500/10 p-5"><p className="text-xs uppercase tracking-[0.2em] text-orange-200">Awaiting review</p><p className="mt-4 text-3xl font-black text-white">{pendingCustomerOrders.length}</p></div>
@@ -1033,7 +1016,6 @@ export default function App() {
           <div className="space-y-6">
             <div className="flex items-end justify-between gap-4">
               <div><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f97316]">Analytics</p><h1 className="mt-2 text-3xl font-black text-white">Sales Reports</h1><p className="mt-2 text-sm text-gray-400">Revenue and order performance at a glance.</p></div>
-              <button type="button" onClick={() => setIsSalesReportOpen(true)} className="rounded-xl border border-blue-500/40 bg-blue-500/10 px-4 py-2.5 text-sm font-bold text-blue-200 hover:border-blue-300/60">Open full report</button>
             </div>
             <div className="grid gap-4 md:grid-cols-3">
               <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5"><TrendingUp className="h-5 w-5 text-emerald-300" /><p className="mt-4 text-xs uppercase tracking-[0.2em] text-emerald-200">Revenue</p><p className="mt-2 text-2xl font-black text-white">₦{confirmedRevenue.toLocaleString()}</p></div>
@@ -1096,13 +1078,6 @@ export default function App() {
                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f97316]">Customers</p>
                 <h1 className="mt-2 text-3xl font-black text-white">Customer Insights</h1>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsCustomerManagementOpen(true)}
-                className="rounded-xl border border-violet-500/40 bg-gradient-to-r from-violet-500/15 to-violet-500/5 px-4 py-2.5 text-sm font-bold text-violet-200 shadow-lg shadow-violet-500/10 hover:border-violet-400/60"
-              >
-                Review customer list
-              </button>
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
@@ -1151,14 +1126,6 @@ export default function App() {
               >
                 ← Back to Store
               </button>
-              <button 
-                type="button" 
-                onClick={() => setIsAdminOpen(true)} 
-                className="group inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#f97316] to-[#fb923c] px-5 py-2.5 text-sm font-bold text-white shadow-xl shadow-orange-500/40 transition-all duration-200 hover:shadow-orange-500/60 hover:scale-105 active:scale-95"
-              >
-                <Package className="h-4 w-4" />
-                <span>View Orders</span>
-              </button>
             </div>
           </div>
 
@@ -1200,12 +1167,6 @@ export default function App() {
                   <h2 className="text-lg font-bold text-white">Order Health Status</h2>
                   <p className="text-xs text-gray-400 mt-1">Payment & fulfillment distribution</p>
                 </div>
-                <button 
-                  onClick={() => setIsSalesReportOpen(true)} 
-                  className="text-xs font-bold text-[#f97316] hover:text-[#fb923c] transition-colors hover:underline"
-                >
-                  View Report →
-                </button>
               </div>
               <div className="flex items-center justify-center gap-12">
                 <div className="relative grid h-40 w-40 shrink-0 place-items-center rounded-full shadow-2xl shadow-orange-500/20" style={{ background: `conic-gradient(#f97316 0 ${pieConfirmed}%, #3b82f6 ${pieConfirmed}% ${pieConfirmed + pieProcessing}%, #10b981 ${pieConfirmed + pieProcessing}% 100%)` }}>
@@ -1261,12 +1222,6 @@ export default function App() {
                   <h2 className="text-lg font-bold text-white">Recent Orders</h2>
                   <p className="text-xs text-gray-400 mt-1">Latest transactions</p>
                 </div>
-                <button 
-                  onClick={() => setIsAdminOpen(true)} 
-                  className="text-xs font-bold text-[#f97316] hover:text-[#fb923c] transition-colors hover:underline"
-                >
-                  View All →
-                </button>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
@@ -1306,32 +1261,11 @@ export default function App() {
             </div>
 
             <div className="rounded-2xl border border-gray-800/50 bg-gradient-to-br from-gray-900/60 to-gray-950/40 p-6 backdrop-blur-sm flex flex-col">
-              <h2 className="text-lg font-bold text-white mb-5">Quick Actions</h2>
-              <div className="space-y-2.5 flex-1">
-                {[
-                  { label: 'Pending Orders', count: pendingCustomerOrders.length, action: () => setIsAdminOpen(true), color: 'red', icon: Package },
-                  { label: 'Low Stock Items', count: products.filter((p) => (stockLevels[p.id] || 0) < 10).length, action: () => setIsStockOpen(true), color: 'amber', icon: AlertTriangle },
-                  { label: 'New Customers', count: '12', action: () => setIsCustomerManagementOpen(true), color: 'purple', icon: Users },
-                ].map((action, i) => {
-                  const Icon = action.icon;
-                  return (
-                    <button 
-                      key={i}
-                      onClick={action.action}
-                      className={`group w-full rounded-xl border border-${action.color}-600/30 bg-gradient-to-r from-${action.color}-950/40 to-${action.color}-900/20 p-4 text-left transition-all duration-200 hover:border-${action.color}-500/60 hover:shadow-lg hover:shadow-${action.color}-500/20 hover:scale-105`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className={`rounded-lg bg-gradient-to-br from-${action.color}-600 to-${action.color}-500 p-2.5 text-white group-hover:shadow-lg group-hover:shadow-${action.color}-500/30`}>
-                            <Icon className="h-4 w-4" />
-                          </div>
-                          <span className="text-sm font-semibold text-gray-200 group-hover:text-white">{action.label}</span>
-                        </div>
-                        <span className={`text-2xl font-black text-${action.color}-400 group-hover:text-${action.color}-300`}>{action.count}</span>
-                      </div>
-                    </button>
-                  );
-                })}
+              <h2 className="text-lg font-bold text-white mb-5">Operations snapshot</h2>
+              <div className="space-y-3 flex-1">
+                <div className="flex items-center justify-between rounded-xl border border-red-500/20 bg-red-500/10 p-4"><span className="text-sm text-gray-300">Pending orders</span><span className="text-2xl font-black text-red-300">{pendingCustomerOrders.length}</span></div>
+                <div className="flex items-center justify-between rounded-xl border border-amber-500/20 bg-amber-500/10 p-4"><span className="text-sm text-gray-300">Low-stock products</span><span className="text-2xl font-black text-amber-300">{products.filter((p) => (stockLevels[p.id] || 0) < 10).length}</span></div>
+                <div className="flex items-center justify-between rounded-xl border border-violet-500/20 bg-violet-500/10 p-4"><span className="text-sm text-gray-300">Active customers</span><span className="text-2xl font-black text-violet-300">{new Set(customerOrders.map((order) => order.phone || order.customerName)).size}</span></div>
               </div>
             </div>
           </div>
@@ -1346,12 +1280,6 @@ export default function App() {
                   </h2>
                   <p className="text-xs text-gray-400 mt-1">Orders awaiting payment confirmation</p>
                 </div>
-                <button 
-                  onClick={() => setIsAdminOpen(true)} 
-                  className="text-xs font-bold text-[#f97316] hover:text-[#fb923c] transition-colors hover:underline"
-                >
-                  Manage All →
-                </button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {pendingCustomerOrders.slice(0, 3).map((order) => (
