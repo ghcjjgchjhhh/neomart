@@ -236,6 +236,21 @@ export default function App() {
   const [accountPhotoUrl, setAccountPhotoUrl] = useState(() =>
     localStorage.getItem('neomart_account_photo_url') || ''
   );
+
+  useEffect(() => {
+    const savedLoggedIn = localStorage.getItem('neomart_logged_in') === 'true';
+    const savedEmail = localStorage.getItem('neomart_user_email') || '';
+    const savedName = localStorage.getItem('neomart_account_name') || '';
+    const savedPhoto = localStorage.getItem('neomart_account_photo_url') || '';
+
+    if (!savedLoggedIn || !savedEmail) return;
+
+    setIsLoggedIn(true);
+    setCurrentUserEmail(savedEmail);
+    setAccountName(savedName || savedEmail.split('@')[0]);
+    setAccountPhotoUrl(savedPhoto);
+  }, []);
+
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isCustomerAccessBlocked, setIsCustomerAccessBlocked] = useState(false);
 

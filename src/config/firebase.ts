@@ -22,10 +22,17 @@ export async function signInWithGoogle() {
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
   const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
   if (isMobile) {
-    await signInWithRedirect(auth, provider);
-    return null;
+    try {
+      const result = await signInWithPopup(auth, provider);
+      return result.user;
+    } catch {
+      await signInWithRedirect(auth, provider);
+      return null;
+    }
   }
+
   const result = await signInWithPopup(auth, provider);
   return result.user;
 }
@@ -33,7 +40,8 @@ export async function signInWithGoogle() {
 export async function getGoogleRedirectUser() {
   if (!auth) return null;
   const result = await getRedirectResult(auth);
-  return result?.user || null;
+  if (result?.user) return result.user;
+  return auth.currentUser || null;
 }
 
 export async function ensureFirebaseAuth() {

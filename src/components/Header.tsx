@@ -234,12 +234,13 @@ export const Header: React.FC<HeaderProps> = ({
               {/* Account */}
               <button
                 onClick={onOpenLogin}
-                className="flex max-w-21.5 flex-col items-center rounded-lg px-1 py-1 hover:bg-white/20 transition-colors text-white cursor-pointer"
+                className="flex w-20 min-w-0 flex-col items-center rounded-lg px-1 py-1 hover:bg-white/20 transition-colors text-white cursor-pointer"
                 aria-label="Account"
+                title={isLoggedIn ? accountName || 'Account' : 'Account'}
               >
                 {accountPhotoUrl ? <img src={accountPhotoUrl} alt="" className="h-6 w-6 rounded-full object-cover" /> : <User className="w-5 h-5" />}
-                <span className="max-w-20 truncate text-[9px] font-medium">
-                  {isLoggedIn ? `Welcome, ${accountName || 'Account'}` : 'Account'}
+                <span className="w-full text-center truncate text-[9px] font-medium leading-tight">
+                  {isLoggedIn ? (accountName || 'Account') : 'Account'}
                 </span>
               </button>
 
