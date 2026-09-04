@@ -1178,20 +1178,20 @@ export default function App() {
                   <p className="text-xs text-gray-400 mt-1">Payment & fulfillment distribution</p>
                 </div>
               </div>
-              <div className="flex items-center justify-center gap-12">
-                <div className="relative grid h-40 w-40 shrink-0 place-items-center rounded-full shadow-2xl shadow-orange-500/20" style={{ background: `conic-gradient(#f97316 0 ${pieConfirmed}%, #3b82f6 ${pieConfirmed}% ${pieConfirmed + pieProcessing}%, #10b981 ${pieConfirmed + pieProcessing}% 100%)` }}>
+              <div className="flex flex-col items-center justify-center gap-8 sm:flex-row sm:gap-10">
+                <div className="relative grid h-36 w-36 shrink-0 place-items-center rounded-full shadow-2xl shadow-orange-500/20 sm:h-40 sm:w-40" style={{ background: `conic-gradient(#f97316 0 ${pieConfirmed}%, #3b82f6 ${pieConfirmed}% ${pieConfirmed + pieProcessing}%, #10b981 ${pieConfirmed + pieProcessing}% 100%)` }}>
                   <div className="grid h-28 w-28 place-items-center rounded-full bg-gradient-to-b from-gray-800 to-gray-900 text-center border border-gray-700 shadow-inner">
                     <strong className="text-3xl text-white">{customerOrders.length}</strong>
                     <span className="text-xs font-semibold text-gray-400">total</span>
                   </div>
                 </div>
-                <div className="space-y-4">
+                <div className="w-full max-w-xs space-y-4">
                   {[
                     { label: 'Confirmed', percentage: pieConfirmed, color: 'from-[#f97316] to-orange-500' },
                     { label: 'Processing', percentage: pieProcessing, color: 'from-blue-500 to-cyan-500' },
                     { label: 'Delivered', percentage: pieDelivered, color: 'from-emerald-500 to-teal-500' }
                   ].map((item, i) => (
-                    <div key={i} className="flex items-center gap-3">
+                    <div key={i} className="flex items-center gap-3 whitespace-nowrap">
                       <div className={`h-3 w-8 rounded-full bg-gradient-to-r ${item.color} shadow-lg`} />
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-semibold text-gray-300">{item.label}</span>
