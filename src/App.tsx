@@ -1355,9 +1355,9 @@ export default function App() {
           onEnableNotifications={enableAdminNotifications}
           orders={orders.filter((order) => order.orderSource === 'customer')}
           onConfirmOrderPayment={handleConfirmOrderPayment}
-          onOpenStockManagement={() => setIsStockOpen(true)}
-          onOpenSalesReport={() => setIsSalesReportOpen(true)}
-          onOpenCustomerManagement={() => setIsCustomerManagementOpen(true)}
+          onOpenStockManagement={() => setAdminSection('inventory')}
+          onOpenSalesReport={() => setAdminSection('reports')}
+          onOpenCustomerManagement={() => setAdminSection('customers')}
           onOpenLiveGps={(orderId) => {
             setIsAdminOpen(false);
             handleOpenLiveTracking(orderId);
@@ -1390,27 +1390,6 @@ export default function App() {
           )}
           onConfirmOrder={handleConfirmOrderPayment}
         />
-        <AdminStockModal
-          isOpen={isStockOpen}
-          onClose={() => setIsStockOpen(false)}
-          stockLevels={stockLevels}
-          onUpdateStock={handleUpdateStock}
-          products={products}
-          onSaveProduct={(product) => {
-            setProducts((previous) => {
-              const updated = previous.some((item) => item.id === product.id)
-                ? previous.map((item) => item.id === product.id ? product : item)
-                : [product, ...previous];
-              return updated;
-            });
-            showToast('Product saved');
-          }}
-          onDeleteProduct={(productId) => {
-            setProducts((previous) => previous.filter((product) => product.id !== productId));
-            showToast('Product deleted');
-          }}
-        />
-
         <AdminSalesReportModal
           isOpen={isSalesReportOpen}
           onClose={() => setIsSalesReportOpen(false)}
