@@ -290,6 +290,7 @@ export default function App() {
   ]);
   const [showSplash, setShowSplash] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [adminSection, setAdminSection] = useState<'overview' | 'orders' | 'inventory' | 'customers'>('overview');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dateRange] = useState('May 12, 2025 - May 19, 2025');
   const [isOrdersModalOpen, setIsOrdersModalOpen] = useState(false);
@@ -820,6 +821,415 @@ export default function App() {
   ];
 
   if (currentView === 'admin') {
+    const adminSidebarItems = [
+      { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+      { id: 'orders', label: 'Orders', icon: Package, badge: pendingCustomerOrders.length },
+      { id: 'inventory', label: 'Inventory', icon: Warehouse },
+      { id: 'customers', label: 'Customers', icon: Users },
+    ] as const;
+
+    const renderAdminContent = () => {
+      if (adminSection === 'orders') {
+        return (
+          <div className="space-y-6">
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f97316]">Orders</p>
+                <h1 className="mt-2 text-3xl font-black text-white">Order Management</h1>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAdminOpen(true)}
+                className="rounded-xl border border-orange-500/40 bg-gradient-to-r from-orange-500/15 to-orange-500/5 px-4 py-2.5 text-sm font-bold text-orange-200 shadow-lg shadow-orange-500/10 hover:border-orange-400/60"
+              >
+                Open full manager
+              </button>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-3">
+              {[
+                { label: 'Pending', value: pendingCustomerOrders.length },
+                { label: 'Confirmed', value: confirmedCustomerOrders.length },
+                { label: 'Delivered', value: deliveredCustomerOrders.length },
+              ].map((stat) => (
+                <div key={stat.label} className="rounded-2xl border border-gray-800 bg-gradient-to-br from-gray-900/60 to-gray-950/40 p-4">
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-gray-400">{stat.label}</p>
+                  <p className="mt-4 text-3xl font-black text-white">{stat.value}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {customerOrders.map((order) => (
+                <button
+                  key={order.id}
+                  onClick={() => setIsAdminOpen(true)}
+                  className="rounded-2xl border border-gray-800 bg-gradient-to-br from-gray-900/70 to-gray-950/50 p-5 text-left transition hover:border-[#f97316]/60 hover:shadow-lg hover:shadow-orange-500/10"
+                >
+                  <div className="mb-4 flex items-center justify-between gap-3">
+                    <span className="text-sm font-black text-white">#{order.id}</span>
+                    <span className="rounded-full bg-orange-500/15 px-2 py-1 text-[10px] font-bold text-orange-300">
+                      {String(order.status).replace(/_/g, ' ')}
+                    </span>
+                  </div>
+                  <div className="space-y-2 text-xs text-gray-300">
+                    <p><span className="text-gray-500">Customer:</span> {order.customerName}</p>
+                    <p><span className="text-gray-500">Amount:</span> ₦{order.total.toLocaleString()}</p>
+                    <p><span className="text-gray-500">Date:</span> {order.date}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      }
+
+      if (adminSection === 'inventory') {
+        return (
+          <div className="space-y-6">
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f97316]">Inventory</p>
+                <h1 className="mt-2 text-3xl font-black text-white">Product Stock</h1>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsStockOpen(true)}
+                className="rounded-xl border border-emerald-500/40 bg-gradient-to-r from-emerald-500/15 to-emerald-500/5 px-4 py-2.5 text-sm font-bold text-emerald-200 shadow-lg shadow-emerald-500/10 hover:border-emerald-400/60"
+              >
+                Manage inventory
+              </button>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-3">
+              {[
+                { label: 'Low stock', value: products.filter((p) => (stockLevels[p.id] ?? 0) < 10).length },
+                { label: 'Healthy', value: products.filter((p) => (stockLevels[p.id] ?? 0) >= 10).length },
+                { label: 'Total SKUs', value: products.length },
+              ].map((stat) => (
+                <div key={stat.label} className="rounded-2xl border border-gray-800 bg-gradient-to-br from-gray-900/60 to-gray-950/40 p-4">
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-gray-400">{stat.label}</p>
+                  <p className="mt-4 text-3xl font-black text-white">{stat.value}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              {products.slice(0, 8).map((product) => {
+                const stock = stockLevels[product.id] ?? 0;
+                return (
+                  <div key={product.id} className="rounded-2xl border border-gray-800 bg-gradient-to-br from-gray-900/70 to-gray-950/50 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <ProductThumb type={product.category} className="h-10 w-10" />
+                        <div>
+                          <p className="text-sm font-bold text-white">{product.name}</p>
+                          <p className="text-[11px] text-gray-400">{product.category}</p>
+                        </div>
+                      </div>
+                      <span className={`rounded-full px-2 py-1 text-[10px] font-bold ${stock < 10 ? 'bg-red-500/15 text-red-300' : 'bg-emerald-500/15 text-emerald-300'}`}>
+                        {stock} units
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      }
+
+      if (adminSection === 'customers') {
+        return (
+          <div className="space-y-6">
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f97316]">Customers</p>
+                <h1 className="mt-2 text-3xl font-black text-white">Customer Insights</h1>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsCustomerManagementOpen(true)}
+                className="rounded-xl border border-violet-500/40 bg-gradient-to-r from-violet-500/15 to-violet-500/5 px-4 py-2.5 text-sm font-bold text-violet-200 shadow-lg shadow-violet-500/10 hover:border-violet-400/60"
+              >
+                Review customer list
+              </button>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-3">
+              {[
+                { label: 'Active', value: new Set(customerOrders.map((order) => order.phone || order.customerName)).size },
+                { label: 'Returning', value: Math.max(12, Math.min(48, Math.round(customerOrders.length / 2))) },
+                { label: 'Support', value: pendingCustomerOrders.length },
+              ].map((stat) => (
+                <div key={stat.label} className="rounded-2xl border border-gray-800 bg-gradient-to-br from-gray-900/60 to-gray-950/40 p-4">
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-gray-400">{stat.label}</p>
+                  <p className="mt-4 text-3xl font-black text-white">{stat.value}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              {Array.from(new Map(customerOrders.map((order) => [order.phone || order.customerName, order])).values()).slice(0, 8).map((order) => (
+                <div key={`${order.phone || order.customerName}-${order.id}`} className="rounded-2xl border border-gray-800 bg-gradient-to-br from-gray-900/70 to-gray-950/50 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-bold text-white">{order.customerName}</p>
+                      <p className="text-[11px] text-gray-400">{order.phone || 'No phone saved'}</p>
+                    </div>
+                    <span className="rounded-full bg-violet-500/15 px-2 py-1 text-[10px] font-bold text-violet-300">Active</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <>
+          <div className="mb-10 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
+            <div className="flex-1">
+              <p className="text-xs font-bold uppercase tracking-widest text-[#f97316]/80 mb-2">Welcome back</p>
+              <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-white mb-2">Dashboard Overview</h1>
+              <p className="text-sm text-gray-400">Real-time store analytics and operations center</p>
+            </div>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              <button 
+                type="button" 
+                onClick={openStorefront} 
+                className="group inline-flex items-center gap-2 rounded-xl border border-gray-700 bg-gradient-to-br from-gray-800/50 to-gray-900/50 px-4 py-2.5 text-sm font-bold text-gray-300 transition-all duration-200 hover:border-gray-600 hover:text-white hover:shadow-lg hover:shadow-gray-500/10 backdrop-blur-sm"
+              >
+                ← Back to Store
+              </button>
+              <button 
+                type="button" 
+                onClick={() => setIsAdminOpen(true)} 
+                className="group inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#f97316] to-[#fb923c] px-5 py-2.5 text-sm font-bold text-white shadow-xl shadow-orange-500/40 transition-all duration-200 hover:shadow-orange-500/60 hover:scale-105 active:scale-95"
+              >
+                <Package className="h-4 w-4" />
+                <span>View Orders</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
+            {[
+              { title: 'Confirmed Revenue', value: `NGN ${confirmedRevenue.toLocaleString()}`, change: '+12.8%', icon: TrendingUp, gradient: 'from-emerald-600 to-teal-600', shadow: 'shadow-emerald-500/20' },
+              { title: 'Total Orders', value: `${customerOrders.length}`, change: `${deliveredCustomerOrders.length} delivered`, icon: Package, gradient: 'from-blue-600 to-cyan-600', shadow: 'shadow-blue-500/20' },
+              { title: 'Pending Review', value: `${pendingCustomerOrders.length}`, change: 'Needs attention', icon: AlertTriangle, gradient: 'from-red-600 to-orange-600', shadow: 'shadow-red-500/20' },
+              { title: 'Active Customers', value: `${new Set(customerOrders.map((order) => order.phone)).size}`, change: 'Unique shoppers', icon: Users, gradient: 'from-purple-600 to-pink-600', shadow: 'shadow-purple-500/20' }
+            ].map((card, idx) => {
+              const Icon = card.icon;
+              return (
+                <div 
+                  key={idx}
+                  className={`group rounded-2xl border border-gray-800/50 bg-gradient-to-br from-gray-900/60 to-gray-950/40 p-6 backdrop-blur-sm transition-all duration-300 hover:border-gray-700 hover:shadow-xl hover:${card.shadow} cursor-pointer hover:scale-105`}
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <p className="text-xs font-semibold text-gray-400 mb-1 uppercase tracking-wide">{card.title}</p>
+                      <h3 className="text-2xl sm:text-3xl font-black text-white">{card.value}</h3>
+                    </div>
+                    <div className={`rounded-xl bg-gradient-to-br ${card.gradient} p-3 shadow-lg ${card.shadow} text-white group-hover:scale-110 transition-transform`}>
+                      <Icon className="h-5 w-5" />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-emerald-400">↑ {card.change}</span>
+                    <span className="text-xs text-gray-500">vs last 7 days</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-[1.2fr_0.8fr] gap-6 mb-8">
+            <div className="rounded-2xl border border-gray-800/50 bg-gradient-to-br from-gray-900/60 to-gray-950/40 p-6 backdrop-blur-sm">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-lg font-bold text-white">Order Health Status</h2>
+                  <p className="text-xs text-gray-400 mt-1">Payment & fulfillment distribution</p>
+                </div>
+                <button 
+                  onClick={() => setIsSalesReportOpen(true)} 
+                  className="text-xs font-bold text-[#f97316] hover:text-[#fb923c] transition-colors hover:underline"
+                >
+                  View Report →
+                </button>
+              </div>
+              <div className="flex items-center justify-center gap-12">
+                <div className="relative grid h-40 w-40 shrink-0 place-items-center rounded-full shadow-2xl shadow-orange-500/20" style={{ background: `conic-gradient(#f97316 0 ${pieConfirmed}%, #3b82f6 ${pieConfirmed}% ${pieConfirmed + pieProcessing}%, #10b981 ${pieConfirmed + pieProcessing}% 100%)` }}>
+                  <div className="grid h-28 w-28 place-items-center rounded-full bg-gradient-to-b from-gray-800 to-gray-900 text-center border border-gray-700 shadow-inner">
+                    <strong className="text-3xl text-white">{customerOrders.length}</strong>
+                    <span className="text-xs font-semibold text-gray-400">total</span>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  {[
+                    { label: 'Confirmed', percentage: pieConfirmed, color: 'from-[#f97316] to-orange-500' },
+                    { label: 'Processing', percentage: pieProcessing, color: 'from-blue-500 to-cyan-500' },
+                    { label: 'Delivered', percentage: pieDelivered, color: 'from-emerald-500 to-teal-500' }
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <div className={`h-3 w-8 rounded-full bg-gradient-to-r ${item.color} shadow-lg`} />
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold text-gray-300">{item.label}</span>
+                        <span className="text-sm font-black text-white">{item.percentage}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-gray-800/50 bg-gradient-to-br from-gray-900/60 to-gray-950/40 p-6 backdrop-blur-sm flex flex-col">
+              <h2 className="text-lg font-bold text-white mb-1">System Status</h2>
+              <p className="text-xs text-gray-400 mb-6">Platform health & analytics</p>
+              <div className="space-y-3 flex-1">
+                {[
+                  { status: 'API Server', health: 'Online', color: 'emerald' },
+                  { status: 'Database', health: 'Synced', color: 'blue' },
+                  { status: 'Payment Gateway', health: 'Active', color: 'green' },
+                  { status: 'Delivery Network', health: 'Operational', color: 'purple' }
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center justify-between rounded-lg bg-gradient-to-r from-gray-800/40 to-gray-900/40 p-3 border border-gray-700/50">
+                    <span className="text-xs font-semibold text-gray-300">{item.status}</span>
+                    <div className="flex items-center gap-2">
+                      <span className={`h-2 w-2 rounded-full bg-${item.color}-500 animate-pulse shadow-lg shadow-${item.color}-500/50`} />
+                      <span className={`text-xs font-bold text-${item.color}-400`}>{item.health}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_0.6fr] gap-6">
+            <div className="rounded-2xl border border-gray-800/50 bg-gradient-to-br from-gray-900/60 to-gray-950/40 p-6 backdrop-blur-sm overflow-hidden">
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <h2 className="text-lg font-bold text-white">Recent Orders</h2>
+                  <p className="text-xs text-gray-400 mt-1">Latest transactions</p>
+                </div>
+                <button 
+                  onClick={() => setIsAdminOpen(true)} 
+                  className="text-xs font-bold text-[#f97316] hover:text-[#fb923c] transition-colors hover:underline"
+                >
+                  View All →
+                </button>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-gray-700/50 text-gray-400">
+                      <th className="pb-3 font-semibold">Order ID</th>
+                      <th className="pb-3 font-semibold">Customer</th>
+                      <th className="pb-3 font-semibold">Amount</th>
+                      <th className="pb-3 font-semibold">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-700/30">
+                    {customerOrders.slice(0, 6).map((order) => (
+                      <tr 
+                        key={order.id} 
+                        onClick={() => setIsAdminOpen(true)} 
+                        className="transition-all duration-200 hover:bg-gradient-to-r hover:from-gray-800/30 hover:to-gray-900/30 cursor-pointer group"
+                      >
+                        <td className="py-3 font-bold text-white group-hover:text-[#f97316]">#{order.id}</td>
+                        <td className="py-3 text-gray-300 group-hover:text-white">{order.customerName}</td>
+                        <td className="py-3 font-bold text-emerald-400">₦{order.total.toLocaleString()}</td>
+                        <td className="py-3">
+                          <span className={`inline-flex items-center rounded-full px-3 py-1 text-[10px] font-bold ${
+                            order.status === 'delivered' ? 'bg-emerald-500/20 text-emerald-400' :
+                            order.status === 'shipped' ? 'bg-blue-500/20 text-blue-400' :
+                            order.status === 'confirmed' ? 'bg-cyan-500/20 text-cyan-400' :
+                            'bg-orange-500/20 text-orange-400'
+                          }`}>
+                            {String(order.status).charAt(0).toUpperCase() + String(order.status).slice(1)}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-gray-800/50 bg-gradient-to-br from-gray-900/60 to-gray-950/40 p-6 backdrop-blur-sm flex flex-col">
+              <h2 className="text-lg font-bold text-white mb-5">Quick Actions</h2>
+              <div className="space-y-2.5 flex-1">
+                {[
+                  { label: 'Pending Orders', count: pendingCustomerOrders.length, action: () => setIsAdminOpen(true), color: 'red', icon: Package },
+                  { label: 'Low Stock Items', count: products.filter((p) => (stockLevels[p.id] || 0) < 10).length, action: () => setIsStockOpen(true), color: 'amber', icon: AlertTriangle },
+                  { label: 'New Customers', count: '12', action: () => setIsCustomerManagementOpen(true), color: 'purple', icon: Users },
+                ].map((action, i) => {
+                  const Icon = action.icon;
+                  return (
+                    <button 
+                      key={i}
+                      onClick={action.action}
+                      className={`group w-full rounded-xl border border-${action.color}-600/30 bg-gradient-to-r from-${action.color}-950/40 to-${action.color}-900/20 p-4 text-left transition-all duration-200 hover:border-${action.color}-500/60 hover:shadow-lg hover:shadow-${action.color}-500/20 hover:scale-105`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className={`rounded-lg bg-gradient-to-br from-${action.color}-600 to-${action.color}-500 p-2.5 text-white group-hover:shadow-lg group-hover:shadow-${action.color}-500/30`}>
+                            <Icon className="h-4 w-4" />
+                          </div>
+                          <span className="text-sm font-semibold text-gray-200 group-hover:text-white">{action.label}</span>
+                        </div>
+                        <span className={`text-2xl font-black text-${action.color}-400 group-hover:text-${action.color}-300`}>{action.count}</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {pendingCustomerOrders.length > 0 && (
+            <div className="mt-8 rounded-2xl border border-gray-800/50 bg-gradient-to-br from-gray-900/60 to-gray-950/40 p-6 backdrop-blur-sm">
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5 text-red-400" />
+                    Pending Review
+                  </h2>
+                  <p className="text-xs text-gray-400 mt-1">Orders awaiting payment confirmation</p>
+                </div>
+                <button 
+                  onClick={() => setIsAdminOpen(true)} 
+                  className="text-xs font-bold text-[#f97316] hover:text-[#fb923c] transition-colors hover:underline"
+                >
+                  Manage All →
+                </button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {pendingCustomerOrders.slice(0, 3).map((order) => (
+                  <button
+                    key={order.id}
+                    onClick={() => setIsAdminOpen(true)}
+                    className="group text-left rounded-xl border border-red-600/30 bg-gradient-to-br from-red-950/40 to-red-900/20 p-4 transition-all duration-200 hover:border-red-500/60 hover:shadow-lg hover:shadow-red-500/20 hover:scale-105 cursor-pointer"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="rounded-lg bg-gradient-to-br from-red-600 to-red-500 p-2 text-white mt-0.5">
+                        <AlertTriangle className="h-4 w-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-white text-sm">Order #{order.id}</p>
+                        <p className="text-xs text-gray-400 mt-1 truncate">{order.customerName}</p>
+                        <p className="text-xs text-red-300 font-semibold mt-2">Review Payment</p>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      );
+    };
+
     return (
       <div className="admin-dashboard min-h-screen bg-gradient-to-br from-[#0a0d11] via-[#0f1217] to-[#0d1012] text-gray-100 transition-colors">
         <div className="mx-auto grid min-h-screen max-w-[1600px] lg:grid-cols-[260px_1fr]">
@@ -831,36 +1241,33 @@ export default function App() {
                 <div className="text-[9px] uppercase tracking-widest text-gray-400 font-semibold">admin hub</div>
               </div>
             </div>
-            
+
             <nav className="mt-8 space-y-1.5 flex-1 text-sm font-semibold">
-              <div className="flex items-center gap-3 rounded-xl bg-gradient-to-r from-[#f97316] to-[#fb923c] px-4 py-3 text-white shadow-lg shadow-orange-500/30 transition-all">
-                <LayoutDashboard className="h-5 w-5 shrink-0" />
-                <span>Dashboard</span>
-              </div>
-              <button 
-                onClick={() => setIsAdminOpen(true)} 
-                className="group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-gray-300 transition-all duration-200 hover:bg-gradient-to-r hover:from-blue-600/20 hover:to-blue-700/10 hover:text-blue-300 hover:shadow-lg hover:shadow-blue-500/10"
-              >
-                <Package className="h-5 w-5 shrink-0" />
-                <span className="flex-1">Orders</span>
-                {pendingCustomerOrders.length > 0 && <span className="ml-auto rounded-full bg-gradient-to-r from-red-500 to-red-600 px-2.5 py-0.5 text-[10px] font-bold text-white shadow-lg shadow-red-500/30">{pendingCustomerOrders.length}</span>}
-              </button>
-              <button 
-                onClick={() => setIsStockOpen(true)} 
-                className="group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-gray-300 transition-all duration-200 hover:bg-gradient-to-r hover:from-emerald-600/20 hover:to-emerald-700/10 hover:text-emerald-300 hover:shadow-lg hover:shadow-emerald-500/10"
-              >
-                <Warehouse className="h-5 w-5 shrink-0" />
-                <span>Inventory</span>
-              </button>
-              <button 
-                onClick={() => setIsCustomerManagementOpen(true)} 
-                className="group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-gray-300 transition-all duration-200 hover:bg-gradient-to-r hover:from-purple-600/20 hover:to-purple-700/10 hover:text-purple-300 hover:shadow-lg hover:shadow-purple-500/10"
-              >
-                <Users className="h-5 w-5 shrink-0" />
-                <span>Customers</span>
-              </button>
+              {adminSidebarItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = adminSection === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setAdminSection(item.id)}
+                    className={`group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left transition-all duration-200 ${
+                      isActive
+                        ? 'bg-gradient-to-r from-[#f97316] to-[#fb923c] text-white shadow-lg shadow-orange-500/30'
+                        : 'text-gray-300 hover:bg-white/5 hover:text-white'
+                    }`}
+                  >
+                    <Icon className="h-5 w-5 shrink-0" />
+                    <span className="flex-1">{item.label}</span>
+                    {typeof item.badge === 'number' && item.badge > 0 && (
+                      <span className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white">
+                        {item.badge}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </nav>
-            
+
             <div className="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950/50 to-emerald-900/20 p-4 backdrop-blur-sm shadow-lg shadow-emerald-500/10">
               <div className="mb-3 flex items-center gap-2.5 text-xs font-bold text-emerald-300">
                 <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-300 animate-pulse shadow-lg shadow-emerald-400/50" />
@@ -869,254 +1276,9 @@ export default function App() {
               <p className="text-[11px] leading-5 text-gray-400">Real-time sync enabled for orders, payments & inventory.</p>
             </div>
           </aside>
+
           <main className="min-w-0 px-4 py-6 sm:px-8 lg:px-10 lg:py-8">
-            {/* Header Section */}
-            <div className="mb-10 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
-              <div className="flex-1">
-                <p className="text-xs font-bold uppercase tracking-widest text-[#f97316]/80 mb-2">Welcome back</p>
-                <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-white mb-2">Dashboard Overview</h1>
-                <p className="text-sm text-gray-400">Real-time store analytics and operations center</p>
-              </div>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                <button 
-                  type="button" 
-                  onClick={openStorefront} 
-                  className="group inline-flex items-center gap-2 rounded-xl border border-gray-700 bg-gradient-to-br from-gray-800/50 to-gray-900/50 px-4 py-2.5 text-sm font-bold text-gray-300 transition-all duration-200 hover:border-gray-600 hover:text-white hover:shadow-lg hover:shadow-gray-500/10 backdrop-blur-sm"
-                >
-                  ← Back to Store
-                </button>
-                <button 
-                  type="button" 
-                  onClick={() => setIsAdminOpen(true)} 
-                  className="group inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#f97316] to-[#fb923c] px-5 py-2.5 text-sm font-bold text-white shadow-xl shadow-orange-500/40 transition-all duration-200 hover:shadow-orange-500/60 hover:scale-105 active:scale-95"
-                >
-                  <Package className="h-4 w-4" />
-                  <span>View Orders</span>
-                </button>
-              </div>
-            </div>
-
-            {/* KPI Cards Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
-              {[
-                { title: 'Confirmed Revenue', value: `NGN ${confirmedRevenue.toLocaleString()}`, change: '+12.8%', icon: TrendingUp, gradient: 'from-emerald-600 to-teal-600', shadow: 'shadow-emerald-500/20' },
-                { title: 'Total Orders', value: `${customerOrders.length}`, change: `${deliveredCustomerOrders.length} delivered`, icon: Package, gradient: 'from-blue-600 to-cyan-600', shadow: 'shadow-blue-500/20' },
-                { title: 'Pending Review', value: `${pendingCustomerOrders.length}`, change: 'Needs attention', icon: AlertTriangle, gradient: 'from-red-600 to-orange-600', shadow: 'shadow-red-500/20' },
-                { title: 'Active Customers', value: `${new Set(customerOrders.map((order) => order.phone)).size}`, change: 'Unique shoppers', icon: Users, gradient: 'from-purple-600 to-pink-600', shadow: 'shadow-purple-500/20' }
-              ].map((card, idx) => {
-                const Icon = card.icon;
-                return (
-                  <div 
-                    key={idx}
-                    className={`group rounded-2xl border border-gray-800/50 bg-gradient-to-br from-gray-900/60 to-gray-950/40 p-6 backdrop-blur-sm transition-all duration-300 hover:border-gray-700 hover:shadow-xl hover:${card.shadow} cursor-pointer hover:scale-105`}
-                  >
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <p className="text-xs font-semibold text-gray-400 mb-1 uppercase tracking-wide">{card.title}</p>
-                        <h3 className="text-2xl sm:text-3xl font-black text-white">{card.value}</h3>
-                      </div>
-                      <div className={`rounded-xl bg-gradient-to-br ${card.gradient} p-3 shadow-lg ${card.shadow} text-white group-hover:scale-110 transition-transform`}>
-                        <Icon className="h-5 w-5" />
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-emerald-400">↑ {card.change}</span>
-                      <span className="text-xs text-gray-500">vs last 7 days</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Charts Section */}
-            <div className="grid grid-cols-1 xl:grid-cols-[1.2fr_0.8fr] gap-6 mb-8">
-              {/* Order Health Chart */}
-              <div className="rounded-2xl border border-gray-800/50 bg-gradient-to-br from-gray-900/60 to-gray-950/40 p-6 backdrop-blur-sm">
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <h2 className="text-lg font-bold text-white">Order Health Status</h2>
-                    <p className="text-xs text-gray-400 mt-1">Payment & fulfillment distribution</p>
-                  </div>
-                  <button 
-                    onClick={() => setIsSalesReportOpen(true)} 
-                    className="text-xs font-bold text-[#f97316] hover:text-[#fb923c] transition-colors hover:underline"
-                  >
-                    View Report →
-                  </button>
-                </div>
-                <div className="flex items-center justify-center gap-12">
-                  <div className="relative grid h-40 w-40 shrink-0 place-items-center rounded-full shadow-2xl shadow-orange-500/20" style={{ background: `conic-gradient(#f97316 0 ${pieConfirmed}%, #3b82f6 ${pieConfirmed}% ${pieConfirmed + pieProcessing}%, #10b981 ${pieConfirmed + pieProcessing}% 100%)` }}>
-                    <div className="grid h-28 w-28 place-items-center rounded-full bg-gradient-to-b from-gray-800 to-gray-900 text-center border border-gray-700 shadow-inner">
-                      <strong className="text-3xl text-white">{customerOrders.length}</strong>
-                      <span className="text-xs font-semibold text-gray-400">total</span>
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    {[
-                      { label: 'Confirmed', percentage: pieConfirmed, color: 'from-[#f97316] to-orange-500' },
-                      { label: 'Processing', percentage: pieProcessing, color: 'from-blue-500 to-cyan-500' },
-                      { label: 'Delivered', percentage: pieDelivered, color: 'from-emerald-500 to-teal-500' }
-                    ].map((item, i) => (
-                      <div key={i} className="flex items-center gap-3">
-                        <div className={`h-3 w-8 rounded-full bg-gradient-to-r ${item.color} shadow-lg`} />
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-semibold text-gray-300">{item.label}</span>
-                          <span className="text-sm font-black text-white">{item.percentage}%</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* System Status Card */}
-              <div className="rounded-2xl border border-gray-800/50 bg-gradient-to-br from-gray-900/60 to-gray-950/40 p-6 backdrop-blur-sm flex flex-col">
-                <h2 className="text-lg font-bold text-white mb-1">System Status</h2>
-                <p className="text-xs text-gray-400 mb-6">Platform health & analytics</p>
-                <div className="space-y-3 flex-1">
-                  {[
-                    { status: 'API Server', health: 'Online', color: 'emerald' },
-                    { status: 'Database', health: 'Synced', color: 'blue' },
-                    { status: 'Payment Gateway', health: 'Active', color: 'green' },
-                    { status: 'Delivery Network', health: 'Operational', color: 'purple' }
-                  ].map((item, i) => (
-                    <div key={i} className="flex items-center justify-between rounded-lg bg-gradient-to-r from-gray-800/40 to-gray-900/40 p-3 border border-gray-700/50">
-                      <span className="text-xs font-semibold text-gray-300">{item.status}</span>
-                      <div className="flex items-center gap-2">
-                        <span className={`h-2 w-2 rounded-full bg-${item.color}-500 animate-pulse shadow-lg shadow-${item.color}-500/50`} />
-                        <span className={`text-xs font-bold text-${item.color}-400`}>{item.health}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Bottom Section */}
-            <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_0.6fr] gap-6">
-              {/* Recent Orders Table */}
-              <div className="rounded-2xl border border-gray-800/50 bg-gradient-to-br from-gray-900/60 to-gray-950/40 p-6 backdrop-blur-sm overflow-hidden">
-                <div className="flex items-center justify-between mb-5">
-                  <div>
-                    <h2 className="text-lg font-bold text-white">Recent Orders</h2>
-                    <p className="text-xs text-gray-400 mt-1">Latest transactions</p>
-                  </div>
-                  <button 
-                    onClick={() => setIsAdminOpen(true)} 
-                    className="text-xs font-bold text-[#f97316] hover:text-[#fb923c] transition-colors hover:underline"
-                  >
-                    View All →
-                  </button>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead>
-                      <tr className="border-b border-gray-700/50 text-gray-400">
-                        <th className="pb-3 font-semibold">Order ID</th>
-                        <th className="pb-3 font-semibold">Customer</th>
-                        <th className="pb-3 font-semibold">Amount</th>
-                        <th className="pb-3 font-semibold">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-700/30">
-                      {customerOrders.slice(0, 6).map((order) => (
-                        <tr 
-                          key={order.id} 
-                          onClick={() => setIsAdminOpen(true)} 
-                          className="transition-all duration-200 hover:bg-gradient-to-r hover:from-gray-800/30 hover:to-gray-900/30 cursor-pointer group"
-                        >
-                          <td className="py-3 font-bold text-white group-hover:text-[#f97316]">#{order.id}</td>
-                          <td className="py-3 text-gray-300 group-hover:text-white">{order.customerName}</td>
-                          <td className="py-3 font-bold text-emerald-400">₦{order.total.toLocaleString()}</td>
-                          <td className="py-3">
-                            <span className={`inline-flex items-center rounded-full px-3 py-1 text-[10px] font-bold ${
-                              order.status === 'delivered' ? 'bg-emerald-500/20 text-emerald-400' :
-                              order.status === 'shipped' ? 'bg-blue-500/20 text-blue-400' :
-                              order.status === 'confirmed' ? 'bg-cyan-500/20 text-cyan-400' :
-                              'bg-orange-500/20 text-orange-400'
-                            }`}>
-                              {String(order.status).charAt(0).toUpperCase() + String(order.status).slice(1)}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Quick Actions */}
-              <div className="rounded-2xl border border-gray-800/50 bg-gradient-to-br from-gray-900/60 to-gray-950/40 p-6 backdrop-blur-sm flex flex-col">
-                <h2 className="text-lg font-bold text-white mb-5">Quick Actions</h2>
-                <div className="space-y-2.5 flex-1">
-                  {[
-                    { label: 'Pending Orders', count: pendingCustomerOrders.length, action: () => setIsAdminOpen(true), color: 'red', icon: Package },
-                    { label: 'Low Stock Items', count: products.filter((p) => (stockLevels[p.id] || 0) < 10).length, action: () => setIsStockOpen(true), color: 'amber', icon: AlertTriangle },
-                    { label: 'New Customers', count: '12', action: () => setIsCustomerManagementOpen(true), color: 'purple', icon: Users },
-                  ].map((action, i) => {
-                    const Icon = action.icon;
-                    return (
-                      <button 
-                        key={i}
-                        onClick={action.action}
-                        className={`group w-full rounded-xl border border-${action.color}-600/30 bg-gradient-to-r from-${action.color}-950/40 to-${action.color}-900/20 p-4 text-left transition-all duration-200 hover:border-${action.color}-500/60 hover:shadow-lg hover:shadow-${action.color}-500/20 hover:scale-105`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className={`rounded-lg bg-gradient-to-br from-${action.color}-600 to-${action.color}-500 p-2.5 text-white group-hover:shadow-lg group-hover:shadow-${action.color}-500/30`}>
-                              <Icon className="h-4 w-4" />
-                            </div>
-                            <span className="text-sm font-semibold text-gray-200 group-hover:text-white">{action.label}</span>
-                          </div>
-                          <span className={`text-2xl font-black text-${action.color}-400 group-hover:text-${action.color}-300`}>{action.count}</span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            {/* Priority Queue */}
-            {pendingCustomerOrders.length > 0 && (
-              <div className="mt-8 rounded-2xl border border-gray-800/50 bg-gradient-to-br from-gray-900/60 to-gray-950/40 p-6 backdrop-blur-sm">
-                <div className="flex items-center justify-between mb-5">
-                  <div>
-                    <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                      <AlertTriangle className="h-5 w-5 text-red-400" />
-                      Pending Review
-                    </h2>
-                    <p className="text-xs text-gray-400 mt-1">Orders awaiting payment confirmation</p>
-                  </div>
-                  <button 
-                    onClick={() => setIsAdminOpen(true)} 
-                    className="text-xs font-bold text-[#f97316] hover:text-[#fb923c] transition-colors hover:underline"
-                  >
-                    Manage All →
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {pendingCustomerOrders.slice(0, 3).map((order) => (
-                    <button
-                      key={order.id}
-                      onClick={() => setIsAdminOpen(true)}
-                      className="group text-left rounded-xl border border-red-600/30 bg-gradient-to-br from-red-950/40 to-red-900/20 p-4 transition-all duration-200 hover:border-red-500/60 hover:shadow-lg hover:shadow-red-500/20 hover:scale-105 cursor-pointer"
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="rounded-lg bg-gradient-to-br from-red-600 to-red-500 p-2 text-white mt-0.5">
-                          <AlertTriangle className="h-4 w-4" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-white text-sm">Order #{order.id}</p>
-                          <p className="text-xs text-gray-400 mt-1 truncate">{order.customerName}</p>
-                          <p className="text-xs text-red-300 font-semibold mt-2">Review Payment</p>
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+            {renderAdminContent()}
           </main>
         </div>
 
