@@ -66,7 +66,7 @@ export const AdminCustomersModal: React.FC<AdminCustomersModalProps> = ({
     const grouped = new Map<string, CustomerRecord>();
     orders.forEach((order) => {
       const email = order.email?.trim().toLowerCase() || `phone:${order.phone || order.id}`;
-      const customerPhone = order.phone === '08135642842' ? '' : order.phone;
+      const customerPhone = order.phone === '08135648242' ? '' : order.phone;
       const current = grouped.get(email) || {
         name: order.customerName || order.email?.split('@')[0] || 'Customer',
         email: order.email || 'Email not provided',

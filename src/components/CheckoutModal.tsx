@@ -256,7 +256,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 required
                 value={delivery.phone}
                 onChange={(e) => setDelivery({ ...delivery, phone: e.target.value })}
-                placeholder="e.g. 08135642842"
+                placeholder="e.g. 08135648242"
                 className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#18181b] text-gray-800 dark:text-gray-200 focus:outline-none focus:border-[#f68b1e]"
               />
             </div>

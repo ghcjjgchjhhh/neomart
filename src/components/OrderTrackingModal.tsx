@@ -563,7 +563,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                 </div>
 
                 <a
-                  href="tel:08135642842"
+                  href="tel:08135648242"
                   className="flex items-center gap-1 px-3 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-semibold transition-colors cursor-pointer"
                 >
                   <Phone className="w-3.5 h-3.5 text-emerald-400" />
@@ -571,7 +571,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                 </a>
 
                 <a
-                  href={`https://wa.me/2348135642842?text=${encodeURIComponent(`Hello Musa, I am tracking my NeoMart order #${selectedOrder.id}. My live location is active.`)}`}
+                  href={`https://wa.me/2348135648242?text=${encodeURIComponent(`Hello Musa, I am tracking my NeoMart order #${selectedOrder.id}. My live location is active.`)}`}
                   target="_blank"
                   rel="noreferrer"
                   className="flex items-center gap-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-md"

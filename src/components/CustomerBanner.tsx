@@ -25,7 +25,7 @@ export const CustomerBanner: React.FC = () => {
           <div className="bg-[#f68b1e] hover:bg-[#e07a10] px-4 py-2 rounded-xl text-center shadow-md transition-all">
             <div className="flex items-center justify-center gap-1.5 font-extrabold text-base sm:text-lg tracking-wider">
               <PhoneCall className="w-4 h-4" />
-              <span>08135642842</span>
+              <span>08135648242</span>
             </div>
             <small className="block text-[10px] font-normal text-white/90">
               Toll-Free Customer Line

@@ -180,7 +180,7 @@ export const HelpCenterModal: React.FC<HelpCenterModalProps> = ({
       } else if (lower.includes('return') || lower.includes('refund')) {
         reply = 'NeoMart provides a 7-day hassle-free return window for damaged, incorrect, or defective items.';
       } else if (lower.includes('agent') || lower.includes('human')) {
-        reply = 'Connecting you to Senior Support Officer Emeka... (Estimated wait time: < 1 minute). Hotline: 08135642842.';
+        reply = 'Connecting you to Senior Support Officer Emeka... (Estimated wait time: < 1 minute). Hotline: 08135648242.';
       }
 
       setMessages((prev) => [...prev, { sender: 'bot', text: reply }]);

@@ -188,7 +188,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               <h3 className="font-extrabold text-lg text-red-600 dark:text-red-400">Login disabled</h3>
               <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">Your account access has been disabled by NeoMart support.</p>
             </div>
-            <a href="tel:08135642842" className="block rounded-xl bg-[#f68b1e] px-4 py-3 text-xs font-bold text-white">Contact customer care: 08135642842</a>
+            <a href="tel:08135648242" className="block rounded-xl bg-[#f68b1e] px-4 py-3 text-xs font-bold text-white">Contact customer care: 08135648242</a>
           </div>
         ) : isLoggedIn ? (
           <div className="space-y-4 py-4 text-center">

@@ -38,7 +38,7 @@ import {
 } from 'recharts';
 
 const ADMIN_EMAIL = 'ifeanyianoma2@gmail.com';
-const SUPPORT_PHONE = '08135642842';
+const SUPPORT_PHONE = '08135648242';
 
 import { allProducts as initialProducts, flashProductIds } from './data/products';
 import { initialReviews, sampleOrders } from './data/ordersAndReviews';

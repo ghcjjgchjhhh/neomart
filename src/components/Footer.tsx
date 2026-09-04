@@ -185,7 +185,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenHelpSection }) => {
                 <span>Customer Hotline</span>
               </div>
               <strong className="text-base font-extrabold text-[#f68b1e] block">
-                08135642842
+                08135648242
               </strong>
               <small className="text-[10px] text-gray-400 block">
                 Mon–Sat 8AM–8PM · Sun 10AM–6PM

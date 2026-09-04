@@ -152,7 +152,7 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
             <div className="flex items-center gap-1.5 bg-[#f68b1e] text-white px-2.5 py-0.5 rounded-full font-bold text-[11px] animate-pulse-line">
               <PhoneCall className="w-3 h-3" />
-              <span>Hotline: 08135642842</span>
+              <span>Hotline: 08135648242</span>
             </div>
           </div>
 
@@ -334,7 +334,7 @@ export const Header: React.FC<HeaderProps> = ({
                           <span>Open Live Chat Support</span>
                         </button>
                         <a
-                          href="https://wa.me/2348135642842?text=Hello%20NeoMart%20Support,%20I%20need%20help%20with%20my%20order."
+                          href="https://wa.me/2348135648242?text=Hello%20NeoMart%20Support,%20I%20need%20help%20with%20my%20order."
                           target="_blank"
                           rel="noreferrer"
                           className="flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 font-bold text-xs hover:bg-emerald-100 transition-colors cursor-pointer"
@@ -577,7 +577,7 @@ export const Header: React.FC<HeaderProps> = ({
                         <span>Live Chat Support</span>
                       </button>
                       <a
-                        href="https://wa.me/2348135642842?text=Hello%20NeoMart%20Support,%20I%20need%20help%20with%20my%20order."
+                        href="https://wa.me/2348135648242?text=Hello%20NeoMart%20Support,%20I%20need%20help%20with%20my%20order."
                         target="_blank"
                         rel="noreferrer"
                         className="flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 font-bold text-xs hover:bg-emerald-100 transition-colors"
