@@ -356,6 +356,7 @@ export default function App() {
       localStorage.setItem('neomart_account_name', name);
       localStorage.setItem('neomart_session_started_at', String(startedAt));
       if (email.toLowerCase() === ADMIN_EMAIL) {
+        setAdminSection('overview');
         setCurrentView('admin');
         window.history.replaceState({}, '', '/admin');
       }
@@ -627,6 +628,7 @@ export default function App() {
   };
 
   const openAdminPortal = () => {
+    setAdminSection('overview');
     setCurrentView('admin');
     setIsAdminOpen(true);
     window.history.pushState({}, '', '/admin');
@@ -852,12 +854,12 @@ export default function App() {
     const adminSidebarItems = [
       { id: 'overview', label: 'Overview', icon: LayoutDashboard },
       { id: 'orders', label: 'Orders', icon: Package, badge: pendingCustomerOrders.length },
-      { id: 'confirmations', label: 'Payment review', icon: CheckCheck, badge: pendingCustomerOrders.length },
+      { id: 'confirmations', label: 'Payment Review', icon: CheckCheck, badge: pendingCustomerOrders.length },
       { id: 'inventory', label: 'Inventory', icon: Warehouse },
-      { id: 'reports', label: 'Sales reports', icon: BarChart3 },
+      { id: 'reports', label: 'Sales Reports', icon: BarChart3 },
       { id: 'customers', label: 'Customers', icon: Users },
       { id: 'notifications', label: 'Notifications', icon: Bell, badge: notifications.filter((notification) => !notification.read).length },
-      { id: 'support', label: 'Support chat', icon: MessageCircle },
+      { id: 'support', label: 'Support Chat', icon: MessageCircle },
       { id: 'storefront', label: 'Storefront', icon: Store },
       { id: 'settings', label: 'Settings', icon: Settings },
     ] as const;
@@ -1812,6 +1814,7 @@ export default function App() {
           localStorage.setItem('neomart_account_name', name || id.split('@')[0]);
           localStorage.setItem('neomart_session_started_at', String(startedAt));
           if (id.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+            setAdminSection('overview');
             setCurrentView('admin');
             window.history.pushState({}, '', '/admin');
           }
