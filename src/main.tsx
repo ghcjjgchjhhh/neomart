@@ -11,6 +11,12 @@ createRoot(document.getElementById('root')!).render(
 
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
-    void navigator.serviceWorker.register('/service-worker.js');
+    void navigator.serviceWorker.getRegistrations().then((registrations) => {
+      return Promise.all(registrations.map((registration) => registration.unregister()));
+    }).catch(() => undefined).then(() => {
+      return navigator.serviceWorker.register('/service-worker.js', { scope: '/' });
+    }).then((registration) => {
+      void registration.update();
+    }).catch(() => undefined);
   });
 }
