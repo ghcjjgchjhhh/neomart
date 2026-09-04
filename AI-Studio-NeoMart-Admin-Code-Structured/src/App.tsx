@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Header } from './components/Header';
 import { CategoryNav } from './components/CategoryNav';
 import { Sidebar } from './components/Sidebar';
@@ -24,18 +24,6 @@ import { OrderTrackingModal } from './components/TrackingModal';
 import { Footer } from './components/Footer';
 import { Toast } from './components/Toast';
 import { SplashScreen } from './components/SplashScreen';
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-  PieChart,
-  Pie,
-  Cell
-} from 'recharts';
 
 const ADMIN_EMAIL = 'ifeanyianoma2@gmail.com';
 const SUPPORT_PHONE = '08135642842';
@@ -78,76 +66,8 @@ import {
   Send,
   TrendingUp,
   AlertTriangle,
-  LayoutDashboard,
-  ShoppingBag,
-  ShoppingCart,
-  Store,
-  CreditCard,
-  Truck,
-  Tag,
-  Star,
-  Bell,
-  BarChart2,
-  ShieldCheck,
-  Settings,
-  ChevronRight,
-  ExternalLink,
-  LogOut,
-  X,
-  Menu,
-  Search,
-  ChevronDown,
-  CheckCircle2,
-  User,
-  Shield,
-  Box,
-  ClipboardList,
-  Calendar,
-  Check,
-  CheckCheck,
-  Phone,
-  Mail,
-  MapPin,
-  MoreHorizontal,
-  Search as SearchIcon,
+  LayoutDashboard
 } from 'lucide-react';
-
-const ProductThumb: React.FC<{ type: string; className?: string }> = ({ type, className = 'w-10 h-10' }) => {
-  const normalized = type.toLowerCase();
-  if (normalized.includes('iphone') || normalized.includes('phone')) {
-    return (
-      <div className={`${className} flex items-center justify-center rounded-lg border border-gray-700/60 bg-gray-900 shrink-0`}>
-        <Smartphone className="h-5 w-5 text-cyan-400" />
-      </div>
-    );
-  }
-  if (normalized.includes('macbook') || normalized.includes('laptop')) {
-    return (
-      <div className={`${className} flex items-center justify-center rounded-lg border border-gray-700/60 bg-slate-900 shrink-0`}>
-        <Laptop className="h-5 w-5 text-indigo-400" />
-      </div>
-    );
-  }
-  if (normalized.includes('tv')) {
-    return (
-      <div className={`${className} flex items-center justify-center rounded-lg border border-gray-700/60 bg-sky-950 shrink-0`}>
-        <Tv className="h-5 w-5 text-cyan-300" />
-      </div>
-    );
-  }
-  if (normalized.includes('airpods') || normalized.includes('audio')) {
-    return (
-      <div className={`${className} flex items-center justify-center rounded-lg border border-gray-700/60 bg-gray-800 shrink-0`}>
-        <Headphones className="h-5 w-5 text-emerald-400" />
-      </div>
-    );
-  }
-  return (
-    <div className={`${className} flex items-center justify-center rounded-lg border border-amber-800/40 bg-amber-950/40 shrink-0`}>
-      <Package className="h-5 w-5 text-amber-400" />
-    </div>
-  );
-};
 
 export default function App() {
   const trackingPathMatch = window.location.pathname.match(/^\/track\/([^/]+)$/i);
@@ -289,20 +209,6 @@ export default function App() {
     { from: 'support', text: 'Ask me to surface pending payments or stock risks.' },
   ]);
   const [showSplash, setShowSplash] = useState(true);
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [dateRange] = useState('May 12, 2025 - May 19, 2025');
-  const [isOrdersModalOpen, setIsOrdersModalOpen] = useState(false);
-  const [isProductsModalOpen, setIsProductsModalOpen] = useState(false);
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
-  const [salesTimeframe, setSalesTimeframe] = useState<'weekly' | 'monthly'>('weekly');
-  const [notifications, setNotifications] = useState([
-    { id: 'n-1', title: 'New order #NM12548', description: 'Daniel Okafor placed an order for ₦125,000.', time: '5 mins ago', read: false },
-    { id: 'n-2', title: 'Low stock warning', description: 'LG 1.5HP Split AC has only 8 units left in stock.', time: '18 mins ago', read: false },
-    { id: 'n-3', title: 'Payment confirmed', description: 'OPay settlement for #NM12547 (₦85,500) confirmed.', time: '42 mins ago', read: false },
-    { id: 'n-4', title: 'Out for Delivery', description: 'Order #NM12544 has been dispatched to rider Michael.', time: '1 hour ago', read: false }
-  ]);
 
   useEffect(() => {
     void getGoogleRedirectUser().then((user) => {
@@ -802,7 +708,6 @@ export default function App() {
   const pieConfirmed = Math.round((confirmedCustomerOrders.length / pieTotal) * 100);
   const pieProcessing = Math.round((processingCustomerOrders.length / pieTotal) * 100);
   const pieDelivered = Math.max(0, 100 - pieConfirmed - pieProcessing);
-  const filteredOrders = [...customerOrders].slice(0, 5);
 
   const categoryCards = [
     { id: 'phone', label: 'Phones', icon: <Smartphone className="w-6 h-6 text-[#f68b1e]" /> },
@@ -821,302 +726,18 @@ export default function App() {
 
   if (currentView === 'admin') {
     return (
-      <div className="admin-dashboard min-h-screen bg-gradient-to-br from-[#0a0d11] via-[#0f1217] to-[#0d1012] text-gray-100 transition-colors">
-        <div className="mx-auto grid min-h-screen max-w-[1600px] lg:grid-cols-[260px_1fr]">
-          <aside className="hidden border-r border-gradient bg-gradient-to-b from-[#131821] to-[#0d1015] p-6 text-white lg:flex lg:flex-col dark:border-gray-800/50 shadow-xl">
-            <div className="flex items-center gap-3 border-b border-gradient pb-6 mb-2">
-              <div className="grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-[#f97316] to-[#ea580c] font-black shadow-lg shadow-orange-500/40">N</div>
-              <div className="flex-1">
-                <div className="font-bold text-lg tracking-tight">neoMart</div>
-                <div className="text-[9px] uppercase tracking-widest text-gray-400 font-semibold">admin hub</div>
-              </div>
-            </div>
-            
-            <nav className="mt-8 space-y-1.5 flex-1 text-sm font-semibold">
-              <div className="flex items-center gap-3 rounded-xl bg-gradient-to-r from-[#f97316] to-[#fb923c] px-4 py-3 text-white shadow-lg shadow-orange-500/30 transition-all">
-                <LayoutDashboard className="h-5 w-5 shrink-0" />
-                <span>Dashboard</span>
-              </div>
-              <button 
-                onClick={() => setIsAdminOpen(true)} 
-                className="group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-gray-300 transition-all duration-200 hover:bg-gradient-to-r hover:from-blue-600/20 hover:to-blue-700/10 hover:text-blue-300 hover:shadow-lg hover:shadow-blue-500/10"
-              >
-                <Package className="h-5 w-5 shrink-0" />
-                <span className="flex-1">Orders</span>
-                {pendingCustomerOrders.length > 0 && <span className="ml-auto rounded-full bg-gradient-to-r from-red-500 to-red-600 px-2.5 py-0.5 text-[10px] font-bold text-white shadow-lg shadow-red-500/30">{pendingCustomerOrders.length}</span>}
-              </button>
-              <button 
-                onClick={() => setIsStockOpen(true)} 
-                className="group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-gray-300 transition-all duration-200 hover:bg-gradient-to-r hover:from-emerald-600/20 hover:to-emerald-700/10 hover:text-emerald-300 hover:shadow-lg hover:shadow-emerald-500/10"
-              >
-                <Warehouse className="h-5 w-5 shrink-0" />
-                <span>Inventory</span>
-              </button>
-              <button 
-                onClick={() => setIsCustomerManagementOpen(true)} 
-                className="group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-gray-300 transition-all duration-200 hover:bg-gradient-to-r hover:from-purple-600/20 hover:to-purple-700/10 hover:text-purple-300 hover:shadow-lg hover:shadow-purple-500/10"
-              >
-                <Users className="h-5 w-5 shrink-0" />
-                <span>Customers</span>
-              </button>
-            </nav>
-            
-            <div className="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950/50 to-emerald-900/20 p-4 backdrop-blur-sm shadow-lg shadow-emerald-500/10">
-              <div className="mb-3 flex items-center gap-2.5 text-xs font-bold text-emerald-300">
-                <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-300 animate-pulse shadow-lg shadow-emerald-400/50" />
-                <span>All systems online</span>
-              </div>
-              <p className="text-[11px] leading-5 text-gray-400">Real-time sync enabled for orders, payments & inventory.</p>
-            </div>
+      <div className="admin-dashboard min-h-screen bg-[#0d1012] text-gray-100 transition-colors">
+        <div className="mx-auto grid min-h-screen max-w-[1500px] lg:grid-cols-[220px_1fr]">
+          <aside className="hidden border-r border-gray-200 bg-[#171b1d] p-5 text-white lg:flex lg:flex-col dark:border-gray-800">
+            <div className="flex items-center gap-2 border-b border-white/10 pb-6"><div className="grid h-9 w-9 place-items-center rounded-xl bg-[#f68b1e] font-black">N</div><div><div className="font-black">NeoMart</div><div className="text-[10px] uppercase tracking-[0.18em] text-gray-400">Control room</div></div></div>
+            <nav className="mt-8 space-y-2 text-sm font-bold"><div className="flex items-center gap-3 rounded-xl bg-[#f68b1e] px-3 py-3"><LayoutDashboard className="h-4 w-4" />Overview</div><button onClick={() => setIsAdminOpen(true)} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-gray-400 transition hover:bg-white/10 hover:text-white"><Package className="h-4 w-4" />Orders <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-[10px] text-white">{pendingCustomerOrders.length}</span></button><button onClick={() => setIsStockOpen(true)} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-gray-400 transition hover:bg-white/10 hover:text-white"><Warehouse className="h-4 w-4" />Inventory</button><button onClick={() => setIsCustomerManagementOpen(true)} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-gray-400 transition hover:bg-white/10 hover:text-white"><Users className="h-4 w-4" />Customers</button></nav>
+            <div className="mt-auto rounded-2xl border border-white/10 bg-white/5 p-4"><div className="mb-2 flex items-center gap-2 text-xs font-bold text-emerald-300"><span className="h-2 w-2 rounded-full bg-emerald-400" />All systems operational</div><p className="text-[11px] leading-5 text-gray-400">Orders, payments and inventory are syncing.</p></div>
           </aside>
-          <main className="min-w-0 px-4 py-6 sm:px-8 lg:px-10 lg:py-8">
-            {/* Header Section */}
-            <div className="mb-10 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
-              <div className="flex-1">
-                <p className="text-xs font-bold uppercase tracking-widest text-[#f97316]/80 mb-2">Welcome back</p>
-                <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-white mb-2">Dashboard Overview</h1>
-                <p className="text-sm text-gray-400">Real-time store analytics and operations center</p>
-              </div>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                <button 
-                  type="button" 
-                  onClick={openStorefront} 
-                  className="group inline-flex items-center gap-2 rounded-xl border border-gray-700 bg-gradient-to-br from-gray-800/50 to-gray-900/50 px-4 py-2.5 text-sm font-bold text-gray-300 transition-all duration-200 hover:border-gray-600 hover:text-white hover:shadow-lg hover:shadow-gray-500/10 backdrop-blur-sm"
-                >
-                  ← Back to Store
-                </button>
-                <button 
-                  type="button" 
-                  onClick={() => setIsAdminOpen(true)} 
-                  className="group inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#f97316] to-[#fb923c] px-5 py-2.5 text-sm font-bold text-white shadow-xl shadow-orange-500/40 transition-all duration-200 hover:shadow-orange-500/60 hover:scale-105 active:scale-95"
-                >
-                  <Package className="h-4 w-4" />
-                  <span>View Orders</span>
-                </button>
-              </div>
-            </div>
-
-            {/* KPI Cards Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
-              {[
-                { title: 'Confirmed Revenue', value: `NGN ${confirmedRevenue.toLocaleString()}`, change: '+12.8%', icon: TrendingUp, gradient: 'from-emerald-600 to-teal-600', shadow: 'shadow-emerald-500/20' },
-                { title: 'Total Orders', value: `${customerOrders.length}`, change: `${deliveredCustomerOrders.length} delivered`, icon: Package, gradient: 'from-blue-600 to-cyan-600', shadow: 'shadow-blue-500/20' },
-                { title: 'Pending Review', value: `${pendingCustomerOrders.length}`, change: 'Needs attention', icon: AlertTriangle, gradient: 'from-red-600 to-orange-600', shadow: 'shadow-red-500/20' },
-                { title: 'Active Customers', value: `${new Set(customerOrders.map((order) => order.phone)).size}`, change: 'Unique shoppers', icon: Users, gradient: 'from-purple-600 to-pink-600', shadow: 'shadow-purple-500/20' }
-              ].map((card, idx) => {
-                const Icon = card.icon;
-                return (
-                  <div 
-                    key={idx}
-                    className={`group rounded-2xl border border-gray-800/50 bg-gradient-to-br from-gray-900/60 to-gray-950/40 p-6 backdrop-blur-sm transition-all duration-300 hover:border-gray-700 hover:shadow-xl hover:${card.shadow} cursor-pointer hover:scale-105`}
-                  >
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <p className="text-xs font-semibold text-gray-400 mb-1 uppercase tracking-wide">{card.title}</p>
-                        <h3 className="text-2xl sm:text-3xl font-black text-white">{card.value}</h3>
-                      </div>
-                      <div className={`rounded-xl bg-gradient-to-br ${card.gradient} p-3 shadow-lg ${card.shadow} text-white group-hover:scale-110 transition-transform`}>
-                        <Icon className="h-5 w-5" />
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-emerald-400">↑ {card.change}</span>
-                      <span className="text-xs text-gray-500">vs last 7 days</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Charts Section */}
-            <div className="grid grid-cols-1 xl:grid-cols-[1.2fr_0.8fr] gap-6 mb-8">
-              {/* Order Health Chart */}
-              <div className="rounded-2xl border border-gray-800/50 bg-gradient-to-br from-gray-900/60 to-gray-950/40 p-6 backdrop-blur-sm">
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <h2 className="text-lg font-bold text-white">Order Health Status</h2>
-                    <p className="text-xs text-gray-400 mt-1">Payment & fulfillment distribution</p>
-                  </div>
-                  <button 
-                    onClick={() => setIsSalesReportOpen(true)} 
-                    className="text-xs font-bold text-[#f97316] hover:text-[#fb923c] transition-colors hover:underline"
-                  >
-                    View Report →
-                  </button>
-                </div>
-                <div className="flex items-center justify-center gap-12">
-                  <div className="relative grid h-40 w-40 shrink-0 place-items-center rounded-full shadow-2xl shadow-orange-500/20" style={{ background: `conic-gradient(#f97316 0 ${pieConfirmed}%, #3b82f6 ${pieConfirmed}% ${pieConfirmed + pieProcessing}%, #10b981 ${pieConfirmed + pieProcessing}% 100%)` }}>
-                    <div className="grid h-28 w-28 place-items-center rounded-full bg-gradient-to-b from-gray-800 to-gray-900 text-center border border-gray-700 shadow-inner">
-                      <strong className="text-3xl text-white">{customerOrders.length}</strong>
-                      <span className="text-xs font-semibold text-gray-400">total</span>
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    {[
-                      { label: 'Confirmed', percentage: pieConfirmed, color: 'from-[#f97316] to-orange-500' },
-                      { label: 'Processing', percentage: pieProcessing, color: 'from-blue-500 to-cyan-500' },
-                      { label: 'Delivered', percentage: pieDelivered, color: 'from-emerald-500 to-teal-500' }
-                    ].map((item, i) => (
-                      <div key={i} className="flex items-center gap-3">
-                        <div className={`h-3 w-8 rounded-full bg-gradient-to-r ${item.color} shadow-lg`} />
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-semibold text-gray-300">{item.label}</span>
-                          <span className="text-sm font-black text-white">{item.percentage}%</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* System Status Card */}
-              <div className="rounded-2xl border border-gray-800/50 bg-gradient-to-br from-gray-900/60 to-gray-950/40 p-6 backdrop-blur-sm flex flex-col">
-                <h2 className="text-lg font-bold text-white mb-1">System Status</h2>
-                <p className="text-xs text-gray-400 mb-6">Platform health & analytics</p>
-                <div className="space-y-3 flex-1">
-                  {[
-                    { status: 'API Server', health: 'Online', color: 'emerald' },
-                    { status: 'Database', health: 'Synced', color: 'blue' },
-                    { status: 'Payment Gateway', health: 'Active', color: 'green' },
-                    { status: 'Delivery Network', health: 'Operational', color: 'purple' }
-                  ].map((item, i) => (
-                    <div key={i} className="flex items-center justify-between rounded-lg bg-gradient-to-r from-gray-800/40 to-gray-900/40 p-3 border border-gray-700/50">
-                      <span className="text-xs font-semibold text-gray-300">{item.status}</span>
-                      <div className="flex items-center gap-2">
-                        <span className={`h-2 w-2 rounded-full bg-${item.color}-500 animate-pulse shadow-lg shadow-${item.color}-500/50`} />
-                        <span className={`text-xs font-bold text-${item.color}-400`}>{item.health}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Bottom Section */}
-            <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_0.6fr] gap-6">
-              {/* Recent Orders Table */}
-              <div className="rounded-2xl border border-gray-800/50 bg-gradient-to-br from-gray-900/60 to-gray-950/40 p-6 backdrop-blur-sm overflow-hidden">
-                <div className="flex items-center justify-between mb-5">
-                  <div>
-                    <h2 className="text-lg font-bold text-white">Recent Orders</h2>
-                    <p className="text-xs text-gray-400 mt-1">Latest transactions</p>
-                  </div>
-                  <button 
-                    onClick={() => setIsAdminOpen(true)} 
-                    className="text-xs font-bold text-[#f97316] hover:text-[#fb923c] transition-colors hover:underline"
-                  >
-                    View All →
-                  </button>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead>
-                      <tr className="border-b border-gray-700/50 text-gray-400">
-                        <th className="pb-3 font-semibold">Order ID</th>
-                        <th className="pb-3 font-semibold">Customer</th>
-                        <th className="pb-3 font-semibold">Amount</th>
-                        <th className="pb-3 font-semibold">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-700/30">
-                      {customerOrders.slice(0, 6).map((order) => (
-                        <tr 
-                          key={order.id} 
-                          onClick={() => setIsAdminOpen(true)} 
-                          className="transition-all duration-200 hover:bg-gradient-to-r hover:from-gray-800/30 hover:to-gray-900/30 cursor-pointer group"
-                        >
-                          <td className="py-3 font-bold text-white group-hover:text-[#f97316]">#{order.id}</td>
-                          <td className="py-3 text-gray-300 group-hover:text-white">{order.customerName}</td>
-                          <td className="py-3 font-bold text-emerald-400">₦{order.total.toLocaleString()}</td>
-                          <td className="py-3">
-                            <span className={`inline-flex items-center rounded-full px-3 py-1 text-[10px] font-bold ${
-                              order.status === 'delivered' ? 'bg-emerald-500/20 text-emerald-400' :
-                              order.status === 'shipped' ? 'bg-blue-500/20 text-blue-400' :
-                              order.status === 'confirmed' ? 'bg-cyan-500/20 text-cyan-400' :
-                              'bg-orange-500/20 text-orange-400'
-                            }`}>
-                              {String(order.status).charAt(0).toUpperCase() + String(order.status).slice(1)}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Quick Actions */}
-              <div className="rounded-2xl border border-gray-800/50 bg-gradient-to-br from-gray-900/60 to-gray-950/40 p-6 backdrop-blur-sm flex flex-col">
-                <h2 className="text-lg font-bold text-white mb-5">Quick Actions</h2>
-                <div className="space-y-2.5 flex-1">
-                  {[
-                    { label: 'Pending Orders', count: pendingCustomerOrders.length, action: () => setIsAdminOpen(true), color: 'red', icon: Package },
-                    { label: 'Low Stock Items', count: products.filter((p) => (stockLevels[p.id] || 0) < 10).length, action: () => setIsStockOpen(true), color: 'amber', icon: AlertTriangle },
-                    { label: 'New Customers', count: '12', action: () => setIsCustomerManagementOpen(true), color: 'purple', icon: Users },
-                  ].map((action, i) => {
-                    const Icon = action.icon;
-                    return (
-                      <button 
-                        key={i}
-                        onClick={action.action}
-                        className={`group w-full rounded-xl border border-${action.color}-600/30 bg-gradient-to-r from-${action.color}-950/40 to-${action.color}-900/20 p-4 text-left transition-all duration-200 hover:border-${action.color}-500/60 hover:shadow-lg hover:shadow-${action.color}-500/20 hover:scale-105`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className={`rounded-lg bg-gradient-to-br from-${action.color}-600 to-${action.color}-500 p-2.5 text-white group-hover:shadow-lg group-hover:shadow-${action.color}-500/30`}>
-                              <Icon className="h-4 w-4" />
-                            </div>
-                            <span className="text-sm font-semibold text-gray-200 group-hover:text-white">{action.label}</span>
-                          </div>
-                          <span className={`text-2xl font-black text-${action.color}-400 group-hover:text-${action.color}-300`}>{action.count}</span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            {/* Priority Queue */}
-            {pendingCustomerOrders.length > 0 && (
-              <div className="mt-8 rounded-2xl border border-gray-800/50 bg-gradient-to-br from-gray-900/60 to-gray-950/40 p-6 backdrop-blur-sm">
-                <div className="flex items-center justify-between mb-5">
-                  <div>
-                    <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                      <AlertTriangle className="h-5 w-5 text-red-400" />
-                      Pending Review
-                    </h2>
-                    <p className="text-xs text-gray-400 mt-1">Orders awaiting payment confirmation</p>
-                  </div>
-                  <button 
-                    onClick={() => setIsAdminOpen(true)} 
-                    className="text-xs font-bold text-[#f97316] hover:text-[#fb923c] transition-colors hover:underline"
-                  >
-                    Manage All →
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {pendingCustomerOrders.slice(0, 3).map((order) => (
-                    <button
-                      key={order.id}
-                      onClick={() => setIsAdminOpen(true)}
-                      className="group text-left rounded-xl border border-red-600/30 bg-gradient-to-br from-red-950/40 to-red-900/20 p-4 transition-all duration-200 hover:border-red-500/60 hover:shadow-lg hover:shadow-red-500/20 hover:scale-105 cursor-pointer"
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="rounded-lg bg-gradient-to-br from-red-600 to-red-500 p-2 text-white mt-0.5">
-                          <AlertTriangle className="h-4 w-4" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-white text-sm">Order #{order.id}</p>
-                          <p className="text-xs text-gray-400 mt-1 truncate">{order.customerName}</p>
-                          <p className="text-xs text-red-300 font-semibold mt-2">Review Payment</p>
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+          <main className="min-w-0 px-4 py-5 sm:px-7 lg:px-9 lg:py-8">
+            <div className="mb-7 flex flex-wrap items-center justify-between gap-4"><div><p className="text-xs font-black uppercase tracking-[0.22em] text-[#f68b1e]">Friday, September 04</p><h1 className="mt-1 text-3xl font-black tracking-tight text-gray-950 dark:text-white">Good morning, Franklin</h1><p className="mt-1 text-sm text-gray-500">Here is what is happening across your store.</p></div><div className="flex items-center gap-2"><button type="button" onClick={openStorefront} className="rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-bold text-gray-700 transition hover:border-[#f68b1e] hover:text-[#f68b1e] dark:border-gray-700 dark:bg-[#18181b] dark:text-gray-200">Back to store</button><button type="button" onClick={() => setIsAdminOpen(true)} className="rounded-xl bg-[#f68b1e] px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-orange-500/20 transition hover:bg-orange-600"><Package className="mr-2 inline h-4 w-4" />Open orders</button></div></div>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><div className="rounded-2xl bg-[#171b1d] p-5 text-white shadow-xl"><div className="flex items-center justify-between text-xs text-gray-400">Confirmed revenue <TrendingUp className="h-4 w-4 text-emerald-400" /></div><div className="mt-3 text-2xl font-black">NGN {confirmedRevenue.toLocaleString()}</div><div className="mt-2 text-[11px] text-emerald-300">+12.8% from last week</div></div><div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-[#18181b]"><div className="text-xs font-bold text-gray-500">All orders</div><div className="mt-3 text-2xl font-black">{customerOrders.length}</div><div className="mt-2 text-[11px] text-gray-500">{deliveredCustomerOrders.length} delivered</div></div><div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-[#18181b]"><div className="text-xs font-bold text-gray-500">Needs attention</div><div className="mt-3 text-2xl font-black text-red-500">{pendingCustomerOrders.length}</div><div className="mt-2 text-[11px] text-red-500">Pending payment review</div></div><div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-[#18181b]"><div className="text-xs font-bold text-gray-500">Live customers</div><div className="mt-3 text-2xl font-black">{new Set(customerOrders.map((order) => order.phone)).size}</div><div className="mt-2 text-[11px] text-gray-500">Unique shoppers</div></div></div>
+            <div className="mt-5 grid gap-5 xl:grid-cols-[1.15fr_0.85fr]"><section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-[#18181b]"><div className="flex items-center justify-between"><div><h2 className="font-black">Order health</h2><p className="mt-1 text-xs text-gray-500">Payment and fulfilment mix</p></div><button onClick={() => setIsSalesReportOpen(true)} className="text-xs font-bold text-[#f68b1e]">View report</button></div><div className="mt-6 flex items-center gap-8"><div className="relative grid h-36 w-36 shrink-0 place-items-center rounded-full" style={{ background: `conic-gradient(#f68b1e 0 ${pieConfirmed}%, #4f8cff ${pieConfirmed}% ${pieConfirmed + pieProcessing}%, #19a974 ${pieConfirmed + pieProcessing}% 100%)` }}><div className="grid h-24 w-24 place-items-center rounded-full bg-white text-center dark:bg-[#18181b]"><strong className="text-2xl">{customerOrders.length}</strong><span className="text-[10px] text-gray-500">total orders</span></div></div><div className="space-y-4 text-xs"><div><span className="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-[#f68b1e]" />Confirmed <strong className="ml-4">{pieConfirmed}%</strong></div><div><span className="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-[#4f8cff]" />Processing <strong className="ml-4">{pieProcessing}%</strong></div><div><span className="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-[#19a974]" />Delivered <strong className="ml-4">{pieDelivered}%</strong></div></div></div></section><section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-[#18181b]"><div className="flex items-center justify-between"><div><h2 className="font-black">Admin chat</h2><p className="mt-1 text-xs text-gray-500">Your operations copilot</p></div><MessageCircle className="h-5 w-5 text-[#f68b1e]" /></div><div className="mt-4 h-28 space-y-2 overflow-y-auto rounded-xl bg-gray-50 p-3 text-xs dark:bg-[#202024]">{adminChatMessages.map((message, index) => <div key={`${message.text}-${index}`} className={message.from === 'admin' ? 'ml-8 rounded-lg bg-[#f68b1e] p-2 text-white' : 'mr-8 rounded-lg bg-white p-2 text-gray-600 shadow-sm dark:bg-[#303035] dark:text-gray-200'}>{message.text}</div>)}</div><form className="mt-3 flex gap-2" onSubmit={(event) => { event.preventDefault(); const text = adminChatInput.trim(); if (!text) return; setAdminChatMessages((messages) => [...messages, { from: 'admin', text }, { from: 'support', text: 'I have noted that. Open Live Support for a team response.' }]); setAdminChatInput(''); }}><input value={adminChatInput} onChange={(event) => setAdminChatInput(event.target.value)} placeholder="Ask about an order..." className="min-w-0 flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs outline-none focus:border-[#f68b1e] dark:border-gray-700 dark:bg-[#202024]" /><button aria-label="Send chat message" className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#f68b1e] text-white"><Send className="h-4 w-4" /></button></form><button onClick={() => handleOpenHelpSection('live-chat')} className="mt-3 text-xs font-bold text-[#f68b1e]">Open live support</button></section></div>
+            <section className="mt-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-[#18181b]"><div className="mb-4 flex items-center justify-between"><div><h2 className="font-black">Priority queue</h2><p className="mt-1 text-xs text-gray-500">Orders that may need your attention</p></div><button onClick={() => setIsAdminOpen(true)} className="text-xs font-bold text-[#f68b1e]">Manage all</button></div>{pendingCustomerOrders.length === 0 ? <div className="rounded-xl bg-emerald-50 p-4 text-sm font-bold text-emerald-700">You are all caught up.</div> : <div className="divide-y divide-gray-100 dark:divide-gray-800">{pendingCustomerOrders.slice(0, 3).map((order) => <button key={order.id} onClick={() => setIsAdminOpen(true)} className="flex w-full items-center justify-between gap-4 py-3 text-left transition hover:bg-gray-50 dark:hover:bg-[#202024]"><div className="flex min-w-0 items-center gap-3"><div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-red-50 text-red-500 dark:bg-red-950/30"><AlertTriangle className="h-4 w-4" /></div><div className="min-w-0"><div className="truncate text-sm font-bold">Order #{order.id}</div><div className="text-xs text-gray-500">{order.phone || 'Customer'} · {order.date}</div></div></div><span className="shrink-0 rounded-full bg-red-50 px-3 py-1 text-[10px] font-black text-red-600 dark:bg-red-950/30">Review payment</span></button>)}</div>}</section>
           </main>
         </div>
 
