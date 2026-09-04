@@ -1271,12 +1271,21 @@ export default function App() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-gray-800/50 bg-gradient-to-br from-gray-900/60 to-gray-950/40 p-6 backdrop-blur-sm flex flex-col">
-              <h2 className="text-lg font-bold text-white mb-5">Operations snapshot</h2>
-              <div className="space-y-3 flex-1">
-                <div className="flex items-center justify-between rounded-xl border border-red-500/20 bg-red-500/10 p-4"><span className="text-sm text-gray-300">Pending orders</span><span className="text-2xl font-black text-red-300">{pendingCustomerOrders.length}</span></div>
-                <div className="flex items-center justify-between rounded-xl border border-amber-500/20 bg-amber-500/10 p-4"><span className="text-sm text-gray-300">Low-stock products</span><span className="text-2xl font-black text-amber-300">{products.filter((p) => (stockLevels[p.id] || 0) < 10).length}</span></div>
-                <div className="flex items-center justify-between rounded-xl border border-violet-500/20 bg-violet-500/10 p-4"><span className="text-sm text-gray-300">Active customers</span><span className="text-2xl font-black text-violet-300">{new Set(customerOrders.map((order) => order.phone || order.customerName)).size}</span></div>
+            <div className="rounded-2xl border border-gray-800/50 bg-gradient-to-br from-gray-900/60 to-gray-950/40 p-6 backdrop-blur-sm">
+              <h2 className="mb-5 text-lg font-bold text-white">Quick Actions</h2>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { label: 'Add Product', detail: 'Add new product', icon: Package, action: () => setIsStockOpen(true), tone: 'orange' },
+                  { label: 'View Orders', detail: 'Manage orders', icon: ClipboardList, action: () => setIsAdminOpen(true), tone: 'blue' },
+                  { label: 'Payment Review', detail: 'Review payments', icon: CreditCard, action: () => setIsConfirmOrdersOpen(true), tone: 'green' },
+                  { label: 'Add Customer', detail: 'Manage customers', icon: User, action: () => setIsCustomerManagementOpen(true), tone: 'violet' },
+                  { label: 'Sales Reports', detail: 'View reports', icon: BarChart3, action: () => setIsSalesReportOpen(true), tone: 'amber' },
+                  { label: 'Storefront', detail: 'Open store', icon: Store, action: openStorefront, tone: 'pink' },
+                ].map((action) => {
+                  const Icon = action.icon;
+                  const tones = { orange: 'bg-orange-500/20 text-orange-300', blue: 'bg-blue-500/20 text-blue-300', green: 'bg-emerald-500/20 text-emerald-300', violet: 'bg-violet-500/20 text-violet-300', amber: 'bg-amber-500/20 text-amber-300', pink: 'bg-pink-500/20 text-pink-300' };
+                  return <button key={action.label} type="button" onClick={action.action} className="flex items-center gap-3 rounded-xl border border-gray-800 bg-gray-900/50 p-3 text-left transition hover:border-gray-600 hover:bg-gray-800/70"><span className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg ${tones[action.tone]}`}><Icon className="h-4 w-4" /></span><span className="min-w-0"><span className="block truncate text-xs font-bold text-white">{action.label}</span><span className="mt-1 block truncate text-[10px] text-gray-500">{action.detail}</span></span></button>;
+                })}
               </div>
             </div>
           </div>
