@@ -77,7 +77,7 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({ onSelectCategory }) => {
     <div className="space-y-3.5 mb-4">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
         {/* Main Slider Carousel (3 columns) */}
-        <div className="md:col-span-3 relative h-64 sm:h-72 rounded-xl overflow-hidden shadow-md group">
+        <div data-horizontal-swipe className="md:col-span-3 relative h-64 sm:h-72 rounded-xl overflow-hidden shadow-md group">
           {slides.map((slide, index) => (
             <div
               key={index}

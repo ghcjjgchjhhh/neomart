@@ -949,7 +949,88 @@ export const allProducts: Product[] = [
     img: 'https://m.media-amazon.com/images/I/61qMfoVil5L._AC_UY218_.jpg',
     category: 'baby',
     tags: ['baby', 'monitor', 'graco']
+  },
+  {
+    id: 74,
+    name: 'Poco C81 Pro 6.9" 4GB RAM / 128GB ROM Android 15 - Black',
+    price: 120000,
+    oldPrice: 145000,
+    discount: 17,
+    rating: 4.5,
+    reviews: 0,
+    emoji: '📱',
+    img: 'https://ng.jumia.is/unsafe/fit-in/300x300/filters:fill(white)/product/32/1258914/1.jpg?3393',
+    category: 'phone',
+    tags: ['phone', 'poco', 'xiaomi', 'android', 'smartphone']
+  },
+  {
+    id: 75,
+    name: 'Samsung Galaxy A14 6.6" 4GB RAM / 128GB ROM Android 15 - Black',
+    price: 150000,
+    oldPrice: 180000,
+    discount: 17,
+    rating: 4.6,
+    reviews: 0,
+    emoji: '📱',
+    img: 'https://ng.jumia.is/unsafe/fit-in/300x300/filters:fill(white)/product/15/7514914/1.jpg?5964',
+    category: 'phone',
+    tags: ['phone', 'samsung', 'android', 'smartphone']
+  },
+   {
+    id: 76,
+    name: ' Samsung Galaxy A17 6.7" HD 6GB RAM/128GB ROM Android 14 - Black',
+    price:  235614,
+    oldPrice:  258466,
+    discount: 17,
+    rating: 4.6,
+    reviews: 0,
+    emoji: '📱',
+    img: 'https://ng.jumia.is/unsafe/fit-in/300x300/filters:fill(white)/product/27/2498814/1.jpg?9257',
+    category: 'phone',
+    tags: ['phone', 'samsung', 'android', 'smartphone']
+  },
+   {
+    id: 77,
+    name: 'Samsung Galaxy A14 - 6.6" (6GB/128GB) 4G Dual Sim, 5000mAh - Black',
+    price: 379999,
+    oldPrice: 400000,
+    discount: 10,
+    rating: 4.6,
+    reviews: 0,
+    emoji: '📱',
+    img: 'https://ng.jumia.is/unsafe/fit-in/500x500/filters:fill(white)/product/00/2934914/1.jpg?0366',
+    category: 'phone',
+    tags: ['phone', 'samsung', 'android', 'smartphone']
+  },
+   {
+    id: 78,
+    name: 'Hp ELITEBOOK 830 G8 INTEL CORE I7 11TH GENERATION-16GB RAM/512GB SSD-WIN 11 PRO-BACKLIT KEYBOARD+BAG',
+    price:  790000,
+    oldPrice:  880000,
+    discount: 10,
+    rating: 4.6,
+    reviews: 0,
+    emoji: '📱',
+    img: 'https://ng.jumia.is/unsafe/fit-in/300x300/filters:fill(white)/product/44/3070914/1.jpg?9210',
+    category: 'laptop',
+    tags: ['laptop', 'hp', 'intel', 'notebook']
+  },
+   {
+    id: 79,
+    name: 'Asus TUF Gaming Laptop A16-AMD Ryzen 7 260-16GB Ram-512GB SSD-NV GeForce RTX 5050 8GB-16-inch WUXGA',
+    price: 1557994,
+    oldPrice: 1730000,
+    discount: 10,
+    rating: 4.6,
+    reviews: 0,
+    emoji: '📱',
+    img: 'https://ng.jumia.is/unsafe/fit-in/300x300/filters:fill(white)/product/81/1287914/1.jpg?8001',
+    category: 'laptop',
+    tags: ['laptop', 'asus', 'amd', ]
   }
+  
+
 ];
+
 
 export const flashProductIds = [1, 11, 27, 36, 47, 53, 19, 42];

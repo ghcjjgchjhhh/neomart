@@ -39,10 +39,11 @@ import {
 
 const ADMIN_EMAIL = 'ifeanyianoma2@gmail.com';
 const SUPPORT_PHONE = '08135648242';
+type AdminSection = 'overview' | 'orders' | 'confirmations' | 'inventory' | 'reports' | 'customers' | 'notifications' | 'support' | 'storefront' | 'settings' | 'activity';
 
 import { allProducts as initialProducts, flashProductIds } from './data/products';
 import { initialReviews, sampleOrders } from './data/ordersAndReviews';
-import { confirmOrderPayment, getOrders, saveOrder, saveCustomerProfile, subscribeToOrders, updateOrderStatus, updateOrderDelivery, saveStockLevel, subscribeToStock, subscribeToCustomerAccountState, updateCustomerAccountState, getCustomerAccountState } from './config/ordersService';
+import { confirmOrderPayment, getCustomerProfile, getOrders, saveOrder, saveCustomerProfile, subscribeToOrders, updateOrderStatus, updateOrderDelivery, saveStockLevel, subscribeToStock, subscribeToCustomerAccountState, updateCustomerAccountState, getCustomerAccountState } from './config/ordersService';
 import { auth, getGoogleRedirectUser } from './config/firebase';
 import {
   Product,
@@ -192,7 +193,10 @@ export default function App() {
   const [products, setProducts] = useState<Product[]>(() => {
     try {
       const saved = localStorage.getItem('neomart_products');
-      return saved ? JSON.parse(saved) : initialProducts;
+      if (!saved) return initialProducts;
+      const savedProducts = JSON.parse(saved) as Product[];
+      const savedIds = new Set(savedProducts.map((product) => product.id));
+      return [...savedProducts, ...initialProducts.filter((product) => !savedIds.has(product.id))];
     } catch {
       return initialProducts;
     }
@@ -292,6 +296,7 @@ export default function App() {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isPaymentSuccessOpen, setIsPaymentSuccessOpen] = useState(false);
   const [lastPaymentMethod, setLastPaymentMethod] = useState<PaymentMethodType>('delivery');
+  const [savedDeliveryDetails, setSavedDeliveryDetails] = useState<DeliveryDetails | null>(null);
 
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [currentView, setCurrentView] = useState<'store' | 'admin'>(isAdminPath ? 'admin' : 'store');
@@ -341,15 +346,51 @@ export default function App() {
   ]);
   const [showSplash, setShowSplash] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [adminSection, setAdminSection] = useState<'overview' | 'orders' | 'confirmations' | 'inventory' | 'reports' | 'customers' | 'notifications' | 'support' | 'storefront' | 'settings' | 'activity'>('overview');
+  const [adminSection, setAdminSection] = useState<AdminSection>('overview');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const adminTouchStartX = useRef<number | null>(null);
   const [dateRange] = useState('May 12, 2025 - May 19, 2025');
   const [isOrdersModalOpen, setIsOrdersModalOpen] = useState(false);
   const [isProductsModalOpen, setIsProductsModalOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
   const [salesTimeframe, setSalesTimeframe] = useState<'weekly' | 'monthly'>('weekly');
+  const activeOverlay = isLoginOpen
+    ? 'login'
+    : isCheckoutOpen
+    ? 'checkout'
+    : isCartOpen
+    ? 'cart'
+    : isPaymentSuccessOpen
+    ? 'payment-success'
+    : isHelpOpen
+    ? 'help'
+    : isOrderHistoryOpen
+    ? 'order-history'
+    : isOrderTrackingOpen
+    ? 'tracking'
+    : isAdminOpen
+    ? 'admin-orders'
+    : isConfirmOrdersOpen
+    ? 'confirm-orders'
+    : isSalesReportOpen
+    ? 'sales-report'
+    : isCustomerManagementOpen
+    ? 'customers'
+    : null;
+  const overlayHistoryRef = useRef<string | null>(null);
+  const closingOverlayHistoryRef = useRef(false);
+  const handlingPopOverlayRef = useRef(false);
+  const openingCheckoutRef = useRef(false);
+  const catalogScrollPositionRef = useRef(0);
+  const edgeSwipeStartRef = useRef<{ x: number; y: number; target: EventTarget | null } | null>(null);
+  const edgeSwipeOffsetRef = useRef(0);
+  const [edgeSwipeOffset, setEdgeSwipeOffset] = useState(0);
+  const [platform] = useState<'ios' | 'android' | 'desktop'>(() => {
+    const userAgent = navigator.userAgent;
+    if (/iPad|iPhone|iPod/.test(userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) return 'ios';
+    if (/Android/i.test(userAgent)) return 'android';
+    return 'desktop';
+  });
   const [notifications, setNotifications] = useState([
     { id: 'n-1', title: 'New order #NM12548', description: 'Daniel Okafor placed an order for ₦125,000.', time: '5 mins ago', read: false },
     { id: 'n-2', title: 'Low stock warning', description: 'LG 1.5HP Split AC has only 8 units left in stock.', time: '18 mins ago', read: false },
@@ -416,6 +457,193 @@ export default function App() {
     }).catch(() => {});
     return () => unsubscribe?.();
   }, [currentUserEmail, sessionStartedAt]);
+
+  useEffect(() => {
+    if (!currentUserEmail.includes('@')) {
+      setSavedDeliveryDetails(null);
+      return;
+    }
+    let isActive = true;
+    void getCustomerProfile().then((profile) => {
+      if (!isActive) return;
+      const saved = profile?.savedDeliveryDetails as Partial<DeliveryDetails> | undefined;
+      if (saved?.state && saved.city && saved.address && saved.phone) {
+        setSavedDeliveryDetails({
+          state: saved.state,
+          city: saved.city,
+          address: saved.address,
+          phone: saved.phone,
+          notes: saved.notes || '',
+        });
+      }
+    }).catch(() => {});
+    return () => {
+      isActive = false;
+    };
+  }, [currentUserEmail, sessionStartedAt]);
+
+  useEffect(() => {
+    const previousRestoration = window.history.scrollRestoration;
+    window.history.scrollRestoration = 'auto';
+    if (!window.history.state?.neomartView) {
+      window.history.replaceState(
+        { ...(window.history.state || {}), neomartView: window.location.pathname.toLowerCase() === '/admin' ? 'admin' : 'store' },
+        '',
+        window.location.href
+      );
+    }
+    const closeOverlay = (overlay: string | null) => {
+      if (overlay === 'login') setIsLoginOpen(false);
+      if (overlay === 'cart') setIsCartOpen(false);
+      if (overlay === 'checkout') setIsCheckoutOpen(false);
+      if (overlay === 'payment-success') setIsPaymentSuccessOpen(false);
+      if (overlay === 'help') setIsHelpOpen(false);
+      if (overlay === 'order-history') setIsOrderHistoryOpen(false);
+      if (overlay === 'tracking') setIsOrderTrackingOpen(false);
+      if (overlay === 'admin-orders') setIsAdminOpen(false);
+      if (overlay === 'confirm-orders') setIsConfirmOrdersOpen(false);
+      if (overlay === 'stock') setIsStockOpen(false);
+      if (overlay === 'sales-report') setIsSalesReportOpen(false);
+      if (overlay === 'customers') setIsCustomerManagementOpen(false);
+    };
+    const handlePopState = (event: PopStateEvent) => {
+      if (overlayHistoryRef.current) {
+        const closingOverlay = overlayHistoryRef.current;
+        overlayHistoryRef.current = null;
+        handlingPopOverlayRef.current = true;
+        closeOverlay(closingOverlay);
+        if (closingOverlay === 'checkout') setIsCartOpen(true);
+        if (closingOverlayHistoryRef.current) {
+          closingOverlayHistoryRef.current = false;
+          handlingPopOverlayRef.current = false;
+          return;
+        }
+      }
+      if (event.state?.neomartOverlay) overlayHistoryRef.current = event.state.neomartOverlay;
+
+      const state = event.state as { neomartView?: string; adminSection?: AdminSection; productId?: number; category?: CategoryId | string; searchQuery?: string } | null;
+      if (state?.neomartView === 'product' && typeof state.productId === 'number') {
+        setCurrentView('store');
+        setSelectedProductId(state.productId);
+        requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
+        return;
+      }
+      if (state?.neomartView === 'catalog') {
+        const category = state.category || 'all';
+        setCurrentView('store');
+        setSelectedProductId(null);
+        setSelectedCategory(category as CategoryId);
+        setSearchQuery(state.searchQuery || '');
+        setIsSearching(category !== 'all' || Boolean(state.searchQuery));
+        return;
+      }
+      if (state?.neomartView === 'admin' || window.location.pathname.toLowerCase() === '/admin') {
+        setCurrentView('admin');
+        if (state?.adminSection) setAdminSection(state.adminSection);
+        return;
+      }
+      if (window.location.pathname.toLowerCase().startsWith('/track/')) {
+        const orderId = decodeURIComponent(window.location.pathname.slice('/track/'.length));
+        setCurrentView('store');
+        setTrackingOrderId(orderId || null);
+        setIsOrderTrackingOpen(Boolean(orderId));
+        return;
+      }
+      setCurrentView('store');
+      setIsAdminOpen(false);
+      setSelectedProductId(null);
+      setSelectedCategory('all');
+      setSearchQuery('');
+      setIsSearching(false);
+      requestAnimationFrame(() => window.scrollTo({ top: catalogScrollPositionRef.current, behavior: 'auto' }));
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.history.scrollRestoration = previousRestoration;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (activeOverlay && handlingPopOverlayRef.current) {
+      overlayHistoryRef.current = activeOverlay;
+      handlingPopOverlayRef.current = false;
+    } else if (activeOverlay && !overlayHistoryRef.current) {
+      overlayHistoryRef.current = activeOverlay;
+      window.history.pushState({ ...(window.history.state || {}), neomartOverlay: activeOverlay }, '', window.location.href);
+    } else if (activeOverlay && overlayHistoryRef.current !== activeOverlay) {
+      if (activeOverlay === 'checkout' && overlayHistoryRef.current === 'cart' && openingCheckoutRef.current) {
+        openingCheckoutRef.current = false;
+        overlayHistoryRef.current = activeOverlay;
+        window.history.pushState({ ...(window.history.state || {}), neomartOverlay: activeOverlay }, '', window.location.href);
+        return;
+      }
+      if (activeOverlay === 'cart' && overlayHistoryRef.current === 'checkout') {
+        overlayHistoryRef.current = null;
+        closingOverlayHistoryRef.current = true;
+        window.history.back();
+        return;
+      }
+      overlayHistoryRef.current = activeOverlay;
+      window.history.pushState({ ...(window.history.state || {}), neomartOverlay: activeOverlay }, '', window.location.href);
+    } else if (!activeOverlay && overlayHistoryRef.current) {
+      overlayHistoryRef.current = null;
+      if (window.history.state?.neomartOverlay) {
+        closingOverlayHistoryRef.current = true;
+        window.history.back();
+      }
+    }
+  }, [activeOverlay]);
+
+  const canNavigateBack = Boolean(activeOverlay || selectedProductId !== null || isSearching || selectedCategory !== 'all' || currentView === 'admin' || isOrderTrackingOpen);
+  const handleEdgeTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
+    if (platform === 'desktop' || !canNavigateBack || event.touches.length !== 1) return;
+    const touch = event.touches[0];
+    const target = event.target as HTMLElement;
+    if (touch.clientX > 28 || target.closest('input, textarea, select, button, a, [data-horizontal-swipe]')) return;
+    edgeSwipeStartRef.current = { x: touch.clientX, y: touch.clientY, target: event.target };
+  };
+  const handleEdgeTouchMove = (event: React.TouchEvent<HTMLDivElement>) => {
+    const start = edgeSwipeStartRef.current;
+    if (!start || event.touches.length !== 1) return;
+    const touch = event.touches[0];
+    const deltaX = touch.clientX - start.x;
+    const deltaY = Math.abs(touch.clientY - start.y);
+    if (deltaX < 0 || deltaY > deltaX) {
+      edgeSwipeStartRef.current = null;
+      edgeSwipeOffsetRef.current = 0;
+      setEdgeSwipeOffset(0);
+      return;
+    }
+    const offset = Math.min(deltaX, window.innerWidth * 0.42);
+    edgeSwipeOffsetRef.current = offset;
+    setEdgeSwipeOffset(offset);
+  };
+  const handleEdgeTouchEnd = () => {
+    if (!edgeSwipeStartRef.current) return;
+    const shouldGoBack = edgeSwipeOffsetRef.current > Math.min(90, window.innerWidth * 0.25);
+    edgeSwipeStartRef.current = null;
+    edgeSwipeOffsetRef.current = 0;
+    setEdgeSwipeOffset(0);
+    if (!shouldGoBack) return;
+    if (currentView === 'admin' && adminSection !== 'overview') {
+      if (window.history.state?.neomartView === 'admin' && window.history.state?.adminSection === adminSection) {
+        window.history.back();
+      } else {
+        setAdminSection('overview');
+        window.history.replaceState({ ...(window.history.state || {}), neomartView: 'admin', adminSection: 'overview' }, '', '/admin');
+      }
+      return;
+    }
+    window.history.back();
+  };
+  const gestureSurfaceProps = {
+    onTouchStart: handleEdgeTouchStart,
+    onTouchMove: handleEdgeTouchMove,
+    onTouchEnd: handleEdgeTouchEnd,
+    'data-platform': platform,
+  };
 
   // Sync theme
   useEffect(() => {
@@ -519,8 +747,18 @@ export default function App() {
       }).catch(() => {});
     };
 
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') refreshOrders();
+    };
+
     const refreshTimer = window.setInterval(refreshOrders, 3000);
-    return () => window.clearInterval(refreshTimer);
+    window.addEventListener('focus', refreshOrders);
+    document.addEventListener('visibilitychange', refreshWhenVisible);
+    return () => {
+      window.clearInterval(refreshTimer);
+      window.removeEventListener('focus', refreshOrders);
+      document.removeEventListener('visibilitychange', refreshWhenVisible);
+    };
   }, [currentUserEmail, isLoggedIn]);
 
   const toggleTheme = () => {
@@ -644,21 +882,40 @@ export default function App() {
       setIsSearching(true);
       setSearchQuery(cat);
     }
+    if (currentView === 'store' && (window.history.state?.neomartView !== 'catalog' || window.history.state?.category !== cat)) {
+      window.history.pushState({ ...(window.history.state || {}), neomartView: 'catalog', category: cat, searchQuery: cat === 'all' ? '' : cat }, '', window.location.href);
+    }
   };
 
   const handleSelectProduct = (productId: number) => {
+    catalogScrollPositionRef.current = window.scrollY;
     setSelectedProductId(productId);
+    window.history.pushState({ ...(window.history.state || {}), neomartView: 'product', productId }, '', window.location.href);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleBackToCatalog = () => {
+    if (window.history.state?.neomartView === 'product') {
+      window.history.back();
+      return;
+    }
     setSelectedProductId(null);
+    window.scrollTo({ top: catalogScrollPositionRef.current, behavior: 'auto' });
   };
 
   const handleSearchSubmit = (query: string) => {
     setSearchQuery(query);
     setIsSearching(true);
     setSelectedProductId(null);
+    if (currentView === 'store') {
+      window.history.pushState({ ...(window.history.state || {}), neomartView: 'catalog', category: 'all', searchQuery: query }, '', window.location.href);
+    }
+  };
+
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+    setSelectedProductId(null);
+    setIsSearching(Boolean(query.trim()));
   };
 
   const handleOpenHelpSection = (section: HelpSectionType) => {
@@ -666,20 +923,31 @@ export default function App() {
     setIsHelpOpen(true);
   };
 
+  const navigateAdminSection = (section: AdminSection) => {
+    setAdminSection(section);
+    if (currentView === 'admin' && window.history.state?.adminSection !== section) {
+      window.history.pushState({ ...(window.history.state || {}), neomartView: 'admin', adminSection: section }, '', '/admin');
+    }
+  };
+
   const openAdminPortal = () => {
-    setAdminSection('overview');
+    navigateAdminSection('overview');
     setIsAdminOpen(false);
     setIsConfirmOrdersOpen(false);
     setIsSalesReportOpen(false);
     setIsCustomerManagementOpen(false);
     setCurrentView('admin');
-    window.history.pushState({}, '', '/admin');
+    if (window.location.pathname.toLowerCase() !== '/admin') {
+      window.history.pushState({ neomartView: 'admin', adminSection: 'overview' }, '', '/admin');
+    }
   };
 
   const openStorefront = () => {
     setCurrentView('store');
     setIsAdminOpen(false);
-    window.history.pushState({}, '', '/');
+    if (window.location.pathname !== '/') {
+      window.history.pushState({ neomartView: 'store' }, '', '/');
+    }
   };
 
   const handleConfirmOrderPayment = async (orderId: string) => {
@@ -709,7 +977,7 @@ export default function App() {
 
   // Checkout flow
   const handleStartCheckout = () => {
-    setIsCartOpen(false);
+    openingCheckoutRef.current = true;
     setIsCheckoutOpen(true);
   };
 
@@ -718,7 +986,10 @@ export default function App() {
     setTrackingOrderId(nextOrderId);
     setIsOrderTrackingOpen(true);
     if (nextOrderId) {
-      window.history.pushState({}, '', `/track/${encodeURIComponent(nextOrderId)}`);
+      const trackingPath = `/track/${encodeURIComponent(nextOrderId)}`;
+      if (window.location.pathname !== trackingPath) {
+        window.history.pushState({ neomartView: 'tracking', orderId: nextOrderId }, '', trackingPath);
+      }
     }
   };
 
@@ -797,12 +1068,20 @@ export default function App() {
     void saveOrder(newOrder).catch(() => {
       showToast('Order saved locally. Firebase sync is unavailable.');
     });
-    void saveCustomerProfile({
-      email: newOrder.email,
-      phone: newOrder.phone,
-      savedAddresses: [newOrder.address],
-      lastOrderId: newOrder.id,
-    }).catch(() => {});
+    if (_deliveryDetails && newOrder.email) {
+      const previous = savedDeliveryDetails;
+      const deliveryChanged = JSON.stringify(previous || null) !== JSON.stringify(_deliveryDetails);
+      if (deliveryChanged) {
+        setSavedDeliveryDetails(_deliveryDetails);
+        void saveCustomerProfile({
+          email: newOrder.email,
+          phone: newOrder.phone,
+          savedDeliveryDetails: _deliveryDetails,
+          savedAddresses: [newOrder.address],
+          lastOrderId: newOrder.id,
+        }).catch(() => {});
+      }
+    }
     void fetch('/api/notify-order', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -838,13 +1117,14 @@ export default function App() {
     let list = [...allProducts];
 
     if (isSearching && searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      list = list.filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.tags.some((t) => t.toLowerCase().includes(q)) ||
-          p.category.toLowerCase().includes(q)
-      );
+      const q = searchQuery.toLowerCase().trim().replace(/\s+/g, ' ');
+      list = list.filter((p) => {
+        const searchableText = [p.name, p.category, ...p.tags]
+          .join(' ')
+          .toLowerCase()
+          .replace(/\s+/g, ' ');
+        return searchableText.includes(q);
+      });
     } else if (selectedCategory !== 'all') {
       list = list.filter(
         (p) => p.category === selectedCategory || p.tags.includes(selectedCategory)
@@ -911,21 +1191,6 @@ export default function App() {
       { id: 'settings', label: 'Settings', icon: Settings },
       { id: 'activity', label: 'Activity Log', icon: ClipboardList, badge: adminActivityLog.length },
     ] as const;
-    const adminSectionOrder = adminSidebarItems.map((item) => item.id);
-    const handleAdminTouchStart = (event: React.TouchEvent<HTMLElement>) => {
-      adminTouchStartX.current = event.changedTouches[0]?.clientX ?? null;
-    };
-    const handleAdminTouchEnd = (event: React.TouchEvent<HTMLElement>) => {
-      const startX = adminTouchStartX.current;
-      const endX = event.changedTouches[0]?.clientX;
-      adminTouchStartX.current = null;
-      if (startX === null || endX === undefined || Math.abs(endX - startX) < 70) return;
-      const currentIndex = adminSectionOrder.indexOf(adminSection);
-      const nextIndex = endX < startX ? currentIndex + 1 : currentIndex - 1;
-      const nextSection = adminSectionOrder[nextIndex];
-      if (nextSection) setAdminSection(nextSection);
-    };
-
     const renderAdminNav = () => (
       <nav className="space-y-1.5 text-sm font-semibold">
         {adminSidebarItems.map((item) => {
@@ -936,7 +1201,7 @@ export default function App() {
               key={item.id}
               type="button"
               onClick={() => {
-                setAdminSection(item.id);
+                navigateAdminSection(item.id);
                 setMobileMenuOpen(false);
               }}
               aria-current={isActive ? 'page' : undefined}
@@ -973,7 +1238,7 @@ export default function App() {
     const renderAdminContent = () => {
       if (adminSection === 'orders') {
         return (
-          <AdminRoom onBack={() => setAdminSection('overview')}>
+          <AdminRoom onBack={() => navigateAdminSection('overview')}>
             <div className="flex items-end justify-between gap-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f97316]">Orders</p>
@@ -1020,7 +1285,7 @@ export default function App() {
 
       if (adminSection === 'inventory') {
         return (
-          <AdminRoom onBack={() => setAdminSection('overview')}>
+          <AdminRoom onBack={() => navigateAdminSection('overview')}>
             <div><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f97316]">Inventory</p><h1 className="mt-2 text-3xl font-black text-white">Product Stock</h1><p className="mt-2 text-sm text-gray-400">Manage products and quantities directly in this workspace.</p></div>
             <div className="grid gap-4 md:grid-cols-3">
               <AdminStatCard label="Low stock" value={products.filter((p) => (stockLevels[p.id] ?? 0) < 10).length} tone="red" />
@@ -1034,7 +1299,7 @@ export default function App() {
 
       if (adminSection === 'confirmations') {
         return (
-          <AdminRoom onBack={() => setAdminSection('overview')}>
+          <AdminRoom onBack={() => navigateAdminSection('overview')}>
             <div className="flex items-end justify-between gap-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f97316]">Finance</p>
@@ -1058,7 +1323,7 @@ export default function App() {
 
       if (adminSection === 'reports') {
         return (
-          <AdminRoom onBack={() => setAdminSection('overview')}>
+          <AdminRoom onBack={() => navigateAdminSection('overview')}>
             <div className="flex items-end justify-between gap-4">
               <div><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f97316]">Analytics</p><h1 className="mt-2 text-3xl font-black text-white">Sales Reports</h1><p className="mt-2 text-sm text-gray-400">Revenue and order performance at a glance.</p></div><button type="button" onClick={exportOrdersCsv} className="rounded-xl border border-blue-500/40 bg-blue-500/10 px-4 py-2.5 text-sm font-bold text-blue-200 hover:border-blue-300">Export CSV</button>
             </div>
@@ -1074,7 +1339,7 @@ export default function App() {
 
       if (adminSection === 'notifications') {
         return (
-          <AdminRoom onBack={() => setAdminSection('overview')}>
+          <AdminRoom onBack={() => navigateAdminSection('overview')}>
             <div className="flex items-end justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f97316]">Inbox</p><h1 className="mt-2 text-3xl font-black text-white">Notifications</h1><p className="mt-2 text-sm text-gray-400">Recent activity that needs your attention.</p></div><button type="button" onClick={() => setNotifications((items) => items.map((item) => ({ ...item, read: true })))} className="rounded-xl border border-gray-700 px-4 py-2.5 text-sm font-bold text-gray-300 hover:border-gray-500 hover:text-white">Mark all read</button></div>
             <div className="space-y-3">{notifications.map((notification) => <button key={notification.id} type="button" onClick={() => setNotifications((items) => items.map((item) => item.id === notification.id ? { ...item, read: true } : item))} className={`flex w-full items-start gap-4 rounded-2xl border p-5 text-left transition ${notification.read ? 'border-gray-800 bg-gray-900/40' : 'border-orange-500/30 bg-orange-500/10 hover:border-orange-400/60'}`}><div className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${notification.read ? 'bg-gray-600' : 'bg-orange-400'}`} /><div className="min-w-0"><p className="font-bold text-white">{notification.title}</p><p className="mt-1 text-sm text-gray-400">{notification.description}</p><p className="mt-3 text-[11px] text-gray-500">{notification.time}</p></div></button>)}</div>
           </AdminRoom>
@@ -1083,7 +1348,7 @@ export default function App() {
 
       if (adminSection === 'support') {
         return (
-          <AdminRoom onBack={() => setAdminSection('overview')}>
+          <AdminRoom onBack={() => navigateAdminSection('overview')}>
             <div><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f97316]">Operations</p><h1 className="mt-2 text-3xl font-black text-white">Support chat</h1><p className="mt-2 text-sm text-gray-400">Keep customer and order support in one place.</p></div>
             <div className="rounded-2xl border border-gray-800 bg-gradient-to-br from-gray-900/70 to-gray-950/50 p-6"><div className="mb-5 flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-500/15"><MessageCircle className="h-5 w-5 text-emerald-300" /></div><div><p className="font-bold text-white">NeoMart support assistant</p><p className="text-xs text-emerald-300">Online and monitoring orders</p></div></div><div className="max-h-72 space-y-3 overflow-y-auto">{adminChatMessages.map((message, index) => <div key={`${message.text}-${index}`} className={`max-w-[85%] rounded-xl px-4 py-3 text-sm ${message.from === 'admin' ? 'ml-auto bg-orange-500/15 text-orange-100' : 'bg-gray-800 text-gray-300'}`}>{message.text}</div>)}</div><form className="mt-5 flex gap-2" onSubmit={(event) => { event.preventDefault(); const message = adminChatInput.trim(); if (!message) return; setAdminChatMessages((items) => [...items, { from: 'admin', text: message }]); setAdminChatInput(''); }}><input value={adminChatInput} onChange={(event) => setAdminChatInput(event.target.value)} placeholder="Write a support note..." className="min-w-0 flex-1 rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-sm text-white outline-none placeholder:text-gray-600 focus:border-orange-500" /><button type="submit" aria-label="Send support message" className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-orange-500 text-white hover:bg-orange-400"><Send className="h-4 w-4" /></button></form></div>
           </AdminRoom>
@@ -1092,7 +1357,7 @@ export default function App() {
 
       if (adminSection === 'storefront') {
         return (
-          <AdminRoom onBack={() => setAdminSection('overview')}>
+          <AdminRoom onBack={() => navigateAdminSection('overview')}>
             <div><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f97316]">Public store</p><h1 className="mt-2 text-3xl font-black text-white">Storefront</h1><p className="mt-2 text-sm text-gray-400">Preview the customer experience and keep selling in reach.</p></div>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="rounded-2xl border border-orange-500/30 bg-gradient-to-br from-orange-500/15 to-gray-900/60 p-6"><Store className="h-6 w-6 text-orange-300" /><h2 className="mt-5 text-xl font-black text-white">Customer storefront</h2><p className="mt-2 text-sm leading-6 text-gray-400">Open the live shopping experience to inspect products, categories, checkout, and delivery tracking.</p><button type="button" onClick={openStorefront} className="mt-5 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-bold text-white hover:bg-orange-400">Open storefront</button></div>
@@ -1104,7 +1369,7 @@ export default function App() {
 
       if (adminSection === 'settings') {
         return (
-          <AdminRoom onBack={() => setAdminSection('overview')}>
+          <AdminRoom onBack={() => navigateAdminSection('overview')}>
             <div><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f97316]">Workspace</p><h1 className="mt-2 text-3xl font-black text-white">Settings</h1><p className="mt-2 text-sm text-gray-400">Adjust the admin workspace and connected services.</p></div>
             <div className="divide-y divide-gray-800 overflow-hidden rounded-2xl border border-gray-800 bg-gradient-to-br from-gray-900/70 to-gray-950/50">
               <div className="flex items-center justify-between gap-5 p-5"><div><p className="font-bold text-white">Appearance</p><p className="mt-1 text-sm text-gray-400">Choose the storefront theme used in this browser.</p></div><button type="button" onClick={toggleTheme} className="rounded-xl border border-gray-700 px-4 py-2.5 text-sm font-bold text-gray-200 hover:border-orange-500/60">{theme === 'dark' ? 'Dark mode' : 'Light mode'}</button></div>
@@ -1117,7 +1382,7 @@ export default function App() {
 
       if (adminSection === 'activity') {
         return (
-          <AdminRoom onBack={() => setAdminSection('overview')}>
+          <AdminRoom onBack={() => navigateAdminSection('overview')}>
             <AdminSectionHeader eyebrow="Security" title="Admin Activity Log" description="A local record of important admin actions in this browser." />
             <div className="rounded-2xl border border-gray-800 bg-gradient-to-br from-gray-900/70 to-gray-950/50 p-5">
               <div className="mb-5 flex items-center justify-between gap-3"><h2 className="text-lg font-bold text-white">Recent actions</h2><button type="button" onClick={() => { setAdminActivityLog([]); localStorage.removeItem('neomart_admin_activity_log'); }} className="rounded-xl border border-red-500/40 px-3 py-2 text-xs font-bold text-red-300 hover:bg-red-500/10">Clear log</button></div>
@@ -1129,7 +1394,7 @@ export default function App() {
 
       if (adminSection === 'customers') {
         return (
-          <AdminRoom onBack={() => setAdminSection('overview')}>
+          <AdminRoom onBack={() => navigateAdminSection('overview')}>
             <AdminCustomersModal embedded isOpen orders={customerOrders} onClose={() => undefined} onToast={showToast} onUpdateCustomerState={(email, state: AccountState) => updateCustomerAccountState(email, state)} />
           </AdminRoom>
         );
@@ -1262,7 +1527,7 @@ export default function App() {
                     {customerOrders.slice(0, 6).map((order) => (
                       <tr 
                         key={order.id} 
-                        onClick={() => setAdminSection('orders')} 
+                        onClick={() => navigateAdminSection('orders')} 
                         className="transition-all duration-200 hover:bg-gradient-to-r hover:from-gray-800/30 hover:to-gray-900/30 cursor-pointer group"
                       >
                         <td className="py-3 font-bold text-white group-hover:text-[#f97316]">#{order.id}</td>
@@ -1289,8 +1554,8 @@ export default function App() {
               <h2 className="mb-5 text-lg font-bold text-white">Quick Actions</h2>
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { label: 'Add Product', detail: 'Add new product', icon: Package, action: () => setAdminSection('inventory'), tone: 'orange' },
-                  { label: 'View Orders', detail: 'Manage orders', icon: ClipboardList, action: () => setAdminSection('orders'), tone: 'blue' },
+                  { label: 'Add Product', detail: 'Add new product', icon: Package, action: () => navigateAdminSection('inventory'), tone: 'orange' },
+                  { label: 'View Orders', detail: 'Manage orders', icon: ClipboardList, action: () => navigateAdminSection('orders'), tone: 'blue' },
                   { label: 'Payment Review', detail: 'Review payments', icon: CreditCard, action: () => setIsConfirmOrdersOpen(true), tone: 'green' },
                   { label: 'Add Customer', detail: 'Manage customers', icon: User, action: () => setIsCustomerManagementOpen(true), tone: 'violet' },
                   { label: 'Sales Reports', detail: 'View reports', icon: BarChart3, action: () => setIsSalesReportOpen(true), tone: 'amber' },
@@ -1319,7 +1584,7 @@ export default function App() {
                 {pendingCustomerOrders.slice(0, 3).map((order) => (
                   <button
                     key={order.id}
-                    onClick={() => setAdminSection('orders')}
+                    onClick={() => navigateAdminSection('orders')}
                     className="group text-left rounded-xl border border-red-600/30 bg-gradient-to-br from-red-950/40 to-red-900/20 p-4 transition-all duration-200 hover:border-red-500/60 hover:shadow-lg hover:shadow-red-500/20 hover:scale-105 cursor-pointer"
                   >
                     <div className="flex items-start gap-3">
@@ -1342,7 +1607,7 @@ export default function App() {
     };
 
     return (
-      <div className="admin-dashboard min-h-screen bg-gradient-to-br from-[#0a0d11] via-[#0f1217] to-[#0d1012] text-gray-100 transition-colors">
+      <div {...gestureSurfaceProps} style={{ transform: edgeSwipeOffset ? `translateX(${edgeSwipeOffset}px)` : undefined, transition: edgeSwipeOffset ? 'none' : 'transform 180ms ease-out' }} className="admin-dashboard min-h-screen bg-gradient-to-br from-[#0a0d11] via-[#0f1217] to-[#0d1012] text-gray-100 transition-colors">
         <div className="mx-auto grid min-h-screen max-w-[1600px] lg:grid-cols-[260px_1fr]">
           <aside className="hidden border-r border-gradient bg-gradient-to-b from-[#131821] to-[#0d1015] p-6 text-white lg:flex lg:flex-col dark:border-gray-800/50 shadow-xl">
             <div className="flex items-center gap-3 border-b border-gradient pb-6 mb-2">
@@ -1364,7 +1629,7 @@ export default function App() {
             </div>
           </aside>
 
-          <main className="min-w-0 px-4 py-6 sm:px-8 lg:px-10 lg:py-8" onTouchStart={handleAdminTouchStart} onTouchEnd={handleAdminTouchEnd}>
+          <main className="min-w-0 px-4 py-6 sm:px-8 lg:px-10 lg:py-8">
             <div className="mb-6 flex items-center justify-between gap-3 lg:hidden">
               <div><p className="text-xs font-bold uppercase tracking-[0.2em] text-orange-400">neoMart admin</p><p className="mt-1 text-sm font-bold text-white">{adminSidebarItems.find((item) => item.id === adminSection)?.label}</p></div>
               <button type="button" onClick={() => setMobileMenuOpen(true)} aria-label="Open admin navigation" className="grid h-11 w-11 place-items-center rounded-xl border border-gray-700 bg-gray-900 text-gray-200"><Menu className="h-5 w-5" /></button>
@@ -1389,7 +1654,7 @@ export default function App() {
           onOpenOrders={() => {
             setAdminOrderAlert(null);
             setIsAdminOpen(false);
-            setAdminSection('orders');
+            navigateAdminSection('orders');
           }}
           onDismiss={() => setAdminOrderAlert(null)}
         />
@@ -1400,9 +1665,9 @@ export default function App() {
           onEnableNotifications={enableAdminNotifications}
           orders={orders.filter((order) => order.orderSource === 'customer')}
           onConfirmOrderPayment={handleConfirmOrderPayment}
-          onOpenStockManagement={() => setAdminSection('inventory')}
-          onOpenSalesReport={() => setAdminSection('reports')}
-          onOpenCustomerManagement={() => setAdminSection('customers')}
+          onOpenStockManagement={() => navigateAdminSection('inventory')}
+          onOpenSalesReport={() => navigateAdminSection('reports')}
+          onOpenCustomerManagement={() => navigateAdminSection('customers')}
           onOpenLiveGps={(orderId) => {
             setIsAdminOpen(false);
             handleOpenLiveTracking(orderId);
@@ -1455,14 +1720,16 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f5f5f5] dark:bg-[#0f0f0f] text-gray-900 dark:text-gray-100 transition-colors">
+    <div {...gestureSurfaceProps} style={{ transform: edgeSwipeOffset ? `translateX(${edgeSwipeOffset}px)` : undefined, transition: edgeSwipeOffset ? 'none' : 'transform 180ms ease-out' }} className="min-h-screen flex flex-col bg-[#f5f5f5] dark:bg-[#0f0f0f] text-gray-900 dark:text-gray-100 transition-colors">
       <AdminOrderAlert
         order={adminOrderAlert}
         onOpenOrders={() => {
           setAdminOrderAlert(null);
           setAdminSection('orders');
           setCurrentView('admin');
-          window.history.pushState({}, '', '/admin');
+          if (window.location.pathname.toLowerCase() !== '/admin') {
+            window.history.pushState({ neomartView: 'admin', adminSection: 'orders' }, '', '/admin');
+          }
         }}
         onDismiss={() => setAdminOrderAlert(null)}
       />
@@ -1478,7 +1745,7 @@ export default function App() {
         accountPhotoUrl={accountPhotoUrl}
         onOpenHelpSection={handleOpenHelpSection}
         searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
+        onSearchChange={handleSearchChange}
         onSearchSubmit={handleSearchSubmit}
         products={allProducts}
         onSelectProduct={handleSelectProduct}
@@ -1789,6 +2056,7 @@ export default function App() {
         isOpen={isCheckoutOpen}
         onClose={() => setIsCheckoutOpen(false)}
         cart={cart}
+        initialDelivery={savedDeliveryDetails}
         onCompleteOrder={handleCompleteOrder}
         showToast={showToast}
       />
@@ -1832,7 +2100,9 @@ export default function App() {
           if (id.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
             setAdminSection('overview');
             setCurrentView('admin');
-            window.history.pushState({}, '', '/admin');
+            if (window.location.pathname.toLowerCase() !== '/admin') {
+              window.history.pushState({ neomartView: 'admin' }, '', '/admin');
+            }
           }
           void saveCustomerProfile({
             email: id.includes('@') ? id : undefined,
@@ -1897,13 +2167,21 @@ export default function App() {
         orders={orders.filter((order) => order.orderSource === 'customer')}
         onConfirmOrderPayment={handleConfirmOrderPayment}
         onOpenStockManagement={() => {
-          setAdminSection('inventory');
+          navigateAdminSection('inventory');
           setCurrentView('admin');
           setIsAdminOpen(false);
-          window.history.pushState({}, '', '/admin');
+          if (window.location.pathname.toLowerCase() !== '/admin') {
+            window.history.pushState({ neomartView: 'admin', adminSection: 'inventory' }, '', '/admin');
+          }
         }}
-        onOpenSalesReport={() => setIsSalesReportOpen(true)}
-        onOpenCustomerManagement={() => setIsCustomerManagementOpen(true)}
+        onOpenSalesReport={() => {
+          setIsAdminOpen(false);
+          setIsSalesReportOpen(true);
+        }}
+        onOpenCustomerManagement={() => {
+          setIsAdminOpen(false);
+          setIsCustomerManagementOpen(true);
+        }}
         onOpenLiveGps={(orderId) => {
           setIsAdminOpen(false);
           handleOpenLiveTracking(orderId);

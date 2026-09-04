@@ -41,6 +41,12 @@ export async function saveCustomerProfile(profile: DocumentData) {
   return true;
 }
 
+export async function getCustomerProfile(): Promise<DocumentData | null> {
+  if (!db || !(await ensureFirebaseAuth()) || !auth?.currentUser) return null;
+  const snapshot = await getDoc(doc(db, 'users', auth.currentUser.uid));
+  return snapshot.exists() ? snapshot.data() : null;
+}
+
 export async function confirmOrderPayment(orderId: string) {
   if (!db || !(await ensureFirebaseAuth())) return false;
   await updateDoc(doc(db, 'orders', orderId), {

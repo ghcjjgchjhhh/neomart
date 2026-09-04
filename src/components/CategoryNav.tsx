@@ -31,7 +31,7 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({
   return (
     <nav className="w-full bg-white dark:bg-[#141414] border-b border-gray-200 dark:border-gray-800 transition-colors shadow-xs">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="flex items-center gap-2 overflow-x-auto py-2 no-scrollbar">
+        <div data-horizontal-swipe className="flex items-center gap-2 overflow-x-auto py-2 no-scrollbar">
           {navItems.map((item) => {
             const isActive = selectedCategory === item.id;
             return (

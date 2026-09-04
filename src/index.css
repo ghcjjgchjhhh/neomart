@@ -71,7 +71,40 @@ body {
   transition: background 0.3s ease, color 0.3s ease;
   margin: 0;
   padding: 0;
+  min-height: 100%;
+  overscroll-behavior-y: auto;
+  -webkit-overflow-scrolling: touch;
   -webkit-font-smoothing: antialiased;
+}
+
+html {
+  min-height: 100%;
+  background: var(--bg);
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
+}
+
+#root {
+  min-height: 100dvh;
+  padding-top: env(safe-area-inset-top);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+main,
+section,
+aside,
+dialog {
+  -webkit-overflow-scrolling: touch;
 }
 
 @keyframes pulse-line {

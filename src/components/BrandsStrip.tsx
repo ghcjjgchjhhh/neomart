@@ -29,7 +29,7 @@ export const BrandsStrip: React.FC<BrandsStripProps> = ({ onSearchBrand }) => {
         <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">Top Brands</h2>
       </div>
 
-      <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+      <div data-horizontal-swipe className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
         {brands.map((brand) => (
           <button
             key={brand}

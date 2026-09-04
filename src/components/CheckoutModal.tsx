@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   X,
   CreditCard,
@@ -16,6 +16,7 @@ interface CheckoutModalProps {
   isOpen: boolean;
   onClose: () => void;
   cart: CartItem[];
+  initialDelivery?: DeliveryDetails | null;
   onCompleteOrder: (method: PaymentMethodType, deliveryDetails?: DeliveryDetails, discountAmount?: number) => void;
   showToast: (msg: string) => void;
 }
@@ -24,6 +25,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   isOpen,
   onClose,
   cart,
+  initialDelivery,
   onCompleteOrder,
   showToast
 }) => {
@@ -40,6 +42,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     phone: '',
     notes: ''
   });
+
+  useEffect(() => {
+    if (isOpen && initialDelivery) setDelivery(initialDelivery);
+  }, [initialDelivery, isOpen]);
 
   // State / City Picker UI state
   const [stateSearch, setStateSearch] = useState('');
