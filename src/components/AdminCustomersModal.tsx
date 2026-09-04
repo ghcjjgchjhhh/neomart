@@ -32,6 +32,7 @@ export interface AccountState {
 
 interface AdminCustomersModalProps {
   isOpen: boolean;
+  embedded?: boolean;
   onClose: () => void;
   orders: Order[];
   onToast: (message: string) => void;
@@ -42,6 +43,7 @@ const ACCOUNT_STATES_KEY = 'neomart_admin_customer_states';
 
 export const AdminCustomersModal: React.FC<AdminCustomersModalProps> = ({
   isOpen,
+  embedded = false,
   onClose,
   orders,
   onToast,
@@ -128,8 +130,8 @@ export const AdminCustomersModal: React.FC<AdminCustomersModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 p-3 backdrop-blur-sm">
-      <div className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-2xl dark:border-gray-800 dark:bg-[#18181b]">
+    <div className={embedded ? 'w-full' : 'fixed inset-0 z-[60] flex items-center justify-center bg-black/75 p-3 backdrop-blur-sm'}>
+      <div className={embedded ? 'flex min-h-[620px] w-full flex-col overflow-hidden rounded-2xl border border-gray-800 bg-gray-950/40' : 'flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-2xl dark:border-gray-800 dark:bg-[#18181b]'}>
         <header className="flex items-center justify-between border-b border-gray-200 bg-[#222222] px-5 py-4 text-white dark:border-gray-800">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f68b1e]"><UserRound className="h-5 w-5" /></div>

@@ -329,7 +329,6 @@ export default function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [adminSection, setAdminSection] = useState<'overview' | 'orders' | 'confirmations' | 'inventory' | 'reports' | 'customers' | 'notifications' | 'support' | 'storefront' | 'settings'>('overview');
-  const [selectedAdminCustomer, setSelectedAdminCustomer] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dateRange] = useState('May 12, 2025 - May 19, 2025');
   const [isOrdersModalOpen, setIsOrdersModalOpen] = useState(false);
@@ -1074,55 +1073,9 @@ export default function App() {
       }
 
       if (adminSection === 'customers') {
-        const customerRecords = Array.from(new Map(customerOrders.map((order) => [order.phone || order.email || order.customerName || order.id, order])).values());
-        const selectedCustomer = customerRecords.find((order) => (order.phone || order.email || order.customerName || order.id) === selectedAdminCustomer);
-        const selectedCustomerOrders = selectedCustomer
-          ? customerOrders.filter((order) => (order.phone || order.email || order.customerName || order.id) === (selectedCustomer.phone || selectedCustomer.email || selectedCustomer.customerName || selectedCustomer.id))
-          : [];
         return (
           <AdminRoom>
-            <div className="flex items-end justify-between gap-4">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f97316]">Customers</p>
-                <h1 className="mt-2 text-3xl font-black text-white">Customer Insights</h1>
-              </div>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-3">
-              {[
-                { label: 'Active', value: new Set(customerOrders.map((order) => order.phone || order.customerName)).size },
-                { label: 'Returning', value: Math.max(12, Math.min(48, Math.round(customerOrders.length / 2))) },
-                { label: 'Support', value: pendingCustomerOrders.length },
-              ].map((stat) => (
-                <div key={stat.label} className="rounded-2xl border border-gray-800 bg-gradient-to-br from-gray-900/60 to-gray-950/40 p-4">
-                  <p className="text-[11px] uppercase tracking-[0.2em] text-gray-400">{stat.label}</p>
-                  <p className="mt-4 text-3xl font-black text-white">{stat.value}</p>
-                </div>
-              ))}
-            </div>
-
-            {selectedCustomer && (
-              <div className="rounded-2xl border border-violet-500/30 bg-gradient-to-br from-violet-500/10 to-gray-900/60 p-6">
-                <div className="flex items-start justify-between gap-4"><div><p className="text-xs uppercase tracking-[0.2em] text-violet-300">Customer account</p><h2 className="mt-2 text-2xl font-black text-white">{selectedCustomer.customerName || 'Customer'}</h2></div><button type="button" onClick={() => setSelectedAdminCustomer(null)} aria-label="Close customer details" className="text-gray-400 hover:text-white"><X className="h-5 w-5" /></button></div>
-                <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><div><p className="text-[11px] uppercase tracking-wider text-gray-500">Email</p><p className="mt-1 break-words text-sm text-white">{selectedCustomer.email || 'Not available'}</p></div><div><p className="text-[11px] uppercase tracking-wider text-gray-500">Phone</p><p className="mt-1 text-sm text-white">{selectedCustomer.phone || 'Not available'}</p></div><div><p className="text-[11px] uppercase tracking-wider text-gray-500">Registration</p><p className="mt-1 text-sm text-white">{selectedCustomer.date}</p></div><div><p className="text-[11px] uppercase tracking-wider text-gray-500">Total orders</p><p className="mt-1 text-sm font-bold text-white">{selectedCustomerOrders.length}</p></div></div>
-                <div className="mt-5 flex flex-wrap items-center gap-3 text-xs"><span className="rounded-full bg-emerald-500/15 px-3 py-1.5 font-bold text-emerald-300">Active account</span><span className="text-gray-400">Latest activity: order {selectedCustomerOrders[0]?.id || 'none'} on {selectedCustomerOrders[0]?.date || 'no activity'}</span></div>
-              </div>
-            )}
-
-            <div className="grid gap-4 md:grid-cols-2">
-              {customerRecords.slice(0, 8).map((order) => {
-                const customerKey = order.phone || order.email || order.customerName || order.id;
-                return <button type="button" key={`${customerKey}-${order.id}`} onClick={() => setSelectedAdminCustomer(customerKey)} className="rounded-2xl border border-gray-800 bg-gradient-to-br from-gray-900/70 to-gray-950/50 p-4 text-left transition hover:border-violet-500/60">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-bold text-white">{order.customerName}</p>
-                      <p className="mt-1 break-words text-[11px] text-gray-400">{order.email || order.phone || 'No contact saved'}</p>
-                    </div>
-                    <span className="rounded-full bg-violet-500/15 px-2 py-1 text-[10px] font-bold text-violet-300">Active</span>
-                  </div>
-                </button>;
-              })}
-            </div>
+            <AdminCustomersModal embedded isOpen orders={customerOrders} onClose={() => undefined} onToast={showToast} onUpdateCustomerState={(email, state: AccountState) => updateCustomerAccountState(email, state)} />
           </AdminRoom>
         );
       }
