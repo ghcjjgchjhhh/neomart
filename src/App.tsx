@@ -24,6 +24,7 @@ import { OrderTrackingModal } from './components/TrackingModal';
 import { Footer } from './components/Footer';
 import { Toast } from './components/Toast';
 import { SplashScreen } from './components/SplashScreen';
+import { AdminInventoryRoom } from './components/AdminInventoryRoom';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -954,48 +955,13 @@ export default function App() {
       if (adminSection === 'inventory') {
         return (
           <AdminRoom>
-            <div className="flex items-end justify-between gap-4">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f97316]">Inventory</p>
-                <h1 className="mt-2 text-3xl font-black text-white">Product Stock</h1>
-              </div>
-              <button type="button" onClick={() => setIsStockOpen(true)} className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-sm font-bold text-emerald-200 hover:border-emerald-300">Manage products</button>
-            </div>
-
+            <div><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f97316]">Inventory</p><h1 className="mt-2 text-3xl font-black text-white">Product Stock</h1><p className="mt-2 text-sm text-gray-400">Manage products and quantities directly in this workspace.</p></div>
             <div className="grid gap-4 md:grid-cols-3">
-              {[
-                { label: 'Low stock', value: products.filter((p) => (stockLevels[p.id] ?? 0) < 10).length },
-                { label: 'Healthy', value: products.filter((p) => (stockLevels[p.id] ?? 0) >= 10).length },
-                { label: 'Total SKUs', value: products.length },
-              ].map((stat) => (
-                <div key={stat.label} className="rounded-2xl border border-gray-800 bg-gradient-to-br from-gray-900/60 to-gray-950/40 p-4">
-                  <p className="text-[11px] uppercase tracking-[0.2em] text-gray-400">{stat.label}</p>
-                  <p className="mt-4 text-3xl font-black text-white">{stat.value}</p>
-                </div>
-              ))}
+              <AdminStatCard label="Low stock" value={products.filter((p) => (stockLevels[p.id] ?? 0) < 10).length} tone="red" />
+              <AdminStatCard label="Healthy stock" value={products.filter((p) => (stockLevels[p.id] ?? 0) >= 10).length} tone="green" />
+              <AdminStatCard label="Total SKUs" value={products.length} tone="blue" />
             </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              {products.slice(0, 8).map((product) => {
-                const stock = stockLevels[product.id] ?? 0;
-                return (
-                  <div key={product.id} className="rounded-2xl border border-gray-800 bg-gradient-to-br from-gray-900/70 to-gray-950/50 p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <ProductThumb type={product.category} className="h-10 w-10" />
-                        <div>
-                          <p className="text-sm font-bold text-white">{product.name}</p>
-                          <p className="text-[11px] text-gray-400">{product.category}</p>
-                        </div>
-                      </div>
-                      <span className={`rounded-full px-2 py-1 text-[10px] font-bold ${stock < 10 ? 'bg-red-500/15 text-red-300' : 'bg-emerald-500/15 text-emerald-300'}`}>
-                        {stock} units
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            <AdminInventoryRoom products={products} stockLevels={stockLevels} onUpdateStock={handleUpdateStock} onSaveProduct={(product) => { setProducts((previous) => previous.some((item) => item.id === product.id) ? previous.map((item) => item.id === product.id ? product : item) : [product, ...previous]); showToast('Product saved'); }} onDeleteProduct={(productId) => { setProducts((previous) => previous.filter((product) => product.id !== productId)); showToast('Product deleted'); }} />
           </AdminRoom>
         );
       }
@@ -1278,7 +1244,7 @@ export default function App() {
               <h2 className="mb-5 text-lg font-bold text-white">Quick Actions</h2>
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { label: 'Add Product', detail: 'Add new product', icon: Package, action: () => setIsStockOpen(true), tone: 'orange' },
+                  { label: 'Add Product', detail: 'Add new product', icon: Package, action: () => setAdminSection('inventory'), tone: 'orange' },
                   { label: 'View Orders', detail: 'Manage orders', icon: ClipboardList, action: () => setAdminSection('orders'), tone: 'blue' },
                   { label: 'Payment Review', detail: 'Review payments', icon: CreditCard, action: () => setIsConfirmOrdersOpen(true), tone: 'green' },
                   { label: 'Add Customer', detail: 'Manage customers', icon: User, action: () => setIsCustomerManagementOpen(true), tone: 'violet' },
