@@ -211,113 +211,106 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             </button>
           </div>
         ) : (
-          <div>
-            {/* Top Switcher Tabs */}
-            <div className="flex border-b border-gray-100 dark:border-gray-800 mt-3 mb-4">
+          <div className="pt-6">
+            <div className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-[26px] bg-gradient-to-br from-[#f68b1e] to-[#ff8a3d] shadow-[0_12px_30px_rgba(246,139,30,0.28)]">
+              <NeoMartLogo size="sm" textColor="light" />
+            </div>
+
+            <h1 className="text-center text-4xl sm:text-5xl font-black tracking-[-0.06em] text-[#1f1f1f] dark:text-white">
+              Welcome to NeoMart
+            </h1>
+            <p className="mt-4 text-center text-lg text-gray-500 dark:text-gray-400">
+              Sign in to access your saved carts, orders, and rewards.
+            </p>
+
+            <div className="mt-8 space-y-4">
               <button
                 type="button"
-                onClick={() => {
-                  setShowAddGoogleAccount(false);
-                  setActiveTab('google');
-                }}
-                className={`flex-1 py-2.5 text-xs font-bold flex items-center justify-center gap-2 border-b-2 transition-all cursor-pointer ${
-                  activeTab === 'google'
-                    ? 'border-[#f68b1e] text-[#f68b1e]'
-                    : 'border-transparent text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
-                }`}
+                onClick={handleGoogleIconClick}
+                className="flex w-full items-center justify-center gap-3 rounded-2xl border border-[#e6e6e6] bg-white px-4 py-4 text-left shadow-sm transition-all hover:border-[#d9d9d9] hover:shadow-md cursor-pointer"
+                disabled={loading}
               >
-                <svg className="w-4 h-4" viewBox="0 0 24 24">
-                  <path
-                    fill="#4285F4"
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  />
-                  <path
-                    fill="#34A853"
-                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  />
-                  <path
-                    fill="#FBBC05"
-                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                  />
-                  <path
-                    fill="#EA4335"
-                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                  />
+                <svg className="h-7 w-7" viewBox="0 0 24 24" aria-hidden="true">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
                 </svg>
-                <span>Google Accounts</span>
+                <span className="text-2xl font-bold tracking-[-0.04em] text-[#1f1f1f]">
+                  {loading ? 'Connecting...' : 'Continue with Google'}
+                </span>
               </button>
+
+              <div className="flex items-center gap-4 py-2">
+                <div className="h-px flex-1 bg-gray-300" />
+                <span className="text-xs font-bold uppercase tracking-[0.22em] text-gray-400">or with email</span>
+                <div className="h-px flex-1 bg-gray-300" />
+              </div>
+            </div>
+
+            <div className="mt-6 space-y-5">
+              <div>
+                <label className="mb-2 block text-lg font-extrabold uppercase tracking-[-0.04em] text-[#1f1f1f] dark:text-white">
+                  Email address
+                </label>
+                <div className="flex items-center gap-3 rounded-2xl border border-[#d9d9d9] bg-white px-4 py-3 shadow-sm">
+                  <svg className="h-5 w-5 text-[#666]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                    <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor"/>
+                    <path d="M3 7l9 6 9-6" stroke="currentColor" strokeLinecap="round"/>
+                  </svg>
+                  <input
+                    type="email"
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    placeholder="you@example.com"
+                    className="w-full border-0 bg-transparent text-lg text-[#1f1f1f] placeholder:text-gray-400 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-lg font-extrabold uppercase tracking-[-0.04em] text-[#1f1f1f] dark:text-white">
+                  Password
+                </label>
+                <div className="flex items-center gap-3 rounded-2xl border border-[#d9d9d9] bg-white px-4 py-3 shadow-sm">
+                  <svg className="h-5 w-5 text-[#666]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                    <rect x="5" y="10" width="14" height="10" rx="2" stroke="currentColor"/>
+                    <path d="M8 10V7.5A4 4 0 0116 7.5V10" stroke="currentColor" strokeLinecap="round"/>
+                  </svg>
+                  <input
+                    type="password"
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full border-0 bg-transparent text-lg text-[#1f1f1f] placeholder:text-gray-400 focus:outline-none"
+                  />
+                </div>
+              </div>
 
               <button
                 type="button"
-                onClick={() => setActiveTab('phone_email')}
-                className={`flex-1 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer ${
-                  activeTab === 'phone_email'
-                    ? 'border-[#f68b1e] text-[#f68b1e]'
-                    : 'border-transparent text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
-                }`}
+                onClick={handlePhoneEmailLogin}
+                className="mt-2 w-full rounded-2xl bg-gradient-to-r from-[#f68b1e] to-[#f57c20] px-5 py-4 text-3xl font-black tracking-[-0.06em] text-white shadow-[0_12px_25px_rgba(246,139,30,0.32)] transition-transform hover:-translate-y-0.5 disabled:opacity-70 cursor-pointer"
+                disabled={loading}
               >
-                Phone or Email
+                {loading ? 'Signing In...' : 'Sign In'}
               </button>
             </div>
 
-            {/* TAB 1: GOOGLE ACCOUNTS */}
-            {activeTab === 'google' && (
-              <div>
-                {!showAddGoogleAccount ? (
-                  <div>
-                    <div className="mb-3">
-                      <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">
-                        Choose your Google account
-                      </h3>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Tap an account below to sign in immediately:
-                      </p>
-                    </div>
+            <p className="mt-8 text-center text-xl text-[#1f1f1f] dark:text-white">
+              Don’t have an account? <button type="button" onClick={() => setActiveTab('google')} className="font-extrabold text-[#f68b1e] underline decoration-[#f68b1e]/40 underline-offset-4 cursor-pointer">Sign up now</button>
+            </p>
 
-                    {/* Account List */}
-                    <div className="space-y-1.5 max-h-60 overflow-y-auto mb-3 pr-1">
-                      {accountsList.map((acc) => {
-                        const isSigning = signingInAccount === acc.email;
-                        return (
-                          <button
-                            key={acc.email}
-                            type="button"
-                            disabled={signingInAccount !== null}
-                            onClick={() => handleSelectGoogleAccount(acc)}
-                            className="w-full flex items-center justify-between p-3 rounded-2xl bg-gray-50 dark:bg-[#222222] hover:bg-orange-50 dark:hover:bg-[#2d2214] border border-gray-200 dark:border-gray-700 hover:border-[#f68b1e]/50 transition-all text-left cursor-pointer group disabled:opacity-60"
-                          >
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div
-                                className={`w-10 h-10 rounded-full ${acc.avatarBg} ${acc.avatarColor} font-bold text-base flex items-center justify-center shrink-0 shadow-xs`}
-                              >
-                                {acc.avatarLetter}
-                              </div>
-
-                              <div className="min-w-0 flex-1">
-                                <div className="text-xs font-bold text-gray-900 dark:text-gray-100 truncate group-hover:text-[#f68b1e] transition-colors">
-                                  {acc.name}
-                                </div>
-                                <div className="text-[11px] text-gray-500 dark:text-gray-400 truncate">
-                                  {acc.email}
-                                </div>
-                              </div>
-                            </div>
-
-                            {isSigning ? (
-                              <div className="w-4 h-4 rounded-full border-2 border-[#f68b1e] border-t-transparent animate-spin ml-2 shrink-0" />
-                            ) : (
-                              <span className="text-[11px] font-bold text-[#f68b1e] bg-[#fff3e0] dark:bg-[#3d2700] px-2.5 py-1 rounded-lg border border-[#f68b1e]/20 shrink-0 ml-2">
-                                Sign In
-                              </span>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {/* Buttons Row: Use Another Google Account + Google Icon Button */}
-                    <div className="flex items-center gap-2">
-                      <button
+            <button
+              type="button"
+              onClick={() => setActiveTab('google')}
+              className="mt-8 flex w-full items-center justify-center gap-2 rounded-xl border border-[#e4e4e4] bg-white/30 px-4 py-3 text-center text-lg font-bold text-[#1f1f1f] shadow-sm transition hover:bg-white cursor-pointer"
+            >
+              <span className="text-2xl">⚡</span>
+              <span>Tester Shortcut: Enter Demo Admin Mode</span>
+            </button>
+          </div>
+        )}
                         type="button"
                         onClick={() => setShowAddGoogleAccount(true)}
                         className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-dashed border-gray-300 dark:border-gray-700 hover:border-gray-400 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
