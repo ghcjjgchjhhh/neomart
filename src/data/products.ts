@@ -679,14 +679,14 @@ export const allProducts: Product[] = [
   },
   {
     id: 53,
-    name: 'Sony PlayStation 5 Digital Edition Console',
-    price: 480000,
-    oldPrice: 560000,
+    name: 'Sony PlayStation 5 Slim (PS5 Slim) Console 1TB',
+    price: 1099000,
+    oldPrice: 1299000,
     discount: 14,
     rating: 4.9,
     reviews: 1890,
     emoji: '🎮',
-    img: 'https://m.media-amazon.com/images/G/01/apparel/rcxgs/tile._CB483369110_.gif',
+    img: 'https://ng.jumia.is/unsafe/fit-in/500x500/filters:fill(white)/product/62/0736014/1.jpg?7389',
     category: 'gaming',
     tags: ['gaming', 'ps5', 'sony', 'console']
   },
