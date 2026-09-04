@@ -908,6 +908,7 @@ export default function App() {
                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f97316]">Orders</p>
                 <h1 className="mt-2 text-3xl font-black text-white">Order Management</h1>
               </div>
+              <button type="button" onClick={() => setIsAdminOpen(true)} className="rounded-xl border border-orange-500/40 bg-orange-500/10 px-4 py-2.5 text-sm font-bold text-orange-200 hover:border-orange-300">Open order manager</button>
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
@@ -955,6 +956,7 @@ export default function App() {
                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f97316]">Inventory</p>
                 <h1 className="mt-2 text-3xl font-black text-white">Product Stock</h1>
               </div>
+              <button type="button" onClick={() => setIsStockOpen(true)} className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-sm font-bold text-emerald-200 hover:border-emerald-300">Manage products</button>
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
@@ -1014,6 +1016,7 @@ export default function App() {
               <div className="mb-4 flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-emerald-400" /><h2 className="text-lg font-bold text-white">Review workflow</h2></div>
               <p className="text-sm leading-6 text-gray-400">Pending orders stay visible here until payment is confirmed. Use the review queue to approve payments and keep fulfillment accurate.</p>
             </div>
+            <div className="space-y-3">{pendingCustomerOrders.slice(0, 8).map((order) => <div key={order.id} className="flex flex-col gap-4 rounded-2xl border border-gray-800 bg-gray-900/60 p-5 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-bold text-white">Order #{order.id}</p><p className="mt-1 text-xs text-gray-400">{order.customerName || 'Guest'} · {order.phone || order.email || 'No contact'} · {order.paymentMethod}</p><p className="mt-1 text-xs text-orange-300">Payment pending · ₦{order.total.toLocaleString()}</p></div><div className="flex gap-2"><button type="button" onClick={() => handleConfirmOrderPayment(order.id)} className="rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-emerald-500">Confirm payment</button><button type="button" onClick={() => { setOrders((items) => items.map((item) => item.id === order.id ? { ...item, status: 'Cancelled' } : item)); void updateOrderStatus(order.id, 'Cancelled'); showToast('Payment rejected and order cancelled'); }} className="rounded-xl border border-red-500/40 px-4 py-2.5 text-xs font-bold text-red-300 hover:bg-red-500/10">Reject</button></div></div>)}</div>
           </div>
         );
       }
@@ -1022,7 +1025,7 @@ export default function App() {
         return (
           <div className="space-y-6">
             <div className="flex items-end justify-between gap-4">
-              <div><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f97316]">Analytics</p><h1 className="mt-2 text-3xl font-black text-white">Sales Reports</h1><p className="mt-2 text-sm text-gray-400">Revenue and order performance at a glance.</p></div>
+              <div><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f97316]">Analytics</p><h1 className="mt-2 text-3xl font-black text-white">Sales Reports</h1><p className="mt-2 text-sm text-gray-400">Revenue and order performance at a glance.</p></div><button type="button" onClick={() => setIsSalesReportOpen(true)} className="rounded-xl border border-blue-500/40 bg-blue-500/10 px-4 py-2.5 text-sm font-bold text-blue-200 hover:border-blue-300">Open detailed report</button>
             </div>
             <div className="grid gap-4 md:grid-cols-3">
               <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5"><TrendingUp className="h-5 w-5 text-emerald-300" /><p className="mt-4 text-xs uppercase tracking-[0.2em] text-emerald-200">Revenue</p><p className="mt-2 text-2xl font-black text-white">₦{confirmedRevenue.toLocaleString()}</p></div>
@@ -1085,6 +1088,7 @@ export default function App() {
                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f97316]">Customers</p>
                 <h1 className="mt-2 text-3xl font-black text-white">Customer Insights</h1>
               </div>
+              <button type="button" onClick={() => setIsCustomerManagementOpen(true)} className="rounded-xl border border-violet-500/40 bg-violet-500/10 px-4 py-2.5 text-sm font-bold text-violet-200 hover:border-violet-300">Manage customers</button>
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
