@@ -343,6 +343,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [adminSection, setAdminSection] = useState<'overview' | 'orders' | 'confirmations' | 'inventory' | 'reports' | 'customers' | 'notifications' | 'support' | 'storefront' | 'settings' | 'activity'>('overview');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const adminTouchStartX = useRef<number | null>(null);
   const [dateRange] = useState('May 12, 2025 - May 19, 2025');
   const [isOrdersModalOpen, setIsOrdersModalOpen] = useState(false);
   const [isProductsModalOpen, setIsProductsModalOpen] = useState(false);
@@ -910,6 +911,20 @@ export default function App() {
       { id: 'settings', label: 'Settings', icon: Settings },
       { id: 'activity', label: 'Activity Log', icon: ClipboardList, badge: adminActivityLog.length },
     ] as const;
+    const adminSectionOrder = adminSidebarItems.map((item) => item.id);
+    const handleAdminTouchStart = (event: React.TouchEvent<HTMLElement>) => {
+      adminTouchStartX.current = event.changedTouches[0]?.clientX ?? null;
+    };
+    const handleAdminTouchEnd = (event: React.TouchEvent<HTMLElement>) => {
+      const startX = adminTouchStartX.current;
+      const endX = event.changedTouches[0]?.clientX;
+      adminTouchStartX.current = null;
+      if (startX === null || endX === undefined || Math.abs(endX - startX) < 70) return;
+      const currentIndex = adminSectionOrder.indexOf(adminSection);
+      const nextIndex = endX < startX ? currentIndex + 1 : currentIndex - 1;
+      const nextSection = adminSectionOrder[nextIndex];
+      if (nextSection) setAdminSection(nextSection);
+    };
 
     const renderAdminNav = () => (
       <nav className="space-y-1.5 text-sm font-semibold">
@@ -1349,7 +1364,7 @@ export default function App() {
             </div>
           </aside>
 
-          <main className="min-w-0 px-4 py-6 sm:px-8 lg:px-10 lg:py-8">
+          <main className="min-w-0 px-4 py-6 sm:px-8 lg:px-10 lg:py-8" onTouchStart={handleAdminTouchStart} onTouchEnd={handleAdminTouchEnd}>
             <div className="mb-6 flex items-center justify-between gap-3 lg:hidden">
               <div><p className="text-xs font-bold uppercase tracking-[0.2em] text-orange-400">neoMart admin</p><p className="mt-1 text-sm font-bold text-white">{adminSidebarItems.find((item) => item.id === adminSection)?.label}</p></div>
               <button type="button" onClick={() => setMobileMenuOpen(true)} aria-label="Open admin navigation" className="grid h-11 w-11 place-items-center rounded-xl border border-gray-700 bg-gray-900 text-gray-200"><Menu className="h-5 w-5" /></button>
