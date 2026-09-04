@@ -529,7 +529,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
               />
 
               {/* Top Map HUD Overlays */}
-              <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">
+              <div className="absolute top-3 left-3 right-3 flex items-start justify-between pointer-events-none">
                 <div className="bg-white/95 dark:bg-black/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-gray-200 dark:border-gray-800 shadow-md flex items-center gap-2 pointer-events-auto">
                   <div className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-ping" />
                   <div className="text-[11px] font-bold text-gray-900 dark:text-gray-100 flex items-center gap-1">
@@ -546,7 +546,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                 <button
                   type="button"
                   onClick={requestLocationPermission}
-                  className="bg-white/95 dark:bg-black/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-gray-200 dark:border-gray-800 shadow-md text-gray-700 dark:text-gray-300 hover:text-[#f68b1e] transition-all pointer-events-auto cursor-pointer flex items-center gap-1 text-[11px] font-bold"
+                  className="absolute bottom-3 right-3 bg-white/95 dark:bg-black/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-gray-200 dark:border-gray-800 shadow-md text-gray-700 dark:text-gray-300 hover:text-[#f68b1e] transition-all pointer-events-auto cursor-pointer flex items-center gap-1 text-[11px] font-bold"
                   title="Resync phone GPS"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${permissionStatus === 'requesting' ? 'animate-spin text-[#f68b1e]' : ''}`} />
