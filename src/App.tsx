@@ -629,8 +629,12 @@ export default function App() {
 
   const openAdminPortal = () => {
     setAdminSection('overview');
+    setIsAdminOpen(false);
+    setIsStockOpen(false);
+    setIsConfirmOrdersOpen(false);
+    setIsSalesReportOpen(false);
+    setIsCustomerManagementOpen(false);
     setCurrentView('admin');
-    setIsAdminOpen(true);
     window.history.pushState({}, '', '/admin');
   };
 
