@@ -908,7 +908,6 @@ export default function App() {
                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f97316]">Orders</p>
                 <h1 className="mt-2 text-3xl font-black text-white">Order Management</h1>
               </div>
-              <button type="button" onClick={() => setIsAdminOpen(true)} className="rounded-xl border border-orange-500/40 bg-orange-500/10 px-4 py-2.5 text-sm font-bold text-orange-200 hover:border-orange-300">Open order manager</button>
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
@@ -931,13 +930,13 @@ export default function App() {
                   <tbody className="divide-y divide-gray-800/70">
                     {customerOrders.map((order) => (
                       <tr key={order.id} className="text-gray-300 hover:bg-white/[0.03]">
-                        <td className="px-5 py-4"><button type="button" onClick={() => setIsAdminOpen(true)} className="font-bold text-white hover:text-orange-300">#{order.id}</button><p className="mt-1 text-[11px] text-gray-500">{order.items.length} item{order.items.length === 1 ? '' : 's'}</p></td>
+                        <td className="px-5 py-4"><span className="font-bold text-white">#{order.id}</span><p className="mt-1 text-[11px] text-gray-500">{order.items.length} item{order.items.length === 1 ? '' : 's'}</p></td>
                         <td className="px-5 py-4"><p className="font-semibold text-white">{order.customerName || 'Guest customer'}</p><p className="mt-1 text-[11px] text-gray-500">{order.phone || order.email || 'No contact saved'}</p></td>
                         <td className="px-5 py-4 font-bold text-emerald-300">₦{order.total.toLocaleString()}</td>
                         <td className="px-5 py-4 whitespace-nowrap">{order.date}</td>
                         <td className="px-5 py-4"><select value={order.status === 'Order Confirmed' ? 'Processing' : order.status} onChange={(event) => { const status = event.target.value as Order['status']; setOrders((items) => items.map((item) => item.id === order.id ? { ...item, status } : item)); void updateOrderStatus(order.id, status).catch(() => showToast('Could not sync status. Check Firebase connection.')); }} className="rounded-lg border border-gray-700 bg-gray-900 px-2 py-2 text-[11px] text-gray-200 outline-none focus:border-orange-500"><option value="Processing">Processing</option><option value="Packed">Packed</option><option value="Shipped">Shipped</option><option value="Out for Delivery">Out for Delivery</option><option value="Delivered">Delivered</option><option value="Cancelled">Cancelled</option></select></td>
                         <td className="px-5 py-4"><p className="font-semibold text-gray-200">{order.driverName || 'Unassigned'}</p><p className="mt-1 text-[11px] text-gray-500">{order.trackingNumber || 'No tracking number'}</p></td>
-                        <td className="px-5 py-4"><div className="flex items-center gap-2"><button type="button" onClick={() => setIsAdminOpen(true)} className="rounded-lg border border-gray-700 px-2.5 py-2 font-bold text-gray-300 hover:border-orange-500/60 hover:text-orange-300">Details</button><button type="button" onClick={() => handleOpenLiveTracking(order.id)} className="rounded-lg border border-cyan-500/40 px-2.5 py-2 font-bold text-cyan-300 hover:bg-cyan-500/10">Track</button></div></td>
+                        <td className="px-5 py-4"><button type="button" onClick={() => handleOpenLiveTracking(order.id)} className="rounded-lg border border-cyan-500/40 px-2.5 py-2 font-bold text-cyan-300 hover:bg-cyan-500/10">Track order</button></td>
                       </tr>
                     ))}
                   </tbody>
@@ -1248,7 +1247,7 @@ export default function App() {
                     {customerOrders.slice(0, 6).map((order) => (
                       <tr 
                         key={order.id} 
-                        onClick={() => setIsAdminOpen(true)} 
+                        onClick={() => setAdminSection('orders')} 
                         className="transition-all duration-200 hover:bg-gradient-to-r hover:from-gray-800/30 hover:to-gray-900/30 cursor-pointer group"
                       >
                         <td className="py-3 font-bold text-white group-hover:text-[#f97316]">#{order.id}</td>
@@ -1276,7 +1275,7 @@ export default function App() {
               <div className="grid grid-cols-2 gap-3">
                 {[
                   { label: 'Add Product', detail: 'Add new product', icon: Package, action: () => setIsStockOpen(true), tone: 'orange' },
-                  { label: 'View Orders', detail: 'Manage orders', icon: ClipboardList, action: () => setIsAdminOpen(true), tone: 'blue' },
+                  { label: 'View Orders', detail: 'Manage orders', icon: ClipboardList, action: () => setAdminSection('orders'), tone: 'blue' },
                   { label: 'Payment Review', detail: 'Review payments', icon: CreditCard, action: () => setIsConfirmOrdersOpen(true), tone: 'green' },
                   { label: 'Add Customer', detail: 'Manage customers', icon: User, action: () => setIsCustomerManagementOpen(true), tone: 'violet' },
                   { label: 'Sales Reports', detail: 'View reports', icon: BarChart3, action: () => setIsSalesReportOpen(true), tone: 'amber' },
@@ -1305,7 +1304,7 @@ export default function App() {
                 {pendingCustomerOrders.slice(0, 3).map((order) => (
                   <button
                     key={order.id}
-                    onClick={() => setIsAdminOpen(true)}
+                    onClick={() => setAdminSection('orders')}
                     className="group text-left rounded-xl border border-red-600/30 bg-gradient-to-br from-red-950/40 to-red-900/20 p-4 transition-all duration-200 hover:border-red-500/60 hover:shadow-lg hover:shadow-red-500/20 hover:scale-105 cursor-pointer"
                   >
                     <div className="flex items-start gap-3">
@@ -1374,7 +1373,8 @@ export default function App() {
           order={adminOrderAlert}
           onOpenOrders={() => {
             setAdminOrderAlert(null);
-            setIsAdminOpen(true);
+            setIsAdminOpen(false);
+            setAdminSection('orders');
           }}
           onDismiss={() => setAdminOrderAlert(null)}
         />
@@ -1466,7 +1466,9 @@ export default function App() {
         order={adminOrderAlert}
         onOpenOrders={() => {
           setAdminOrderAlert(null);
-          setIsAdminOpen(true);
+          setAdminSection('orders');
+          setCurrentView('admin');
+          window.history.pushState({}, '', '/admin');
         }}
         onDismiss={() => setAdminOrderAlert(null)}
       />
