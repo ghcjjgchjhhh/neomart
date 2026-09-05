@@ -1020,8 +1020,8 @@ export default function App() {
 
   // Checkout flow
   const handleStartCheckout = () => {
+    setIsCartOpen(false);
     if (!isLoggedIn || !auth?.currentUser || auth.currentUser.isAnonymous) {
-      setIsCartOpen(false);
       showToast('Please sign in before checkout');
       checkoutAfterLoginRef.current = true;
       localStorage.setItem('neomart_checkout_after_login', 'true');
