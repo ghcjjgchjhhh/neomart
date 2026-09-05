@@ -12,6 +12,31 @@ import {
 import { CartItem, PaymentMethodType, DeliveryDetails, SavedAddress } from '../types';
 import { getLocalGovernmentAreas, nigerianStates } from '../data/locations';
 
+const searchLocationProvider = async (query: string, state: string, lga: string, city = '') => {
+  const params = new URLSearchParams({ q: query, state, lga, ...(city ? { city } : {}) });
+  try {
+    const proxyResult = await fetch(`/api/geocode?${params.toString()}`);
+    if (proxyResult.ok) return await proxyResult.json();
+  } catch {
+    // Firebase Hosting does not run the Vercel API proxy; use the same provider directly there.
+  }
+  const directUrl = new URL('https://nominatim.openstreetmap.org/search');
+  directUrl.searchParams.set('q', [query, city, lga, state, 'Nigeria'].filter(Boolean).join(', '));
+  directUrl.searchParams.set('format', 'jsonv2');
+  directUrl.searchParams.set('addressdetails', '1');
+  directUrl.searchParams.set('limit', '8');
+  directUrl.searchParams.set('countrycodes', 'ng');
+  const directResult = await fetch(directUrl);
+  if (!directResult.ok) return { suggestions: [] };
+  const results = await directResult.json();
+  return { suggestions: Array.isArray(results) ? results.map((item: any) => ({
+    displayName: item.display_name,
+    name: item.address?.road || item.address?.suburb || item.address?.city || item.name,
+    street: item.address?.road || '',
+    city: item.address?.city || item.address?.town || item.address?.village || item.address?.suburb || '',
+  })).filter((item: any) => item.name) : [] };
+};
+
 interface CheckoutModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -103,8 +128,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     }
     const timer = window.setTimeout(() => {
       setLocationLoading(true);
-      void fetch(`/api/geocode?q=${encodeURIComponent(townSearch)}&state=${encodeURIComponent(delivery.state)}&lga=${encodeURIComponent(delivery.lga || '')}`)
-        .then((result) => result.ok ? result.json() : { suggestions: [] })
+      void searchLocationProvider(townSearch, delivery.state, delivery.lga || '')
         .then((data) => setTownSuggestions([...new Set((data.suggestions || []).map((item: { city?: string; name?: string }) => item.city || item.name).filter(Boolean))] as string[]))
         .catch(() => setTownSuggestions([]))
         .finally(() => setLocationLoading(false));
@@ -119,8 +143,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     }
     const timer = window.setTimeout(() => {
       setLocationLoading(true);
-      void fetch(`/api/geocode?q=${encodeURIComponent(streetSearch)}&state=${encodeURIComponent(delivery.state)}&lga=${encodeURIComponent(delivery.lga || '')}&city=${encodeURIComponent(delivery.city)}`)
-        .then((result) => result.ok ? result.json() : { suggestions: [] })
+      void searchLocationProvider(streetSearch, delivery.state, delivery.lga || '', delivery.city)
         .then((data) => setStreetSuggestions(data.suggestions || []))
         .catch(() => setStreetSuggestions([]))
         .finally(() => setLocationLoading(false));
