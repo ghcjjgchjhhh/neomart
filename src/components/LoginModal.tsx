@@ -245,6 +245,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             <button type="submit" disabled={loading} className="mt-5 flex h-14 w-full items-center justify-center gap-3 rounded-[10px] border border-[#4a4b4b] bg-transparent text-[14px] font-bold transition hover:bg-[#242525] disabled:cursor-not-allowed disabled:opacity-60"><GoogleIcon /><span>{loading ? 'Opening Gmail...' : 'Continue with email address'}</span></button>
           </form>
           <p className="mt-5 text-center text-[11px] leading-5 text-[#777979]">Google will securely verify your account. NeoMart never sees your Google password.</p>
+          <div className="mt-5 border-t border-[#303131] pt-4 text-center text-[10px] leading-4 text-[#858787]">By continuing, you agree to our <button type="button" onClick={() => setLegalDocument('terms')} className="text-[#ff6a00] underline">Terms of Service</button> and <button type="button" onClick={() => setLegalDocument('privacy')} className="text-[#ff6a00] underline">Privacy Policy</button>.</div>
+          {legalDocument && <LegalModal document={legalDocument} isDark={true} onBack={() => setLegalDocument(null)} onClose={onClose} />}
         </div>
       </div>
     );
