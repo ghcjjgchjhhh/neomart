@@ -44,7 +44,7 @@ type AdminSection = 'overview' | 'orders' | 'confirmations' | 'inventory' | 'rep
 import { allProducts as initialProducts, flashProductIds } from './data/products';
 import { initialReviews, sampleOrders } from './data/ordersAndReviews';
 import { confirmOrderPayment, getCustomerProfile, getOrders, saveOrder, saveCustomerProfile, subscribeToOrders, updateOrderStatus, updateOrderDelivery, saveStockLevel, subscribeToStock, subscribeToCustomerAccountState, updateCustomerAccountState, getCustomerAccountState } from './config/ordersService';
-import { auth, getGoogleRedirectUser } from './config/firebase';
+import { auth, getGoogleRedirectUser, signOutUser, subscribeToAuthState } from './config/firebase';
 import {
   Product,
   CartItem,
@@ -221,12 +221,9 @@ export default function App() {
   });
 
   // Authentication state
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
-    return localStorage.getItem('neomart_logged_in') === 'true';
-  });
-  const [currentUserEmail, setCurrentUserEmail] = useState(() =>
-    localStorage.getItem('neomart_user_email') || ''
-  );
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUserUid, setCurrentUserUid] = useState('');
+  const [currentUserEmail, setCurrentUserEmail] = useState('');
   const [sessionStartedAt, setSessionStartedAt] = useState(() =>
     Number(localStorage.getItem('neomart_session_started_at')) || Date.now()
   );
@@ -237,19 +234,30 @@ export default function App() {
     localStorage.getItem('neomart_account_photo_url') || ''
   );
 
-  useEffect(() => {
-    const savedLoggedIn = localStorage.getItem('neomart_logged_in') === 'true';
-    const savedEmail = localStorage.getItem('neomart_user_email') || '';
-    const savedName = localStorage.getItem('neomart_account_name') || '';
-    const savedPhoto = localStorage.getItem('neomart_account_photo_url') || '';
-
-    if (!savedLoggedIn || !savedEmail) return;
-
+  useEffect(() => subscribeToAuthState((user) => {
+    if (!user) {
+      setIsLoggedIn(false);
+      setCurrentUserUid('');
+      setCurrentUserEmail('');
+      setAccountName('');
+      setAccountPhotoUrl('');
+      localStorage.removeItem('neomart_logged_in');
+      localStorage.removeItem('neomart_user_email');
+      localStorage.removeItem('neomart_account_name');
+      localStorage.removeItem('neomart_account_photo_url');
+      return;
+    }
+    const email = user.email || user.uid;
+    const name = user.displayName || email.split('@')[0];
     setIsLoggedIn(true);
-    setCurrentUserEmail(savedEmail);
-    setAccountName(savedName || savedEmail.split('@')[0]);
-    setAccountPhotoUrl(savedPhoto);
-  }, []);
+    setCurrentUserUid(user.uid);
+    setCurrentUserEmail(email);
+    setAccountName(name);
+    setAccountPhotoUrl(user.photoURL || '');
+    localStorage.setItem('neomart_user_email', email);
+    localStorage.setItem('neomart_account_name', name);
+    if (user.photoURL) localStorage.setItem('neomart_account_photo_url', user.photoURL);
+  }), []);
 
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isCustomerAccessBlocked, setIsCustomerAccessBlocked] = useState(false);
@@ -447,7 +455,7 @@ export default function App() {
         setCurrentView('admin');
         window.history.replaceState({}, '', '/admin');
       }
-      showToast(`Signed in with Google as ${email}`);
+      showToast(user.providerData.some((provider) => provider.providerId === 'google.com') ? `Signed in with Google as ${email}` : `Signed in as ${email}`);
       });
     }).catch(() => {
       showToast('Google sign-in failed. Check Firebase Google sign-in settings.');
@@ -464,6 +472,7 @@ export default function App() {
         return;
       }
       setIsCustomerAccessBlocked(true);
+      void signOutUser();
       setIsLoggedIn(false);
       setCurrentUserEmail('');
       setAccountName('');
@@ -1048,6 +1057,7 @@ export default function App() {
 
     const newOrder: Order = {
       id: newOrderId,
+      userId: currentUserUid || auth?.currentUser?.uid,
       orderSource: 'customer',
       phone: _deliveryDetails?.phone?.trim() || '',
       email: currentUserEmail.includes('@') ? currentUserEmail : '',
@@ -2116,6 +2126,7 @@ export default function App() {
         theme={theme}
           isAccessBlocked={isCustomerAccessBlocked}
         onLoginSuccess={async (id, name, photoUrl) => {
+          setCurrentUserUid(auth?.currentUser?.uid || '');
           const state = await getCustomerAccountState(id);
           if (state.revokedAt || state.disabled || state.deletedAt) {
             setIsCustomerAccessBlocked(true);
@@ -2144,10 +2155,15 @@ export default function App() {
             email: id.includes('@') ? id : undefined,
             displayName: name || id.split('@')[0],
             phone: auth?.currentUser?.phoneNumber || undefined,
+            provider: auth?.currentUser?.providerData[0]?.providerId || 'password',
+            createdAt: auth?.currentUser?.metadata.creationTime || new Date().toISOString(),
+            lastSignInAt: auth?.currentUser?.metadata.lastSignInTime || new Date().toISOString(),
           }).catch(() => {});
         }}
         onLogout={() => {
+          void signOutUser();
           setIsLoggedIn(false);
+          setCurrentUserUid('');
           setCurrentUserEmail('');
           setAccountName('');
           setAccountPhotoUrl('');

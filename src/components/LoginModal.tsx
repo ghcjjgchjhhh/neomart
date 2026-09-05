@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, Check, Eye, EyeOff, Headphones, LockKeyhole, LogOut, Mail, Package, ShieldCheck, Tag, Truck, X } from 'lucide-react';
-import { sendPasswordResetEmail, signInWithEmailPassword, signInWithGoogle } from '../config/firebase';
+import { registerWithEmailPassword, sendPasswordResetEmail, signInWithEmailPassword, signInWithGoogle } from '../config/firebase';
 import { NeoMartLogo } from './NeoMartLogo';
 import { LegalModal } from './LegalModal';
 
@@ -50,6 +50,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const [resetLoading, setResetLoading] = useState(false);
   const [resetSent, setResetSent] = useState(false);
   const [resetError, setResetError] = useState('');
+  const [showRegisterScreen, setShowRegisterScreen] = useState(false);
+  const [registerEmail, setRegisterEmail] = useState('');
+  const [registerPassword, setRegisterPassword] = useState('');
+  const [registerConfirmation, setRegisterConfirmation] = useState('');
+  const [registerError, setRegisterError] = useState('');
   const [legalDocument, setLegalDocument] = useState<'terms' | 'privacy' | null>(null);
 
   const showToast = (message: string) => {
@@ -69,6 +74,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       setShowResetScreen(false);
       setResetSent(false);
       setResetError('');
+      setShowRegisterScreen(false);
+      setRegisterError('');
     }
   }, [isOpen]);
 
@@ -79,7 +86,13 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const mutedClass = isDark ? 'text-[#bdbdbd]' : 'text-[#77716e]';
   const borderClass = isDark ? 'border-[#363636]' : 'border-[#e5e1df]';
 
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignIn = async (event?: React.MouseEvent<HTMLButtonElement>) => {
+    if (event?.currentTarget.textContent?.includes('Sign up now')) {
+      setRegisterEmail(identifier);
+      setRegisterError('');
+      setShowRegisterScreen(true);
+      return;
+    }
     setLoading(true);
     try {
       const user = await signInWithGoogle();
@@ -90,6 +103,39 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       onClose();
     } catch {
       showToast('Google sign-in failed. Enable Google in Firebase, then try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegistration = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const email = registerEmail.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setRegisterError('Enter a valid email address.');
+      return;
+    }
+    if (registerPassword.length < 6) {
+      setRegisterError('Your NeoMart password must be at least 6 characters.');
+      return;
+    }
+    if (registerPassword !== registerConfirmation) {
+      setRegisterError('The passwords do not match.');
+      return;
+    }
+    setLoading(true);
+    setRegisterError('');
+    try {
+      const user = await registerWithEmailPassword(email, registerPassword);
+      await onLoginSuccess(user.email || user.uid, user.displayName || email.split('@')[0], user.photoURL || undefined);
+      showToast('NeoMart account created successfully');
+      onClose();
+    } catch (error: unknown) {
+      const code = typeof error === 'object' && error !== null && 'code' in error ? String(error.code) : '';
+      if (code === 'auth/email-already-in-use') setRegisterError('An account already exists for this email. Sign in or use Forgot Password.');
+      else if (code === 'auth/operation-not-allowed') setRegisterError('Email and password accounts are not enabled yet. Please contact support.');
+      else if (code === 'auth/network-request-failed') setRegisterError('Unable to connect right now. Check your internet connection and try again.');
+      else setRegisterError('We could not create your account right now. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -226,6 +272,27 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               Log Out
             </button>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (showRegisterScreen) {
+    return (
+      <div className="fixed inset-0 z-50 flex min-h-dvh items-center justify-center overflow-y-auto bg-[#070808] px-5 py-8 text-white sm:px-8">
+        <div className="relative w-full max-w-[470px] rounded-[22px] border border-[#292929] bg-[#181919] px-5 py-8 shadow-2xl sm:px-10 sm:py-10">
+          <button type="button" onClick={() => { setShowRegisterScreen(false); setRegisterError(''); }} aria-label="Back to sign in" className="absolute left-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-[#292a2a] text-[#c1c1c1] transition hover:bg-[#373838] hover:text-white"><ArrowLeft className="h-4 w-4" /></button>
+          <div className="flex justify-center"><div className="flex h-14 w-14 items-center justify-center rounded-[13px] bg-[#ff6a00] shadow-[0_8px_22px_rgba(255,106,0,0.22)]"><NeoMartLogo size="lg" showText={false} /></div></div>
+          <h1 className="mt-6 text-center text-[24px] font-extrabold tracking-[-0.5px]">Create your NeoMart account</h1>
+          <p className="mx-auto mt-2 max-w-[340px] text-center text-[13px] leading-5 text-[#999b9b]">Create a separate NeoMart password to keep your account and orders secure.</p>
+          <form onSubmit={handleRegistration} className="mt-7 space-y-3.5">
+            <label className="block"><span className="mb-1.5 block text-[10px] font-bold uppercase tracking-wide text-[#dedede]">Email address</span><span className="flex h-12 items-center gap-3 rounded-[9px] border border-[#4a4b4b] bg-[#1b1c1c] px-3 text-[#898b8b] focus-within:border-[#ff6a00]"><Mail className="h-[17px] w-[17px] shrink-0" /><input type="email" value={registerEmail} onChange={(event) => { setRegisterEmail(event.target.value); setRegisterError(''); }} placeholder="you@example.com" autoComplete="email" className="w-full bg-transparent text-[13px] text-white outline-none placeholder:text-[#888a8a]" /></span></label>
+            <label className="block"><span className="mb-1.5 block text-[10px] font-bold uppercase tracking-wide text-[#dedede]">NeoMart password</span><span className="flex h-12 items-center gap-3 rounded-[9px] border border-[#4a4b4b] bg-[#1b1c1c] px-3 text-[#898b8b] focus-within:border-[#ff6a00]"><LockKeyhole className="h-[17px] w-[17px] shrink-0" /><input type="password" value={registerPassword} onChange={(event) => { setRegisterPassword(event.target.value); setRegisterError(''); }} placeholder="At least 6 characters" autoComplete="new-password" className="w-full bg-transparent text-[13px] text-white outline-none placeholder:text-[#888a8a]" /></span></label>
+            <label className="block"><span className="mb-1.5 block text-[10px] font-bold uppercase tracking-wide text-[#dedede]">Confirm password</span><span className="flex h-12 items-center gap-3 rounded-[9px] border border-[#4a4b4b] bg-[#1b1c1c] px-3 text-[#898b8b] focus-within:border-[#ff6a00]"><LockKeyhole className="h-[17px] w-[17px] shrink-0" /><input type="password" value={registerConfirmation} onChange={(event) => { setRegisterConfirmation(event.target.value); setRegisterError(''); }} placeholder="Repeat your password" autoComplete="new-password" className="w-full bg-transparent text-[13px] text-white outline-none placeholder:text-[#888a8a]" /></span></label>
+            {registerError && <p role="alert" className="text-[11px] leading-4 text-[#ff9a72]">{registerError}</p>}
+            <button type="submit" disabled={loading} className="h-14 w-full rounded-[10px] bg-[#ff6a00] text-[14px] font-extrabold text-white shadow-[0_8px_18px_rgba(255,106,0,0.18)] transition hover:bg-[#e95f00] disabled:cursor-not-allowed disabled:opacity-70">{loading ? 'Creating Account...' : 'Create Account'}</button>
+          </form>
+          <button type="button" onClick={() => { setShowRegisterScreen(false); setRegisterError(''); }} className="mt-5 block w-full text-center text-[12px] font-bold text-[#ff6a00] hover:underline">Back to Sign In</button>
         </div>
       </div>
     );
