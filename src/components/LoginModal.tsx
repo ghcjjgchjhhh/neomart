@@ -112,6 +112,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const panelClass = isDark ? 'bg-[#1a1a1a] text-[#f3f3f3]' : 'bg-white text-[#211e1d]';
   const mutedClass = isDark ? 'text-[#bdbdbd]' : 'text-[#77716e]';
   const borderClass = isDark ? 'border-[#363636]' : 'border-[#e5e1df]';
+  const authBackdropClass = isDark ? 'bg-[#070808] text-white' : 'bg-[#f5f5f5] text-[#211e1d]';
+  const authPanelClass = isDark ? 'border-[#292929] bg-[#181919]' : 'border-[#e5e1df] bg-white';
+  const authFieldClass = isDark ? 'border-[#4a4b4b] bg-[#1b1c1c] text-white placeholder:text-[#888a8a]' : 'border-[#d8d2ce] bg-[#faf9f7] text-[#211e1d] placeholder:text-[#9b938d]';
+  const authSecondaryButtonClass = isDark ? 'border-[#4a4b4b] text-white hover:bg-[#242525]' : 'border-[#d8d2ce] text-[#211e1d] hover:bg-[#f4f0ec]';
+  const authMutedTextClass = isDark ? 'text-[#999b9b]' : 'text-[#77716e]';
 
   const handleGoogleSignIn = async (event?: React.MouseEvent<HTMLButtonElement>) => {
     if (event?.currentTarget.textContent?.includes('Sign up now')) {
@@ -311,16 +316,16 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   if (showPhoneScreen) {
     const maskedPhone = `${countryCode} ${phoneNumber.replace(/\D/g, '').slice(-3).padStart(3, '•')}`;
     return (
-      <div className="fixed inset-0 z-50 flex min-h-dvh items-center justify-center overflow-y-auto bg-[#070808] px-5 py-8 text-white sm:px-8">
-        <div className="relative w-full max-w-[470px] rounded-[22px] border border-[#292929] bg-[#181919] px-5 py-8 shadow-2xl sm:px-10 sm:py-10">
+      <div className={`fixed inset-0 z-50 flex min-h-dvh items-center justify-center overflow-y-auto px-5 py-8 sm:px-8 ${authBackdropClass}`}>
+        <div className={`relative w-full max-w-[470px] rounded-[22px] border px-5 py-8 shadow-2xl sm:px-10 sm:py-10 ${authPanelClass}`}>
           <button type="button" onClick={onClose} aria-label="Close" className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-[#292a2a] text-[#c1c1c1] hover:bg-[#373838] hover:text-white"><X className="h-5 w-5" /></button>
           <div className="flex justify-center"><div className="flex h-14 w-14 items-center justify-center rounded-[13px] bg-[#ff6a00] shadow-[0_8px_22px_rgba(255,106,0,0.22)]"><NeoMartLogo size="lg" showText={false} /></div></div>
           {phoneStep === 'phone' ? (
             <>
               <h1 className="mt-6 text-center text-[24px] font-extrabold">Continue with Phone Number</h1>
-              <p className="mx-auto mt-2 max-w-[340px] text-center text-[13px] leading-5 text-[#999b9b]">We&apos;ll send a verification code to your phone.</p>
+              <p className={`mx-auto mt-2 max-w-[340px] text-center text-[13px] leading-5 ${authMutedTextClass}`}>We&apos;ll send a verification code to your phone.</p>
               <form onSubmit={handleSendPhoneCode} className="mt-7">
-                <label className="block"><span className="mb-1.5 block text-[10px] font-bold uppercase tracking-wide text-[#dedede]">Phone number</span><span className="flex h-12 gap-2 rounded-[9px] border border-[#4a4b4b] bg-[#1b1c1c] px-3 focus-within:border-[#ff6a00]"><select value={countryCode} onChange={(event) => setCountryCode(event.target.value)} aria-label="Country code" className="bg-transparent text-[13px] text-white outline-none"><option value="+234">NG +234</option><option value="+1">US +1</option><option value="+44">UK +44</option><option value="+233">GH +233</option><option value="+27">ZA +27</option></select><input type="tel" value={phoneNumber} onChange={(event) => { setPhoneNumber(event.target.value); setPhoneError(''); }} placeholder="801 234 5678" autoComplete="tel" className="min-w-0 flex-1 bg-transparent text-[13px] text-white outline-none placeholder:text-[#888a8a]" /></span></label>
+                <label className="block"><span className={`mb-1.5 block text-[10px] font-bold uppercase tracking-wide ${isDark ? 'text-[#dedede]' : 'text-[#5e5752]'}`}>Phone number</span><span className={`flex h-12 gap-2 rounded-[9px] border px-3 focus-within:border-[#ff6a00] ${authFieldClass}`}><select value={countryCode} onChange={(event) => setCountryCode(event.target.value)} aria-label="Country code" className="bg-transparent text-[13px] outline-none"><option value="+234">NG +234</option><option value="+1">US +1</option><option value="+44">UK +44</option><option value="+233">GH +233</option><option value="+27">ZA +27</option></select><input type="tel" value={phoneNumber} onChange={(event) => { setPhoneNumber(event.target.value); setPhoneError(''); }} placeholder="801 234 5678" autoComplete="tel" className="min-w-0 flex-1 bg-transparent text-[13px] outline-none" /></span></label>
                 {phoneError && <p role="alert" className="mt-2 text-[11px] text-[#ff9a72]">{phoneError}</p>}
                 <button type="submit" disabled={phoneLoading} className="mt-5 h-14 w-full rounded-[10px] bg-[#ff6a00] text-[14px] font-extrabold shadow-[0_8px_18px_rgba(255,106,0,0.18)] hover:bg-[#e95f00] disabled:opacity-70">{phoneLoading ? 'Sending code...' : 'Continue'}</button>
               </form>
@@ -328,8 +333,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           ) : (
             <>
               <h1 className="mt-6 text-center text-[24px] font-extrabold">Enter verification code</h1>
-              <p className="mx-auto mt-2 max-w-[340px] text-center text-[13px] leading-5 text-[#999b9b]">We sent a 6-digit code to {maskedPhone}</p>
-              <form onSubmit={handleConfirmPhoneCode} className="mt-7"><label className="block"><span className="mb-1.5 block text-[10px] font-bold uppercase tracking-wide text-[#dedede]">Verification code</span><input inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={verificationCode} onChange={(event) => { setVerificationCode(event.target.value.replace(/\D/g, '')); setPhoneError(''); }} placeholder="000000" className="h-14 w-full rounded-[9px] border border-[#4a4b4b] bg-[#1b1c1c] text-center text-[22px] tracking-[0.35em] text-white outline-none focus:border-[#ff6a00]" /></label>{phoneError && <p role="alert" className="mt-2 text-[11px] text-[#ff9a72]">{phoneError}</p>}<button type="submit" disabled={phoneLoading} className="mt-5 h-14 w-full rounded-[10px] bg-[#ff6a00] text-[14px] font-extrabold hover:bg-[#e95f00] disabled:opacity-70">{phoneLoading ? 'Verifying...' : 'Verify and Continue'}</button></form>
+              <p className={`mx-auto mt-2 max-w-[340px] text-center text-[13px] leading-5 ${authMutedTextClass}`}>We sent a 6-digit code to {maskedPhone}</p>
+              <form onSubmit={handleConfirmPhoneCode} className="mt-7"><label className="block"><span className={`mb-1.5 block text-[10px] font-bold uppercase tracking-wide ${isDark ? 'text-[#dedede]' : 'text-[#5e5752]'}`}>Verification code</span><input inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={verificationCode} onChange={(event) => { setVerificationCode(event.target.value.replace(/\D/g, '')); setPhoneError(''); }} placeholder="000000" className={`h-14 w-full rounded-[9px] border text-center text-[22px] tracking-[0.35em] outline-none focus:border-[#ff6a00] ${authFieldClass}`} /></label>{phoneError && <p role="alert" className="mt-2 text-[11px] text-[#ff9a72]">{phoneError}</p>}<button type="submit" disabled={phoneLoading} className="mt-5 h-14 w-full rounded-[10px] bg-[#ff6a00] text-[14px] font-extrabold text-white hover:bg-[#e95f00] disabled:opacity-70">{phoneLoading ? 'Verifying...' : 'Verify and Continue'}</button></form>
               <div className="mt-5 flex justify-between text-[12px]"><button type="button" onClick={() => { setPhoneStep('phone'); setVerificationCode(''); setPhoneError(''); }} className="font-bold text-[#ff6a00] hover:underline">Change phone number</button><button type="button" disabled={resendCountdown > 0 || phoneLoading} onClick={() => void handleSendPhoneCode()} className="font-bold text-[#ff6a00] disabled:text-[#676969]">{resendCountdown > 0 ? `Resend code in ${resendCountdown}s` : 'Resend code'}</button></div>
             </>
           )}
@@ -341,22 +346,22 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
   if (!isLoggedIn && !isAccessBlocked) {
     return (
-      <div className="fixed inset-0 z-50 flex min-h-dvh items-center justify-center overflow-y-auto bg-[#070808] px-5 py-8 text-white sm:px-8">
-        <div className="relative w-full max-w-[470px] rounded-[22px] border border-[#292929] bg-[#181919] px-5 py-8 shadow-2xl sm:px-10 sm:py-10">
+      <div className={`fixed inset-0 z-50 flex min-h-dvh items-center justify-center overflow-y-auto px-5 py-8 sm:px-8 ${authBackdropClass}`}>
+        <div className={`relative w-full max-w-[470px] rounded-[22px] border px-5 py-8 shadow-2xl sm:px-10 sm:py-10 ${authPanelClass}`}>
           <button type="button" onClick={onClose} aria-label="Close" className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-[#292a2a] text-[#c1c1c1] transition hover:bg-[#373838] hover:text-white"><X className="h-5 w-5" /></button>
           <div className="flex justify-center"><div className="flex h-14 w-14 items-center justify-center rounded-[13px] bg-[#ff6a00] shadow-[0_8px_22px_rgba(255,106,0,0.22)]"><NeoMartLogo size="lg" showText={false} /></div></div>
           <h1 className="mt-6 text-center text-[24px] font-extrabold tracking-[-0.5px]">Continue to NeoMart</h1>
-          <p className="mx-auto mt-2 max-w-[340px] text-center text-[13px] leading-5 text-[#999b9b]">Enter your Gmail address to choose your Google account and continue securely.</p>
+          <p className={`mx-auto mt-2 max-w-[340px] text-center text-[13px] leading-5 ${authMutedTextClass}`}>Enter your Gmail address to choose your Google account and continue securely.</p>
           <button type="button" onClick={() => void handleGoogleSignIn()} disabled={loading} className="mt-7 flex h-14 w-full items-center justify-center gap-3 rounded-[10px] bg-[#ff6a00] text-[14px] font-extrabold text-white shadow-[0_8px_18px_rgba(255,106,0,0.18)] transition hover:bg-[#e95f00] disabled:cursor-not-allowed disabled:opacity-70"><GoogleIcon /><span>{loading ? 'Opening Google...' : 'Continue with Google'}</span></button>
-          <button type="button" onClick={() => { setShowPhoneScreen(true); setPhoneStep('phone'); setPhoneError(''); }} disabled={loading} className="mt-3 flex h-14 w-full items-center justify-center rounded-[10px] border border-[#4a4b4b] bg-transparent text-[14px] font-bold text-white hover:bg-[#242525] disabled:opacity-60">Continue with Phone Number</button>
+          <button type="button" onClick={() => { setShowPhoneScreen(true); setPhoneStep('phone'); setPhoneError(''); }} disabled={loading} className={`mt-3 flex h-14 w-full items-center justify-center rounded-[10px] border bg-transparent text-[14px] font-bold transition disabled:opacity-60 ${authSecondaryButtonClass}`}>Continue with Phone Number</button>
           <div className="my-5 flex items-center gap-3 text-[10px] font-medium text-[#8d8f8f]"><span className="h-px flex-1 bg-[#414242]" /><span>OR USE EMAIL ADDRESS</span><span className="h-px flex-1 bg-[#414242]" /></div>
           <form onSubmit={handleEmailOnlyGoogleSignIn} className="mt-7">
-            <label className="block"><span className="mb-1.5 block text-[10px] font-bold uppercase tracking-wide text-[#dedede]">Gmail address</span><span className="flex h-12 items-center gap-3 rounded-[9px] border border-[#4a4b4b] bg-[#1b1c1c] px-3 text-[#898b8b] focus-within:border-[#ff6a00]"><Mail className="h-[17px] w-[17px] shrink-0" /><input type="email" value={identifier} onChange={(event) => setIdentifier(event.target.value)} placeholder="you@gmail.com" autoComplete="email" className="w-full bg-transparent text-[13px] text-white outline-none placeholder:text-[#888a8a]" /></span></label>
-            <button type="submit" disabled={loading} className="mt-5 flex h-14 w-full items-center justify-center gap-3 rounded-[10px] border border-[#4a4b4b] bg-transparent text-[14px] font-bold transition hover:bg-[#242525] disabled:cursor-not-allowed disabled:opacity-60"><GoogleIcon /><span>{loading ? 'Opening Gmail...' : 'Continue with email address'}</span></button>
+            <label className="block"><span className={`mb-1.5 block text-[10px] font-bold uppercase tracking-wide ${isDark ? 'text-[#dedede]' : 'text-[#5e5752]'}`}>Gmail address</span><span className={`flex h-12 items-center gap-3 rounded-[9px] border px-3 focus-within:border-[#ff6a00] ${authFieldClass}`}><Mail className="h-[17px] w-[17px] shrink-0" /><input type="email" value={identifier} onChange={(event) => setIdentifier(event.target.value)} placeholder="you@gmail.com" autoComplete="email" className="w-full bg-transparent text-[13px] outline-none" /></span></label>
+            <button type="submit" disabled={loading} className={`mt-5 flex h-14 w-full items-center justify-center gap-3 rounded-[10px] border bg-transparent text-[14px] font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${authSecondaryButtonClass}`}><GoogleIcon /><span>{loading ? 'Opening Gmail...' : 'Continue with email address'}</span></button>
           </form>
-          <p className="mt-5 text-center text-[11px] leading-5 text-[#777979]">Google will securely verify your account. NeoMart never sees your Google password.</p>
-          <div className="mt-5 border-t border-[#303131] pt-4 text-center text-[10px] leading-4 text-[#858787]">By continuing, you agree to our <button type="button" onClick={() => setLegalDocument('terms')} className="text-[#ff6a00] underline">Terms of Service</button> and <button type="button" onClick={() => setLegalDocument('privacy')} className="text-[#ff6a00] underline">Privacy Policy</button>.</div>
-          {legalDocument && <LegalModal document={legalDocument} isDark={true} onBack={() => setLegalDocument(null)} onClose={onClose} />}
+          <p className={`mt-5 text-center text-[11px] leading-5 ${authMutedTextClass}`}>Google will securely verify your account. NeoMart never sees your Google password.</p>
+          <div className={`mt-5 border-t pt-4 text-center text-[10px] leading-4 ${isDark ? 'border-[#303131] text-[#858787]' : 'border-[#e5e1df] text-[#77716e]'}`}>By continuing, you agree to our <button type="button" onClick={() => setLegalDocument('terms')} className="text-[#ff6a00] underline">Terms of Service</button> and <button type="button" onClick={() => setLegalDocument('privacy')} className="text-[#ff6a00] underline">Privacy Policy</button>.</div>
+          {legalDocument && <LegalModal document={legalDocument} isDark={isDark} onBack={() => setLegalDocument(null)} onClose={onClose} />}
         </div>
       </div>
     );
@@ -433,8 +438,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
   if (showRegisterScreen) {
     return (
-      <div className="fixed inset-0 z-50 flex min-h-dvh items-center justify-center overflow-y-auto bg-[#070808] px-5 py-8 text-white sm:px-8">
-        <div className="relative w-full max-w-[470px] rounded-[22px] border border-[#292929] bg-[#181919] px-5 py-8 shadow-2xl sm:px-10 sm:py-10">
+      <div className={`fixed inset-0 z-50 flex min-h-dvh items-center justify-center overflow-y-auto px-5 py-8 sm:px-8 ${authBackdropClass}`}>
+        <div className={`relative w-full max-w-[470px] rounded-[22px] border px-5 py-8 shadow-2xl sm:px-10 sm:py-10 ${authPanelClass}`}>
           <button type="button" onClick={() => { setShowRegisterScreen(false); setRegisterError(''); }} aria-label="Back to sign in" className="absolute left-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-[#292a2a] text-[#c1c1c1] transition hover:bg-[#373838] hover:text-white"><ArrowLeft className="h-4 w-4" /></button>
           <div className="flex justify-center"><div className="flex h-14 w-14 items-center justify-center rounded-[13px] bg-[#ff6a00] shadow-[0_8px_22px_rgba(255,106,0,0.22)]"><NeoMartLogo size="lg" showText={false} /></div></div>
           <h1 className="mt-6 text-center text-[24px] font-extrabold tracking-[-0.5px]">Create your NeoMart account</h1>
@@ -454,8 +459,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
   if (showResetScreen) {
     return (
-      <div className="fixed inset-0 z-50 flex min-h-dvh items-center justify-center overflow-y-auto bg-[#070808] px-5 py-8 text-white sm:px-8">
-        <div className="relative w-full max-w-[470px] rounded-[22px] border border-[#292929] bg-[#181919] px-5 py-8 shadow-2xl sm:px-10 sm:py-10">
+      <div className={`fixed inset-0 z-50 flex min-h-dvh items-center justify-center overflow-y-auto px-5 py-8 sm:px-8 ${authBackdropClass}`}>
+        <div className={`relative w-full max-w-[470px] rounded-[22px] border px-5 py-8 shadow-2xl sm:px-10 sm:py-10 ${authPanelClass}`}>
           <button type="button" onClick={() => { setShowResetScreen(false); setResetSent(false); setResetError(''); }} aria-label="Back to sign in" className="absolute left-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-[#292a2a] text-[#c1c1c1] transition hover:bg-[#373838] hover:text-white"><ArrowLeft className="h-4 w-4" /></button>
           <div className="flex justify-center"><div className="flex h-14 w-14 items-center justify-center rounded-[13px] bg-[#ff6a00] shadow-[0_8px_22px_rgba(255,106,0,0.22)]"><NeoMartLogo size="lg" showText={false} /></div></div>
           {resetSent ? (
