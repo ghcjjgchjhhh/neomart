@@ -174,7 +174,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       onClose();
     } catch (error: unknown) {
       const code = typeof error === 'object' && error !== null && 'code' in error ? String(error.code) : '';
-      if (code === 'auth/invalid-credential' || code === 'auth/user-not-found' || code === 'auth/wrong-password') {
+      if (code === 'auth/user-not-found') {
+        showToast('No NeoMart account found. Please sign up first.');
+      } else if (code === 'auth/invalid-credential' || code === 'auth/wrong-password') {
         showToast('Incorrect email or password');
       } else if (code === 'auth/operation-not-allowed') {
         showToast('Email and password sign-in is not enabled yet. Please use Google sign-in or contact support.');
