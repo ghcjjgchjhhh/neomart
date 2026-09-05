@@ -1015,6 +1015,7 @@ export default function App() {
   // Checkout flow
   const handleStartCheckout = () => {
     if (!isLoggedIn || !auth?.currentUser || auth.currentUser.isAnonymous) {
+      setIsCartOpen(false);
       showToast('Please sign in before checkout');
       setIsLoginOpen(true);
       return;
