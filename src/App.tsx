@@ -1021,13 +1021,6 @@ export default function App() {
   // Checkout flow
   const handleStartCheckout = () => {
     setIsCartOpen(false);
-    if (!isLoggedIn || !auth?.currentUser || auth.currentUser.isAnonymous) {
-      showToast('Please sign in before checkout');
-      checkoutAfterLoginRef.current = true;
-      localStorage.setItem('neomart_checkout_after_login', 'true');
-      setIsLoginOpen(true);
-      return;
-    }
     openingCheckoutRef.current = true;
     setIsCheckoutOpen(true);
   };
@@ -1056,8 +1049,9 @@ export default function App() {
     discountAmount = 0
   ) => {
     if (!isLoggedIn || !auth?.currentUser || auth.currentUser.isAnonymous) {
-      setIsCheckoutOpen(false);
-      showToast('Please sign in before placing an order');
+      showToast('Please sign in to confirm your order');
+      checkoutAfterLoginRef.current = true;
+      localStorage.setItem('neomart_checkout_after_login', 'true');
       setIsLoginOpen(true);
       return;
     }

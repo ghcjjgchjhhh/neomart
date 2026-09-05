@@ -426,7 +426,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   if (showPhoneScreen) {
     const maskedPhone = `${countryCode} ${phoneNumber.replace(/\D/g, '').slice(-3).padStart(3, '•')}`;
     return (
-      <div className={`fixed inset-0 z-50 flex min-h-dvh items-center justify-center overflow-y-auto px-5 py-8 sm:px-8 ${authBackdropClass}`}>
+      <div className={`fixed inset-0 z-[70] flex min-h-dvh items-center justify-center overflow-y-auto px-5 py-8 sm:px-8 ${authBackdropClass}`}>
         <div className={`relative w-full max-w-[470px] rounded-[22px] border px-5 py-8 shadow-2xl sm:px-10 sm:py-10 ${authPanelClass}`}>
           <button type="button" onClick={onClose} aria-label="Close" className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-[#292a2a] text-[#c1c1c1] hover:bg-[#373838] hover:text-white"><X className="h-5 w-5" /></button>
           <div className="flex justify-center"><div className="flex h-14 w-14 items-center justify-center rounded-[13px] bg-[#ff6a00] shadow-[0_8px_22px_rgba(255,106,0,0.22)]"><NeoMartLogo size="lg" showText={false} /></div></div>
@@ -456,7 +456,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
   if (!isLoggedIn && !isAccessBlocked) {
     return (
-      <div className={`fixed inset-0 z-50 flex min-h-dvh items-center justify-center overflow-y-auto px-5 py-8 sm:px-8 ${authBackdropClass}`}>
+      <div className={`fixed inset-0 z-[70] flex min-h-dvh items-center justify-center overflow-y-auto px-5 py-8 sm:px-8 ${authBackdropClass}`}>
         <div className={`relative w-full max-w-[470px] rounded-[22px] border px-5 py-8 shadow-2xl sm:px-10 sm:py-10 ${authPanelClass}`}>
           <button type="button" onClick={onClose} aria-label="Close" className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-[#292a2a] text-[#c1c1c1] transition hover:bg-[#373838] hover:text-white"><X className="h-5 w-5" /></button>
           <div className="flex justify-center"><div className="flex h-14 w-14 items-center justify-center rounded-[13px] bg-[#ff6a00] shadow-[0_8px_22px_rgba(255,106,0,0.22)]"><NeoMartLogo size="lg" showText={false} /></div></div>
@@ -479,7 +479,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
   if (isAccessBlocked) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4">
+      <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/65 p-4">
         <div className={`w-full max-w-110 rounded-[30px] p-6 text-center shadow-2xl ${panelClass}`}>
           <ShieldCheck className="mx-auto h-10 w-10 text-red-500" />
           <h3 className="mt-4 text-lg font-extrabold text-red-600">Login disabled</h3>
@@ -495,7 +495,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     const initials = displayName.charAt(0).toUpperCase();
 
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/65 p-3 sm:p-5">
+      <div className="fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto bg-black/65 p-3 sm:p-5">
         <div className={`relative my-auto w-full max-w-3xl rounded-3xl p-4 shadow-2xl sm:p-7 ${panelClass}`}>
           <button type="button" onClick={() => accountSection === 'overview' ? onClose() : setAccountSection('overview')} className={`mb-5 inline-flex items-center gap-2 text-sm font-bold transition hover:text-[#f4510b] cursor-pointer ${mutedClass}`}>
             <ArrowLeft className="h-4 w-4" />
@@ -582,7 +582,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
   if (showRegisterScreen) {
     return (
-      <div className={`fixed inset-0 z-50 flex min-h-dvh items-center justify-center overflow-y-auto px-5 py-8 sm:px-8 ${authBackdropClass}`}>
+      <div className={`fixed inset-0 z-[70] flex min-h-dvh items-center justify-center overflow-y-auto px-5 py-8 sm:px-8 ${authBackdropClass}`}>
         <div className={`relative w-full max-w-[470px] rounded-[22px] border px-5 py-8 shadow-2xl sm:px-10 sm:py-10 ${authPanelClass}`}>
           <button type="button" onClick={() => { setShowRegisterScreen(false); setRegisterError(''); }} aria-label="Back to sign in" className="absolute left-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-[#292a2a] text-[#c1c1c1] transition hover:bg-[#373838] hover:text-white"><ArrowLeft className="h-4 w-4" /></button>
           <div className="flex justify-center"><div className="flex h-14 w-14 items-center justify-center rounded-[13px] bg-[#ff6a00] shadow-[0_8px_22px_rgba(255,106,0,0.22)]"><NeoMartLogo size="lg" showText={false} /></div></div>
@@ -603,7 +603,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
   if (showResetScreen) {
     return (
-      <div className={`fixed inset-0 z-50 flex min-h-dvh items-center justify-center overflow-y-auto px-5 py-8 sm:px-8 ${authBackdropClass}`}>
+      <div className={`fixed inset-0 z-[70] flex min-h-dvh items-center justify-center overflow-y-auto px-5 py-8 sm:px-8 ${authBackdropClass}`}>
         <div className={`relative w-full max-w-[470px] rounded-[22px] border px-5 py-8 shadow-2xl sm:px-10 sm:py-10 ${authPanelClass}`}>
           <button type="button" onClick={() => { setShowResetScreen(false); setResetSent(false); setResetError(''); }} aria-label="Back to sign in" className="absolute left-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-[#292a2a] text-[#c1c1c1] transition hover:bg-[#373838] hover:text-white"><ArrowLeft className="h-4 w-4" /></button>
           <div className="flex justify-center"><div className="flex h-14 w-14 items-center justify-center rounded-[13px] bg-[#ff6a00] shadow-[0_8px_22px_rgba(255,106,0,0.22)]"><NeoMartLogo size="lg" showText={false} /></div></div>
@@ -632,7 +632,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-[#070808] text-white">
+    <div className="fixed inset-0 z-[70] overflow-y-auto bg-[#070808] text-white">
       <div className="mx-auto flex min-h-dvh w-full max-w-[1440px] items-stretch p-0 sm:p-2 lg:p-3">
         <section className="relative hidden min-h-[calc(100dvh-24px)] flex-1 overflow-hidden rounded-[22px] border border-[#292929] bg-[#101111] px-12 py-14 lg:block xl:px-14">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_72%_43%,rgba(255,106,0,0.22),transparent_31%),radial-gradient(circle_at_45%_100%,rgba(255,106,0,0.05),transparent_35%)]" />
