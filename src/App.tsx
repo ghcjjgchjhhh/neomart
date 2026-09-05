@@ -1165,7 +1165,17 @@ export default function App() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ orderId: newOrder.id, total: newOrder.total }),
-    }).catch(() => {});
+    }).then((response) => {
+      if (!response.ok || !response.headers.get('content-type')?.includes('application/json')) throw new Error('Notification API unavailable');
+    }).catch(() => fetch('https://ntfy.sh/neomart-orders-ifeanyianoma2026', {
+      method: 'POST',
+      headers: {
+        Title: 'New NeoMart order',
+        Priority: 'high',
+        Tags: 'package,money_with_wings',
+      },
+      body: `Order #${newOrder.id} received for NGN ${newOrder.total.toLocaleString('en-NG')}.`,
+    })).catch(() => showToast('Order placed, but admin notification could not be sent.'));
 
     try {
       const saved = localStorage.getItem('neomart_stock_levels');
