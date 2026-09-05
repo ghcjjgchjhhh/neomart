@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { createUserWithEmailAndPassword, getAuth, GoogleAuthProvider, getRedirectResult, onAuthStateChanged, sendPasswordResetEmail as firebaseSendPasswordResetEmail, signInAnonymously, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, signOut as firebaseSignOut, type User } from 'firebase/auth';
+import { createUserWithEmailAndPassword, getAuth, GoogleAuthProvider, getRedirectResult, onAuthStateChanged, sendEmailVerification, sendPasswordResetEmail as firebaseSendPasswordResetEmail, signInAnonymously, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, signOut as firebaseSignOut, type User } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -52,6 +52,10 @@ export async function registerWithEmailPassword(email: string, password: string)
   if (!auth) throw new Error('Firebase authentication is not configured');
   const result = await createUserWithEmailAndPassword(auth, email, password);
   return result.user;
+}
+
+export async function sendVerificationEmail(user: User) {
+  await sendEmailVerification(user);
 }
 
 export async function signOutUser() {

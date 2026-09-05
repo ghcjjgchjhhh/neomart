@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, Check, Eye, EyeOff, Headphones, LockKeyhole, LogOut, Mail, Package, ShieldCheck, Tag, Truck, X } from 'lucide-react';
-import { registerWithEmailPassword, sendPasswordResetEmail, signInWithEmailPassword, signInWithGoogle } from '../config/firebase';
+import { registerWithEmailPassword, sendPasswordResetEmail, sendVerificationEmail, signInWithEmailPassword, signInWithGoogle, signOutUser } from '../config/firebase';
 import { NeoMartLogo } from './NeoMartLogo';
 import { LegalModal } from './LegalModal';
 
@@ -111,8 +111,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const handleRegistration = async (event: React.FormEvent) => {
     event.preventDefault();
     const email = registerEmail.trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setRegisterError('Enter a valid email address.');
+    if (!/^[^\s@]+@gmail\.com$/i.test(email)) {
+      setRegisterError('Enter a valid Gmail address.');
       return;
     }
     if (registerPassword.length < 6) {
@@ -127,9 +127,13 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     setRegisterError('');
     try {
       const user = await registerWithEmailPassword(email, registerPassword);
-      await onLoginSuccess(user.email || user.uid, user.displayName || email.split('@')[0], user.photoURL || undefined);
-      showToast('NeoMart account created successfully');
-      onClose();
+      await sendVerificationEmail(user);
+      await signOutUser();
+      setShowRegisterScreen(false);
+      setIdentifier(email);
+      setRegisterPassword('');
+      setRegisterConfirmation('');
+      showToast('Account created. Check your Gmail inbox and verify your email before signing in.');
     } catch (error: unknown) {
       const code = typeof error === 'object' && error !== null && 'code' in error ? String(error.code) : '';
       if (code === 'auth/email-already-in-use') setRegisterError('An account already exists for this email. Sign in or use Forgot Password.');
@@ -146,8 +150,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     const value = identifier.trim();
     const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
-    if (!value || !isEmail) {
-      showToast('Please enter a valid email address');
+    if (!value || !isEmail || !value.toLowerCase().endsWith('@gmail.com')) {
+      showToast('Please enter a valid Gmail address');
       return;
     }
 
@@ -159,6 +163,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     setLoading(true);
     try {
       const user = await signInWithEmailPassword(value, password);
+      if (!user.emailVerified) {
+        await sendVerificationEmail(user).catch(() => {});
+        await signOutUser();
+        showToast('Please verify your Gmail address before signing in. Check your inbox for the verification link.');
+        return;
+      }
       await onLoginSuccess(user.email || user.uid, user.displayName || value.split('@')[0], user.photoURL || undefined);
       showToast('Login successful! Welcome back');
       onClose();
@@ -184,8 +194,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     event.preventDefault();
     const value = resetEmail.trim();
 
-    if (!value || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-      setResetError('Enter a valid email address to continue.');
+    if (!value || !/^[^\s@]+@gmail\.com$/i.test(value)) {
+      setResetError('Enter a valid Gmail address to continue.');
       return;
     }
 
