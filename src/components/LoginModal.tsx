@@ -80,7 +80,13 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
   useEffect(() => {
     if (!isOpen) {
+      phoneVerifierRef.current?.clear();
+      phoneVerifierRef.current = null;
+      phoneConfirmationRef.current = null;
       setLoading(false);
+      setPhoneLoading(false);
+      setResendCountdown(0);
+      setPhoneNumber('');
       setLegalDocument(null);
       setShowResetScreen(false);
       setResetSent(false);
