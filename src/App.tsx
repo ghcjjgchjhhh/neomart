@@ -2110,6 +2110,9 @@ export default function App() {
         isOpen={isLoginOpen}
         onClose={() => setIsLoginOpen(false)}
         isLoggedIn={isLoggedIn}
+        accountName={accountName}
+        accountEmail={currentUserEmail}
+        accountPhotoUrl={accountPhotoUrl}
           isAccessBlocked={isCustomerAccessBlocked}
         onLoginSuccess={async (id, name, photoUrl) => {
           const state = await getCustomerAccountState(id);

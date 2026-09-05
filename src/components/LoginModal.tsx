@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Check, LockKeyhole, Mail, ShieldCheck, X } from 'lucide-react';
+import { ArrowLeft, Check, LockKeyhole, LogOut, Mail, ShieldCheck, X } from 'lucide-react';
 import { signInWithGoogle } from '../config/firebase';
 import { NeoMartLogo } from './NeoMartLogo';
 
@@ -11,6 +11,9 @@ interface LoginModalProps {
   onLogout: () => void;
   showToast: (msg: string) => void;
   isAccessBlocked?: boolean;
+  accountName?: string;
+  accountEmail?: string;
+  accountPhotoUrl?: string;
 }
 
 const GoogleIcon = () => (
@@ -30,6 +33,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   onLogout,
   showToast,
   isAccessBlocked = false,
+  accountName = '',
+  accountEmail = '',
+  accountPhotoUrl = '',
 }) => {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
@@ -87,17 +93,56 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   }
 
   if (isLoggedIn) {
+    const displayName = accountName || accountEmail.split('@')[0] || 'NeoMart customer';
+    const initials = displayName.charAt(0).toUpperCase();
+
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4">
-        <div className="w-full max-w-110 rounded-[30px] bg-white p-6 text-center shadow-2xl">
-          <h3 className="text-lg font-extrabold text-[#211e1d]">Your Account</h3>
-          <div className="mt-4 flex items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 p-3.5 text-xs text-emerald-700">
-            <Check className="h-4 w-4" />
-            <span>You are signed in</span>
-          </div>
-          <button onClick={() => { onLogout(); showToast('Signed out of account'); onClose(); }} className="mt-4 w-full rounded-xl bg-red-500 px-4 py-3 text-xs font-bold text-white cursor-pointer">
-            Sign Out
+        <div className="relative w-full max-w-105 rounded-3xl bg-white p-5 text-[#211e1d] shadow-2xl sm:p-7">
+          <button type="button" onClick={onClose} className="mb-5 inline-flex items-center gap-2 text-sm font-bold text-[#706b68] transition hover:text-[#f4510b] cursor-pointer">
+            <ArrowLeft className="h-4 w-4" />
+            Back
           </button>
+
+          <div className="flex items-start gap-4 border-b border-[#ece8e5] pb-6">
+            {accountPhotoUrl ? (
+              <img src={accountPhotoUrl} alt="" className="h-20 w-20 shrink-0 rounded-2xl border-2 border-[#f6c58f] object-cover shadow-md" />
+            ) : (
+              <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border-2 border-[#f6c58f] bg-[#9b7c70] text-4xl font-medium text-white shadow-md">
+                {initials}
+              </div>
+            )}
+            <div className="min-w-0 pt-1">
+              <h2 className="truncate text-2xl font-black text-[#211e1d]">{displayName}</h2>
+              <p className="mt-2 flex min-w-0 items-center gap-2 text-sm text-[#77716e]">
+                <Mail className="h-4 w-4 shrink-0" />
+                <span className="truncate">{accountEmail || 'Email not available'}</span>
+              </p>
+              <p className="mt-3 text-sm leading-5 text-[#77716e]">NeoMart customer account</p>
+            </div>
+          </div>
+
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            <div className="rounded-2xl bg-[#fff7ef] p-3">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[#a56c3c]">Account</p>
+              <p className="mt-1 text-sm font-bold text-[#3d3733]">Active</p>
+            </div>
+            <div className="rounded-2xl bg-[#f7f7f5] p-3">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[#8b8581]">Shopping</p>
+              <p className="mt-1 text-sm font-bold text-[#3d3733]">Orders & cart</p>
+            </div>
+          </div>
+
+          <div className="mt-6 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-xs text-emerald-700">
+              <Check className="h-4 w-4" />
+              Signed in securely
+            </div>
+            <button onClick={() => { onLogout(); showToast('Signed out of account'); onClose(); }} className="inline-flex items-center gap-2 rounded-xl border border-[#e5d8d2] px-4 py-2.5 text-sm font-bold text-[#b44820] transition hover:bg-[#fff4ed] cursor-pointer">
+              <LogOut className="h-4 w-4" />
+              Log Out
+            </button>
+          </div>
         </div>
       </div>
     );
