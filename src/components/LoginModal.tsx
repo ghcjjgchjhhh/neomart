@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ArrowLeft, Check, LockKeyhole, LogOut, Mail, ShieldCheck, X } from 'lucide-react';
 import { signInWithGoogle } from '../config/firebase';
 import { NeoMartLogo } from './NeoMartLogo';
+import { LegalModal } from './LegalModal';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -42,6 +43,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [legalDocument, setLegalDocument] = useState<'terms' | 'privacy' | null>(null);
 
   if (!isOpen) return null;
 
@@ -208,11 +210,19 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
         <div className={`mt-6 border-t pt-5 text-center text-[0.78rem] leading-5 sm:text-[0.9rem] ${borderClass} ${mutedClass}`}>
           By continuing, you agree to our{' '}
-          <button type="button" className="font-semibold text-[#b66c43] underline underline-offset-2 cursor-pointer">Terms of Service</button>{' '}
+          <button type="button" onClick={() => setLegalDocument('terms')} className="font-semibold text-[#b66c43] underline underline-offset-2 cursor-pointer">Terms of Service</button>{' '}
           and{' '}
-          <button type="button" className="font-semibold text-[#b66c43] underline underline-offset-2 cursor-pointer">Privacy Policy</button>.
+          <button type="button" onClick={() => setLegalDocument('privacy')} className="font-semibold text-[#b66c43] underline underline-offset-2 cursor-pointer">Privacy Policy</button>.
         </div>
       </div>
+      {legalDocument && (
+        <LegalModal
+          document={legalDocument}
+          isDark={isDark}
+          onBack={() => setLegalDocument(null)}
+          onClose={onClose}
+        />
+      )}
     </div>
   );
 };
