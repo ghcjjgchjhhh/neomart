@@ -428,7 +428,7 @@ export default function App() {
 
   useEffect(() => {
     void getGoogleRedirectUser().then((user) => {
-      if (!user) return;
+      if (!user || user.isAnonymous) return;
       const email = user.email || user.uid;
       const name = user.displayName || email.split('@')[0];
       return getCustomerAccountState(email).then((state) => {
