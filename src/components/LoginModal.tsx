@@ -14,6 +14,7 @@ interface LoginModalProps {
   accountName?: string;
   accountEmail?: string;
   accountPhotoUrl?: string;
+  theme?: 'light' | 'dark';
 }
 
 const GoogleIcon = () => (
@@ -36,12 +37,18 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   accountName = '',
   accountEmail = '',
   accountPhotoUrl = '',
+  theme = 'light',
 }) => {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
+
+  const isDark = theme === 'dark';
+  const panelClass = isDark ? 'bg-[#1a1a1a] text-[#f3f3f3]' : 'bg-white text-[#211e1d]';
+  const mutedClass = isDark ? 'text-[#bdbdbd]' : 'text-[#77716e]';
+  const borderClass = isDark ? 'border-[#363636]' : 'border-[#e5e1df]';
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
@@ -82,10 +89,10 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   if (isAccessBlocked) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4">
-        <div className="w-full max-w-110 rounded-[30px] bg-white p-6 text-center shadow-2xl">
+        <div className={`w-full max-w-110 rounded-[30px] p-6 text-center shadow-2xl ${panelClass}`}>
           <ShieldCheck className="mx-auto h-10 w-10 text-red-500" />
           <h3 className="mt-4 text-lg font-extrabold text-red-600">Login disabled</h3>
-          <p className="mt-2 text-xs text-gray-500">Your account access has been disabled by NeoMart support.</p>
+          <p className={`mt-2 text-xs ${mutedClass}`}>Your account access has been disabled by NeoMart support.</p>
           <a href="tel:08135648242" className="mt-5 block rounded-xl bg-[#f4510b] px-4 py-3 text-xs font-bold text-white">Contact customer care: 08135648242</a>
         </div>
       </div>
@@ -98,13 +105,13 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4">
-        <div className="relative w-full max-w-105 rounded-3xl bg-white p-5 text-[#211e1d] shadow-2xl sm:p-7">
-          <button type="button" onClick={onClose} className="mb-5 inline-flex items-center gap-2 text-sm font-bold text-[#706b68] transition hover:text-[#f4510b] cursor-pointer">
+        <div className={`relative w-full max-w-105 rounded-3xl p-5 shadow-2xl sm:p-7 ${panelClass}`}>
+          <button type="button" onClick={onClose} className={`mb-5 inline-flex items-center gap-2 text-sm font-bold transition hover:text-[#f4510b] cursor-pointer ${mutedClass}`}>
             <ArrowLeft className="h-4 w-4" />
             Back
           </button>
 
-          <div className="flex items-start gap-4 border-b border-[#ece8e5] pb-6">
+          <div className={`flex items-start gap-4 border-b pb-6 ${borderClass}`}>
             {accountPhotoUrl ? (
               <img src={accountPhotoUrl} alt="" className="h-20 w-20 shrink-0 rounded-2xl border-2 border-[#f6c58f] object-cover shadow-md" />
             ) : (
@@ -113,23 +120,23 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               </div>
             )}
             <div className="min-w-0 pt-1">
-              <h2 className="truncate text-2xl font-black text-[#211e1d]">{displayName}</h2>
-              <p className="mt-2 flex min-w-0 items-center gap-2 text-sm text-[#77716e]">
+              <h2 className={`truncate text-2xl font-black ${isDark ? 'text-white' : 'text-[#211e1d]'}`}>{displayName}</h2>
+              <p className={`mt-2 flex min-w-0 items-center gap-2 text-sm ${mutedClass}`}>
                 <Mail className="h-4 w-4 shrink-0" />
                 <span className="truncate">{accountEmail || 'Email not available'}</span>
               </p>
-              <p className="mt-3 text-sm leading-5 text-[#77716e]">NeoMart customer account</p>
+              <p className={`mt-3 text-sm leading-5 ${mutedClass}`}>NeoMart customer account</p>
             </div>
           </div>
 
           <div className="mt-5 grid grid-cols-2 gap-3">
-            <div className="rounded-2xl bg-[#fff7ef] p-3">
+            <div className={`rounded-2xl p-3 ${isDark ? 'bg-[#2a211a]' : 'bg-[#fff7ef]'}`}>
               <p className="text-[10px] font-bold uppercase tracking-wider text-[#a56c3c]">Account</p>
-              <p className="mt-1 text-sm font-bold text-[#3d3733]">Active</p>
+              <p className={`mt-1 text-sm font-bold ${isDark ? 'text-white' : 'text-[#3d3733]'}`}>Active</p>
             </div>
-            <div className="rounded-2xl bg-[#f7f7f5] p-3">
+            <div className={`rounded-2xl p-3 ${isDark ? 'bg-[#242424]' : 'bg-[#f7f7f5]'}`}>
               <p className="text-[10px] font-bold uppercase tracking-wider text-[#8b8581]">Shopping</p>
-              <p className="mt-1 text-sm font-bold text-[#3d3733]">Orders & cart</p>
+              <p className={`mt-1 text-sm font-bold ${isDark ? 'text-white' : 'text-[#3d3733]'}`}>Orders & cart</p>
             </div>
           </div>
 
@@ -138,7 +145,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               <Check className="h-4 w-4" />
               Signed in securely
             </div>
-            <button onClick={() => { onLogout(); showToast('Signed out of account'); onClose(); }} className="inline-flex items-center gap-2 rounded-xl border border-[#e5d8d2] px-4 py-2.5 text-sm font-bold text-[#b44820] transition hover:bg-[#fff4ed] cursor-pointer">
+            <button onClick={() => { onLogout(); showToast('Signed out of account'); onClose(); }} className="inline-flex items-center gap-2 rounded-xl border border-[#b44820]/40 px-4 py-2.5 text-sm font-bold text-[#d8693c] transition hover:bg-[#fff4ed]/10 cursor-pointer">
               <LogOut className="h-4 w-4" />
               Log Out
             </button>
@@ -150,8 +157,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/65 p-4 sm:p-5">
-      <div className="relative my-auto w-full max-w-95 rounded-3xl bg-white px-5 py-6 text-[#211e1d] shadow-2xl sm:px-7 sm:py-7">
-        <button onClick={onClose} aria-label="Close" className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-[#f5f5f3] text-[#5d5a58] transition hover:bg-[#ececea] cursor-pointer sm:right-4 sm:top-4">
+      <div className={`relative my-auto w-full max-w-95 rounded-3xl px-5 py-6 shadow-2xl sm:px-7 sm:py-7 ${panelClass}`}>
+        <button onClick={onClose} aria-label="Close" className={`absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full transition cursor-pointer sm:right-4 sm:top-4 ${isDark ? 'bg-[#2a2a2a] text-white hover:bg-[#353535]' : 'bg-[#f5f5f3] text-[#5d5a58] hover:bg-[#ececea]'}`}>
           <X className="h-5 w-5" strokeWidth={2.2} />
         </button>
 
@@ -162,33 +169,33 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         </div>
 
         <h1 className="mt-5 text-center text-[1.55rem] font-black leading-tight tracking-tight sm:text-[1.9rem]">Welcome to NeoMart</h1>
-        <p className="mx-auto mt-2 max-w-80 text-center text-[0.9rem] leading-5 text-[#77716e] sm:text-[1rem]">Sign in to access your saved carts, orders, and rewards.</p>
+        <p className={`mx-auto mt-2 max-w-80 text-center text-[0.9rem] leading-5 sm:text-[1rem] ${mutedClass}`}>Sign in to access your saved carts, orders, and rewards.</p>
 
-        <button type="button" onClick={handleGoogleSignIn} disabled={loading} className="mt-6 flex h-14 w-full items-center justify-center gap-3 rounded-2xl border-2 border-[#d8d5d3] bg-white text-[1rem] font-semibold shadow-[0_3px_6px_rgba(0,0,0,0.08)] transition hover:bg-[#fffaf7] disabled:opacity-60 cursor-pointer sm:text-[1.15rem]">
+        <button type="button" onClick={handleGoogleSignIn} disabled={loading} className={`mt-6 flex h-14 w-full items-center justify-center gap-3 rounded-2xl border-2 text-[1rem] font-semibold shadow-[0_3px_6px_rgba(0,0,0,0.08)] transition disabled:opacity-60 cursor-pointer sm:text-[1.15rem] ${isDark ? 'border-[#484848] bg-[#242424] text-white hover:bg-[#2d2d2d]' : 'border-[#d8d5d3] bg-white text-[#211e1d] hover:bg-[#fffaf7]'}`}>
           <GoogleIcon />
           <span>{loading ? 'Connecting...' : 'Continue with Google'}</span>
         </button>
 
         <div className="my-6 flex items-center gap-2 text-[0.75rem] font-medium text-[#aaa6a4] sm:gap-3 sm:text-[0.85rem]">
-          <span className="h-px flex-1 bg-[#ddd9d7]" />
+          <span className={`h-px flex-1 ${isDark ? 'bg-[#444]' : 'bg-[#ddd9d7]'}`} />
           <span>OR WITH EMAIL</span>
-          <span className="h-px flex-1 bg-[#ddd9d7]" />
+          <span className={`h-px flex-1 ${isDark ? 'bg-[#444]' : 'bg-[#ddd9d7]'}`} />
         </div>
 
         <form onSubmit={handleEmailSignIn} className="space-y-4">
           <label className="block">
-            <span className="mb-1.5 block text-[0.78rem] font-extrabold uppercase tracking-wide text-[#494542]">Email address</span>
-            <span className="flex h-12 items-center gap-3 rounded-xl border-2 border-[#d9d6d4] px-3.5 text-[#9b9693] focus-within:border-[#f4510b]">
+            <span className={`mb-1.5 block text-[0.78rem] font-extrabold uppercase tracking-wide ${isDark ? 'text-[#dedede]' : 'text-[#494542]'}`}>Email address</span>
+            <span className={`flex h-12 items-center gap-3 rounded-xl border-2 px-3.5 text-[#9b9693] focus-within:border-[#f4510b] ${isDark ? 'border-[#484848] bg-[#242424]' : 'border-[#d9d6d4] bg-white'}`}>
               <Mail className="h-5 w-5 shrink-0" strokeWidth={1.8} />
-              <input type="text" value={identifier} onChange={(event) => setIdentifier(event.target.value)} placeholder="you@example.com" className="w-full bg-transparent text-[0.9rem] text-[#302d2b] outline-none placeholder:text-[#aaa6a4] sm:text-[1rem]" />
+              <input type="text" value={identifier} onChange={(event) => setIdentifier(event.target.value)} placeholder="you@example.com" className={`w-full bg-transparent text-[0.9rem] outline-none placeholder:text-[#aaa6a4] sm:text-[1rem] ${isDark ? 'text-white' : 'text-[#302d2b]'}`} />
             </span>
           </label>
 
           <label className="block">
-            <span className="mb-1.5 block text-[0.78rem] font-extrabold uppercase tracking-wide text-[#494542]">Password</span>
-            <span className="flex h-12 items-center gap-3 rounded-xl border-2 border-[#d9d6d4] px-3.5 text-[#9b9693] focus-within:border-[#f4510b]">
+            <span className={`mb-1.5 block text-[0.78rem] font-extrabold uppercase tracking-wide ${isDark ? 'text-[#dedede]' : 'text-[#494542]'}`}>Password</span>
+            <span className={`flex h-12 items-center gap-3 rounded-xl border-2 px-3.5 text-[#9b9693] focus-within:border-[#f4510b] ${isDark ? 'border-[#484848] bg-[#242424]' : 'border-[#d9d6d4] bg-white'}`}>
               <LockKeyhole className="h-5 w-5 shrink-0" strokeWidth={1.8} />
-              <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="••••••••" className="w-full bg-transparent text-[0.9rem] text-[#302d2b] outline-none placeholder:text-[#aaa6a4] sm:text-[1rem]" />
+              <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="••••••••" className={`w-full bg-transparent text-[0.9rem] outline-none placeholder:text-[#aaa6a4] sm:text-[1rem] ${isDark ? 'text-white' : 'text-[#302d2b]'}`} />
             </span>
           </label>
 
@@ -197,9 +204,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           </button>
         </form>
 
-        <p className="mt-6 text-center text-[0.88rem] text-[#77716e] sm:text-[1rem]">Don't have an account? <button type="button" onClick={handleGoogleSignIn} className="font-extrabold text-[#d95b1c] underline underline-offset-4 cursor-pointer">Sign up now</button></p>
+        <p className={`mt-6 text-center text-[0.88rem] sm:text-[1rem] ${mutedClass}`}>Don't have an account? <button type="button" onClick={handleGoogleSignIn} className="font-extrabold text-[#d95b1c] underline underline-offset-4 cursor-pointer">Sign up now</button></p>
 
-        <div className="mt-6 border-t border-[#e5e1df] pt-5 text-center text-[0.78rem] leading-5 text-[#77716e] sm:text-[0.9rem]">
+        <div className={`mt-6 border-t pt-5 text-center text-[0.78rem] leading-5 sm:text-[0.9rem] ${borderClass} ${mutedClass}`}>
           By continuing, you agree to our{' '}
           <button type="button" className="font-semibold text-[#b66c43] underline underline-offset-2 cursor-pointer">Terms of Service</button>{' '}
           and{' '}

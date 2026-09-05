@@ -2113,6 +2113,7 @@ export default function App() {
         accountName={accountName}
         accountEmail={currentUserEmail}
         accountPhotoUrl={accountPhotoUrl}
+        theme={theme}
           isAccessBlocked={isCustomerAccessBlocked}
         onLoginSuccess={async (id, name, photoUrl) => {
           const state = await getCustomerAccountState(id);
