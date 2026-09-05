@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Check, LockKeyhole, Mail, ShieldCheck, UtensilsCrossed, X } from 'lucide-react';
+import { Check, LockKeyhole, Mail, ShieldCheck, X } from 'lucide-react';
 import { signInWithGoogle } from '../config/firebase';
+import { NeoMartLogo } from './NeoMartLogo';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -104,57 +105,57 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/65 p-0 sm:p-5">
-      <div className="relative my-auto min-h-screen w-full max-w-165 rounded-none bg-white px-8 py-12 text-[#211e1d] shadow-2xl sm:min-h-0 sm:rounded-[30px] sm:px-12 sm:py-12">
-        <button onClick={onClose} aria-label="Close" className="absolute right-6 top-6 flex h-16 w-16 items-center justify-center rounded-full bg-[#f5f5f3] text-[#5d5a58] transition hover:bg-[#ececea] cursor-pointer sm:right-8 sm:top-8">
-          <X className="h-8 w-8" strokeWidth={2.2} />
+      <div className="relative my-auto w-full max-w-105 rounded-3xl bg-white px-6 py-8 text-[#211e1d] shadow-2xl sm:px-8 sm:py-9">
+        <button onClick={onClose} aria-label="Close" className="absolute right-4 top-4 flex h-11 w-11 items-center justify-center rounded-full bg-[#f5f5f3] text-[#5d5a58] transition hover:bg-[#ececea] cursor-pointer sm:right-5 sm:top-5">
+          <X className="h-6 w-6" strokeWidth={2.2} />
         </button>
 
         <div className="flex justify-center">
-          <div className="flex h-24 w-24 items-center justify-center rounded-[28px] bg-linear-to-br from-[#ff9d00] to-[#f4510b] shadow-[0_12px_22px_rgba(244,81,11,0.2)]">
-            <UtensilsCrossed className="h-12 w-12 rotate-45 text-white" strokeWidth={2.4} />
+          <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-linear-to-br from-[#ff9d00] to-[#f4510b] shadow-[0_10px_18px_rgba(244,81,11,0.2)]">
+            <NeoMartLogo size="xl" showText={false} />
           </div>
         </div>
 
-        <h1 className="mt-9 text-center text-[2.25rem] font-black leading-tight tracking-tight sm:text-[2.65rem]">Welcome to NeoMart</h1>
-        <p className="mx-auto mt-3 max-w-[520px] text-center text-[1.2rem] leading-7 text-[#77716e] sm:text-[1.35rem]">Sign in to access your saved carts, orders, and rewards.</p>
+        <h1 className="mt-7 text-center text-[1.8rem] font-black leading-tight tracking-tight sm:text-[2.15rem]">Welcome to NeoMart</h1>
+        <p className="mx-auto mt-2 max-w-90 text-center text-[1rem] leading-6 text-[#77716e] sm:text-[1.1rem]">Sign in to access your saved carts, orders, and rewards.</p>
 
-        <button type="button" onClick={handleGoogleSignIn} disabled={loading} className="mt-12 flex h-[92px] w-full items-center justify-center gap-6 rounded-[24px] border-2 border-[#d8d5d3] bg-white text-[1.55rem] font-semibold shadow-[0_4px_8px_rgba(0,0,0,0.08)] transition hover:bg-[#fffaf7] disabled:opacity-60 cursor-pointer sm:text-[1.75rem]">
+        <button type="button" onClick={handleGoogleSignIn} disabled={loading} className="mt-8 flex h-16 w-full items-center justify-center gap-4 rounded-2xl border-2 border-[#d8d5d3] bg-white text-[1.15rem] font-semibold shadow-[0_3px_6px_rgba(0,0,0,0.08)] transition hover:bg-[#fffaf7] disabled:opacity-60 cursor-pointer sm:text-[1.3rem]">
           <GoogleIcon />
           <span>{loading ? 'Connecting...' : 'Continue with Google'}</span>
         </button>
 
-        <div className="my-12 flex items-center gap-4 text-[1.35rem] font-medium text-[#aaa6a4] sm:gap-5 sm:text-[1.5rem]">
+        <div className="my-8 flex items-center gap-3 text-[0.9rem] font-medium text-[#aaa6a4] sm:gap-4 sm:text-[1rem]">
           <span className="h-px flex-1 bg-[#ddd9d7]" />
           <span>OR WITH EMAIL</span>
           <span className="h-px flex-1 bg-[#ddd9d7]" />
         </div>
 
-        <form onSubmit={handleEmailSignIn} className="space-y-8">
+        <form onSubmit={handleEmailSignIn} className="space-y-5">
           <label className="block">
-            <span className="mb-3 block text-[1.15rem] font-extrabold uppercase tracking-wide text-[#494542]">Email address</span>
-            <span className="flex h-[76px] items-center gap-5 rounded-[22px] border-2 border-[#d9d6d4] px-6 text-[#9b9693] focus-within:border-[#f4510b]">
-              <Mail className="h-8 w-8 shrink-0" strokeWidth={1.8} />
-              <input type="text" value={identifier} onChange={(event) => setIdentifier(event.target.value)} placeholder="you@example.com" className="w-full bg-transparent text-[1.2rem] text-[#302d2b] outline-none placeholder:text-[#aaa6a4] sm:text-[1.35rem]" />
+            <span className="mb-2 block text-[0.9rem] font-extrabold uppercase tracking-wide text-[#494542]">Email address</span>
+            <span className="flex h-14 items-center gap-3 rounded-2xl border-2 border-[#d9d6d4] px-4 text-[#9b9693] focus-within:border-[#f4510b]">
+              <Mail className="h-6 w-6 shrink-0" strokeWidth={1.8} />
+              <input type="text" value={identifier} onChange={(event) => setIdentifier(event.target.value)} placeholder="you@example.com" className="w-full bg-transparent text-[1rem] text-[#302d2b] outline-none placeholder:text-[#aaa6a4] sm:text-[1.1rem]" />
             </span>
           </label>
 
           <label className="block">
-            <span className="mb-3 block text-[1.15rem] font-extrabold uppercase tracking-wide text-[#494542]">Password</span>
-            <span className="flex h-[76px] items-center gap-5 rounded-[22px] border-2 border-[#d9d6d4] px-6 text-[#9b9693] focus-within:border-[#f4510b]">
-              <LockKeyhole className="h-8 w-8 shrink-0" strokeWidth={1.8} />
-              <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="••••••••" className="w-full bg-transparent text-[1.2rem] text-[#302d2b] outline-none placeholder:text-[#aaa6a4] sm:text-[1.35rem]" />
+            <span className="mb-2 block text-[0.9rem] font-extrabold uppercase tracking-wide text-[#494542]">Password</span>
+            <span className="flex h-14 items-center gap-3 rounded-2xl border-2 border-[#d9d6d4] px-4 text-[#9b9693] focus-within:border-[#f4510b]">
+              <LockKeyhole className="h-6 w-6 shrink-0" strokeWidth={1.8} />
+              <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="••••••••" className="w-full bg-transparent text-[1rem] text-[#302d2b] outline-none placeholder:text-[#aaa6a4] sm:text-[1.1rem]" />
             </span>
           </label>
 
-          <button type="submit" disabled={loading} className="h-[88px] w-full rounded-[22px] bg-[#f4510b] text-[1.75rem] font-extrabold text-white shadow-[0_8px_13px_rgba(244,81,11,0.25)] transition hover:bg-[#df4608] disabled:opacity-70 cursor-pointer">
+          <button type="submit" disabled={loading} className="h-16 w-full rounded-2xl bg-[#f4510b] text-[1.35rem] font-extrabold text-white shadow-[0_7px_12px_rgba(244,81,11,0.25)] transition hover:bg-[#df4608] disabled:opacity-70 cursor-pointer">
             {loading ? 'Signing In...' : 'Sign In'}
           </button>
         </form>
 
-        <p className="mt-10 text-center text-[1.2rem] text-[#77716e] sm:text-[1.35rem]">Don't have an account? <button type="button" onClick={handleGoogleSignIn} className="font-extrabold text-[#d95b1c] underline underline-offset-4 cursor-pointer">Sign up now</button></p>
+        <p className="mt-7 text-center text-[1rem] text-[#77716e] sm:text-[1.1rem]">Don't have an account? <button type="button" onClick={handleGoogleSignIn} className="font-extrabold text-[#d95b1c] underline underline-offset-4 cursor-pointer">Sign up now</button></p>
 
-        <div className="mt-10 border-t border-[#e5e1df] pt-9 text-center">
-          <button type="button" onClick={handleGoogleSignIn} className="text-[1.05rem] font-medium text-[#9a572c] underline underline-offset-4 cursor-pointer sm:text-[1.2rem]">⚡ Tester Shortcut: Enter Demo Admin Mode</button>
+        <div className="mt-7 border-t border-[#e5e1df] pt-6 text-center">
+          <button type="button" onClick={handleGoogleSignIn} className="text-[0.9rem] font-medium text-[#9a572c] underline underline-offset-4 cursor-pointer sm:text-[1rem]">⚡ Tester Shortcut: Enter Demo Admin Mode</button>
         </div>
       </div>
     </div>
