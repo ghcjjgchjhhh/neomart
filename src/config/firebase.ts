@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { createUserWithEmailAndPassword, getAuth, GoogleAuthProvider, getRedirectResult, onAuthStateChanged, sendEmailVerification, sendPasswordResetEmail as firebaseSendPasswordResetEmail, signInAnonymously, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, signOut as firebaseSignOut, type User } from 'firebase/auth';
+import { createUserWithEmailAndPassword, getAuth, GoogleAuthProvider, getRedirectResult, onAuthStateChanged, RecaptchaVerifier, sendEmailVerification, sendPasswordResetEmail as firebaseSendPasswordResetEmail, signInAnonymously, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, signInWithPhoneNumber as firebaseSignInWithPhoneNumber, signOut as firebaseSignOut, type ConfirmationResult, type User } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -59,6 +59,16 @@ export async function registerWithEmailPassword(email: string, password: string)
 
 export async function sendVerificationEmail(user: User) {
   await sendEmailVerification(user);
+}
+
+export function createPhoneRecaptcha(containerId: string) {
+  if (!auth) throw new Error('Firebase authentication is not configured');
+  return new RecaptchaVerifier(auth, containerId, { size: 'invisible' });
+}
+
+export async function sendPhoneVerificationCode(phoneNumber: string, verifier: RecaptchaVerifier): Promise<ConfirmationResult> {
+  if (!auth) throw new Error('Firebase authentication is not configured');
+  return firebaseSignInWithPhoneNumber(auth, phoneNumber, verifier);
 }
 
 export async function signOutUser() {

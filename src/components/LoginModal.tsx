@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Check, Eye, EyeOff, Headphones, LockKeyhole, LogOut, Mail, Package, ShieldCheck, Tag, Truck, X } from 'lucide-react';
-import { registerWithEmailPassword, sendPasswordResetEmail, sendVerificationEmail, signInWithEmailPassword, signInWithGoogle, signOutUser } from '../config/firebase';
+import { createPhoneRecaptcha, registerWithEmailPassword, sendPasswordResetEmail, sendPhoneVerificationCode, sendVerificationEmail, signInWithEmailPassword, signInWithGoogle, signOutUser } from '../config/firebase';
 import { NeoMartLogo } from './NeoMartLogo';
 import { LegalModal } from './LegalModal';
 
@@ -55,6 +55,16 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const [registerPassword, setRegisterPassword] = useState('');
   const [registerConfirmation, setRegisterConfirmation] = useState('');
   const [registerError, setRegisterError] = useState('');
+  const [showPhoneScreen, setShowPhoneScreen] = useState(false);
+  const [phoneStep, setPhoneStep] = useState<'phone' | 'code'>('phone');
+  const [countryCode, setCountryCode] = useState('+234');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+  const [phoneLoading, setPhoneLoading] = useState(false);
+  const [resendCountdown, setResendCountdown] = useState(0);
+  const phoneConfirmationRef = useRef<import('firebase/auth').ConfirmationResult | null>(null);
+  const phoneVerifierRef = useRef<import('firebase/auth').RecaptchaVerifier | null>(null);
   const [legalDocument, setLegalDocument] = useState<'terms' | 'privacy' | null>(null);
 
   const showToast = (message: string) => {
@@ -70,14 +80,25 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
   useEffect(() => {
     if (!isOpen) {
+      setLoading(false);
       setLegalDocument(null);
       setShowResetScreen(false);
       setResetSent(false);
       setResetError('');
       setShowRegisterScreen(false);
       setRegisterError('');
+      setShowPhoneScreen(false);
+      setPhoneStep('phone');
+      setPhoneError('');
+      setVerificationCode('');
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    const handlePageShow = () => setLoading(false);
+    window.addEventListener('pageshow', handlePageShow);
+    return () => window.removeEventListener('pageshow', handlePageShow);
+  }, []);
 
   if (!isOpen) return null;
 
@@ -230,6 +251,94 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     await handleGoogleSignIn();
   };
 
+  useEffect(() => {
+    if (resendCountdown <= 0) return;
+    const timer = window.setInterval(() => setResendCountdown((value) => Math.max(0, value - 1)), 1000);
+    return () => window.clearInterval(timer);
+  }, [resendCountdown]);
+
+  const normalizedPhone = () => {
+    const digits = phoneNumber.replace(/\D/g, '').replace(/^0+/, '');
+    return `${countryCode}${digits}`;
+  };
+
+  const handleSendPhoneCode = async (event?: React.FormEvent) => {
+    event?.preventDefault();
+    const phone = normalizedPhone();
+    if (phone.replace(/\D/g, '').length < 8) {
+      setPhoneError('Enter a valid phone number with your country code.');
+      return;
+    }
+    setPhoneLoading(true);
+    setPhoneError('');
+    try {
+      phoneVerifierRef.current?.clear();
+      phoneVerifierRef.current = createPhoneRecaptcha('phone-recaptcha');
+      phoneConfirmationRef.current = await sendPhoneVerificationCode(phone, phoneVerifierRef.current);
+      setPhoneStep('code');
+      setResendCountdown(30);
+    } catch (error: unknown) {
+      phoneVerifierRef.current?.clear();
+      phoneVerifierRef.current = null;
+      const code = typeof error === 'object' && error !== null && 'code' in error ? String(error.code) : '';
+      setPhoneError(code === 'auth/invalid-phone-number' ? 'Enter a valid phone number.' : code === 'auth/too-many-requests' ? 'Too many attempts. Please wait and try again.' : 'We could not send the code. Check the number and try again.');
+    } finally {
+      setPhoneLoading(false);
+    }
+  };
+
+  const handleConfirmPhoneCode = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!phoneConfirmationRef.current || !/^\d{6}$/.test(verificationCode.trim())) {
+      setPhoneError('Enter the 6-digit verification code.');
+      return;
+    }
+    setPhoneLoading(true);
+    setPhoneError('');
+    try {
+      const result = await phoneConfirmationRef.current.confirm(verificationCode.trim());
+      await onLoginSuccess(result.user.uid, result.user.displayName || result.user.phoneNumber || 'NeoMart customer', result.user.photoURL || undefined);
+      showToast('Signed in successfully');
+      onClose();
+    } catch (error: unknown) {
+      const code = typeof error === 'object' && error !== null && 'code' in error ? String(error.code) : '';
+      setPhoneError(code === 'auth/invalid-verification-code' ? 'Incorrect verification code.' : 'We could not verify that code. Please try again.');
+    } finally {
+      setPhoneLoading(false);
+    }
+  };
+
+  if (showPhoneScreen) {
+    const maskedPhone = `${countryCode} ${phoneNumber.replace(/\D/g, '').slice(-3).padStart(3, '•')}`;
+    return (
+      <div className="fixed inset-0 z-50 flex min-h-dvh items-center justify-center overflow-y-auto bg-[#070808] px-5 py-8 text-white sm:px-8">
+        <div className="relative w-full max-w-[470px] rounded-[22px] border border-[#292929] bg-[#181919] px-5 py-8 shadow-2xl sm:px-10 sm:py-10">
+          <button type="button" onClick={onClose} aria-label="Close" className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-[#292a2a] text-[#c1c1c1] hover:bg-[#373838] hover:text-white"><X className="h-5 w-5" /></button>
+          <div className="flex justify-center"><div className="flex h-14 w-14 items-center justify-center rounded-[13px] bg-[#ff6a00] shadow-[0_8px_22px_rgba(255,106,0,0.22)]"><NeoMartLogo size="lg" showText={false} /></div></div>
+          {phoneStep === 'phone' ? (
+            <>
+              <h1 className="mt-6 text-center text-[24px] font-extrabold">Continue with Phone Number</h1>
+              <p className="mx-auto mt-2 max-w-[340px] text-center text-[13px] leading-5 text-[#999b9b]">We&apos;ll send a verification code to your phone.</p>
+              <form onSubmit={handleSendPhoneCode} className="mt-7">
+                <label className="block"><span className="mb-1.5 block text-[10px] font-bold uppercase tracking-wide text-[#dedede]">Phone number</span><span className="flex h-12 gap-2 rounded-[9px] border border-[#4a4b4b] bg-[#1b1c1c] px-3 focus-within:border-[#ff6a00]"><select value={countryCode} onChange={(event) => setCountryCode(event.target.value)} aria-label="Country code" className="bg-transparent text-[13px] text-white outline-none"><option value="+234">NG +234</option><option value="+1">US +1</option><option value="+44">UK +44</option><option value="+233">GH +233</option><option value="+27">ZA +27</option></select><input type="tel" value={phoneNumber} onChange={(event) => { setPhoneNumber(event.target.value); setPhoneError(''); }} placeholder="801 234 5678" autoComplete="tel" className="min-w-0 flex-1 bg-transparent text-[13px] text-white outline-none placeholder:text-[#888a8a]" /></span></label>
+                {phoneError && <p role="alert" className="mt-2 text-[11px] text-[#ff9a72]">{phoneError}</p>}
+                <button type="submit" disabled={phoneLoading} className="mt-5 h-14 w-full rounded-[10px] bg-[#ff6a00] text-[14px] font-extrabold shadow-[0_8px_18px_rgba(255,106,0,0.18)] hover:bg-[#e95f00] disabled:opacity-70">{phoneLoading ? 'Sending code...' : 'Continue'}</button>
+              </form>
+            </>
+          ) : (
+            <>
+              <h1 className="mt-6 text-center text-[24px] font-extrabold">Enter verification code</h1>
+              <p className="mx-auto mt-2 max-w-[340px] text-center text-[13px] leading-5 text-[#999b9b]">We sent a 6-digit code to {maskedPhone}</p>
+              <form onSubmit={handleConfirmPhoneCode} className="mt-7"><label className="block"><span className="mb-1.5 block text-[10px] font-bold uppercase tracking-wide text-[#dedede]">Verification code</span><input inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={verificationCode} onChange={(event) => { setVerificationCode(event.target.value.replace(/\D/g, '')); setPhoneError(''); }} placeholder="000000" className="h-14 w-full rounded-[9px] border border-[#4a4b4b] bg-[#1b1c1c] text-center text-[22px] tracking-[0.35em] text-white outline-none focus:border-[#ff6a00]" /></label>{phoneError && <p role="alert" className="mt-2 text-[11px] text-[#ff9a72]">{phoneError}</p>}<button type="submit" disabled={phoneLoading} className="mt-5 h-14 w-full rounded-[10px] bg-[#ff6a00] text-[14px] font-extrabold hover:bg-[#e95f00] disabled:opacity-70">{phoneLoading ? 'Verifying...' : 'Verify and Continue'}</button></form>
+              <div className="mt-5 flex justify-between text-[12px]"><button type="button" onClick={() => { setPhoneStep('phone'); setVerificationCode(''); setPhoneError(''); }} className="font-bold text-[#ff6a00] hover:underline">Change phone number</button><button type="button" disabled={resendCountdown > 0 || phoneLoading} onClick={() => void handleSendPhoneCode()} className="font-bold text-[#ff6a00] disabled:text-[#676969]">{resendCountdown > 0 ? `Resend code in ${resendCountdown}s` : 'Resend code'}</button></div>
+            </>
+          )}
+          <div id="phone-recaptcha" />
+        </div>
+      </div>
+    );
+  }
+
   if (!isLoggedIn && !isAccessBlocked) {
     return (
       <div className="fixed inset-0 z-50 flex min-h-dvh items-center justify-center overflow-y-auto bg-[#070808] px-5 py-8 text-white sm:px-8">
@@ -239,6 +348,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           <h1 className="mt-6 text-center text-[24px] font-extrabold tracking-[-0.5px]">Continue to NeoMart</h1>
           <p className="mx-auto mt-2 max-w-[340px] text-center text-[13px] leading-5 text-[#999b9b]">Enter your Gmail address to choose your Google account and continue securely.</p>
           <button type="button" onClick={() => void handleGoogleSignIn()} disabled={loading} className="mt-7 flex h-14 w-full items-center justify-center gap-3 rounded-[10px] bg-[#ff6a00] text-[14px] font-extrabold text-white shadow-[0_8px_18px_rgba(255,106,0,0.18)] transition hover:bg-[#e95f00] disabled:cursor-not-allowed disabled:opacity-70"><GoogleIcon /><span>{loading ? 'Opening Google...' : 'Continue with Google'}</span></button>
+          <button type="button" onClick={() => { setShowPhoneScreen(true); setPhoneStep('phone'); setPhoneError(''); }} disabled={loading} className="mt-3 flex h-14 w-full items-center justify-center rounded-[10px] border border-[#4a4b4b] bg-transparent text-[14px] font-bold text-white hover:bg-[#242525] disabled:opacity-60">Continue with Phone Number</button>
           <div className="my-5 flex items-center gap-3 text-[10px] font-medium text-[#8d8f8f]"><span className="h-px flex-1 bg-[#414242]" /><span>OR USE EMAIL ADDRESS</span><span className="h-px flex-1 bg-[#414242]" /></div>
           <form onSubmit={handleEmailOnlyGoogleSignIn} className="mt-7">
             <label className="block"><span className="mb-1.5 block text-[10px] font-bold uppercase tracking-wide text-[#dedede]">Gmail address</span><span className="flex h-12 items-center gap-3 rounded-[9px] border border-[#4a4b4b] bg-[#1b1c1c] px-3 text-[#898b8b] focus-within:border-[#ff6a00]"><Mail className="h-[17px] w-[17px] shrink-0" /><input type="email" value={identifier} onChange={(event) => setIdentifier(event.target.value)} placeholder="you@gmail.com" autoComplete="email" className="w-full bg-transparent text-[13px] text-white outline-none placeholder:text-[#888a8a]" /></span></label>
