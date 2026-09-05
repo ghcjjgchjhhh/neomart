@@ -104,23 +104,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [streetSuggestions, setStreetSuggestions] = useState<Array<{ name: string; street: string; city: string; displayName: string }>>([]);
   const [locationLoading, setLocationLoading] = useState(false);
 
-  if (!isOpen) return null;
-
-  const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
-  const discount = couponApplied ? Math.round(subtotal * 0.1) : 0;
-  const total = subtotal - discount;
-
-  const formatPrice = (amount: number) => {
-    return '₦' + amount.toLocaleString('en-NG');
-  };
-
-  const filteredStates = nigerianStates.filter((s) =>
-    s.toLowerCase().includes(stateSearch.toLowerCase())
-  );
-
-  const availableLgas = delivery.state ? getLocalGovernmentAreas(delivery.state) : [];
-  const filteredLgas = availableLgas.filter((lga) => lga.toLowerCase().includes(lgaSearch.toLowerCase()));
-
   useEffect(() => {
     if (!delivery.state || !delivery.lga || townSearch.trim().length < 2) {
       setTownSuggestions([]);
@@ -150,6 +133,23 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     }, 500);
     return () => window.clearTimeout(timer);
   }, [delivery.state, delivery.lga, delivery.city, streetSearch]);
+
+  if (!isOpen) return null;
+
+  const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const discount = couponApplied ? Math.round(subtotal * 0.1) : 0;
+  const total = subtotal - discount;
+
+  const formatPrice = (amount: number) => {
+    return '₦' + amount.toLocaleString('en-NG');
+  };
+
+  const filteredStates = nigerianStates.filter((s) =>
+    s.toLowerCase().includes(stateSearch.toLowerCase())
+  );
+
+  const availableLgas = delivery.state ? getLocalGovernmentAreas(delivery.state) : [];
+  const filteredLgas = availableLgas.filter((lga) => lga.toLowerCase().includes(lgaSearch.toLowerCase()));
 
   const handleSubmitOrder = (e: React.FormEvent) => {
     e.preventDefault();
