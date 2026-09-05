@@ -2125,6 +2125,21 @@ export default function App() {
         accountPhotoUrl={accountPhotoUrl}
         theme={theme}
           isAccessBlocked={isCustomerAccessBlocked}
+        orderCount={orders.filter((order) => order.email === currentUserEmail || order.userId === currentUserUid).length}
+        cartCount={cart.reduce((total, item) => total + item.qty, 0)}
+        hasPhone={Boolean(auth?.currentUser?.phoneNumber)}
+        emailVerified={Boolean(auth?.currentUser?.emailVerified)}
+        onOpenOrders={() => { setIsLoginOpen(false); setIsOrderHistoryOpen(true); }}
+        onOpenCart={() => { setIsLoginOpen(false); setIsCartOpen(true); }}
+        onOpenHelp={() => { setIsLoginOpen(false); handleOpenHelpSection('live-chat'); }}
+        onSaveProfile={async ({ displayName, photoURL }) => {
+          setAccountName(displayName);
+          setAccountPhotoUrl(photoURL);
+          localStorage.setItem('neomart_account_name', displayName);
+          if (photoURL) localStorage.setItem('neomart_account_photo_url', photoURL);
+          else localStorage.removeItem('neomart_account_photo_url');
+          await saveCustomerProfile({ displayName, photoURL, email: currentUserEmail, phone: auth?.currentUser?.phoneNumber || undefined });
+        }}
         onLoginSuccess={async (id, name, photoUrl) => {
           setCurrentUserUid(auth?.currentUser?.uid || '');
           const state = await getCustomerAccountState(id);

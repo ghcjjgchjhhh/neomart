@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { createUserWithEmailAndPassword, getAuth, GoogleAuthProvider, getRedirectResult, onAuthStateChanged, RecaptchaVerifier, sendEmailVerification, sendPasswordResetEmail as firebaseSendPasswordResetEmail, signInAnonymously, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, signInWithPhoneNumber as firebaseSignInWithPhoneNumber, signOut as firebaseSignOut, type ConfirmationResult, type User } from 'firebase/auth';
+import { createUserWithEmailAndPassword, getAuth, GoogleAuthProvider, getRedirectResult, onAuthStateChanged, RecaptchaVerifier, sendEmailVerification, sendPasswordResetEmail as firebaseSendPasswordResetEmail, signInAnonymously, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, signInWithPhoneNumber as firebaseSignInWithPhoneNumber, signOut as firebaseSignOut, updateProfile, type ConfirmationResult, type User } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -59,6 +59,12 @@ export async function registerWithEmailPassword(email: string, password: string)
 
 export async function sendVerificationEmail(user: User) {
   await sendEmailVerification(user);
+}
+
+export async function updateFirebaseProfile(displayName: string, photoURL?: string) {
+  if (!auth?.currentUser) throw new Error('You must be signed in to update your profile');
+  await updateProfile(auth.currentUser, { displayName, photoURL: photoURL || null });
+  return auth.currentUser;
 }
 
 export function createPhoneRecaptcha(containerId: string) {

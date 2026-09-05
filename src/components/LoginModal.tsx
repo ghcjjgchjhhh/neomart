@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, Check, Eye, EyeOff, Headphones, LockKeyhole, LogOut, Mail, Package, ShieldCheck, Tag, Truck, X } from 'lucide-react';
-import { createPhoneRecaptcha, registerWithEmailPassword, sendPasswordResetEmail, sendPhoneVerificationCode, sendVerificationEmail, signInWithEmailPassword, signInWithGoogle, signOutUser } from '../config/firebase';
+import { ArrowLeft, Bell, Check, ChevronRight, CreditCard, Eye, EyeOff, FileText, Headphones, HelpCircle, Info, LockKeyhole, LogOut, Mail, MapPin, Package, Pencil, RotateCcw, ShieldCheck, ShoppingCart, Smartphone, Tag, Truck, UserRound, X } from 'lucide-react';
+import { createPhoneRecaptcha, registerWithEmailPassword, sendPasswordResetEmail, sendPhoneVerificationCode, sendVerificationEmail, signInWithEmailPassword, signInWithGoogle, signOutUser, updateFirebaseProfile } from '../config/firebase';
 import { NeoMartLogo } from './NeoMartLogo';
 import { LegalModal } from './LegalModal';
 
@@ -16,6 +16,14 @@ interface LoginModalProps {
   accountEmail?: string;
   accountPhotoUrl?: string;
   theme?: 'light' | 'dark';
+  orderCount?: number;
+  cartCount?: number;
+  hasPhone?: boolean;
+  emailVerified?: boolean;
+  onOpenOrders?: () => void;
+  onOpenCart?: () => void;
+  onOpenHelp?: () => void;
+  onSaveProfile?: (profile: { displayName: string; photoURL: string }) => Promise<void>;
 }
 
 const GoogleIcon = () => (
@@ -39,6 +47,14 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   accountEmail = '',
   accountPhotoUrl = '',
   theme = 'light',
+  orderCount = 0,
+  cartCount = 0,
+  hasPhone = false,
+  emailVerified = false,
+  onOpenOrders,
+  onOpenCart,
+  onOpenHelp,
+  onSaveProfile,
 }) => {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
@@ -66,6 +82,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const phoneConfirmationRef = useRef<import('firebase/auth').ConfirmationResult | null>(null);
   const phoneVerifierRef = useRef<import('firebase/auth').RecaptchaVerifier | null>(null);
   const [legalDocument, setLegalDocument] = useState<'terms' | 'privacy' | null>(null);
+  const [accountSection, setAccountSection] = useState<'overview' | 'profile' | 'security'>('overview');
+  const [profileName, setProfileName] = useState(accountName);
+  const [profilePhoto, setProfilePhoto] = useState(accountPhotoUrl);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileMessage, setProfileMessage] = useState('');
 
   const showToast = (message: string) => {
     if (message === 'Password reset is coming soon') {
@@ -87,6 +108,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       setPhoneLoading(false);
       setResendCountdown(0);
       setPhoneNumber('');
+      setAccountSection('overview');
+      setProfileMessage('');
       setLegalDocument(null);
       setShowResetScreen(false);
       setResetSent(false);
@@ -99,6 +122,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       setVerificationCode('');
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    setProfileName(accountName);
+    setProfilePhoto(accountPhotoUrl);
+  }, [accountName, accountPhotoUrl]);
 
   useEffect(() => {
     const handlePageShow = () => setLoading(false);
@@ -268,6 +296,26 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     await handleGoogleSignIn();
   };
 
+  const handleSaveProfile = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const name = profileName.trim();
+    if (!name) {
+      setProfileMessage('Enter your name to continue.');
+      return;
+    }
+    setProfileSaving(true);
+    setProfileMessage('');
+    try {
+      await updateFirebaseProfile(name, profilePhoto.trim());
+      await onSaveProfile?.({ displayName: name, photoURL: profilePhoto.trim() });
+      setProfileMessage('Profile updated successfully.');
+    } catch {
+      setProfileMessage('We could not update your profile right now.');
+    } finally {
+      setProfileSaving(false);
+    }
+  };
+
   const normalizedPhone = () => {
     const rawDigits = phoneNumber.replace(/\D/g, '');
     const countryDigits = countryCode.replace(/\D/g, '');
@@ -401,14 +449,14 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     const initials = displayName.charAt(0).toUpperCase();
 
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4">
-        <div className={`relative w-full max-w-105 rounded-3xl p-5 shadow-2xl sm:p-7 ${panelClass}`}>
+      <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/65 p-3 sm:p-5">
+        <div className={`relative my-auto w-full max-w-3xl rounded-3xl p-4 shadow-2xl sm:p-7 ${panelClass}`}>
           <button type="button" onClick={onClose} className={`mb-5 inline-flex items-center gap-2 text-sm font-bold transition hover:text-[#f4510b] cursor-pointer ${mutedClass}`}>
             <ArrowLeft className="h-4 w-4" />
             Back
           </button>
 
-          <div className={`flex items-start gap-4 border-b pb-6 ${borderClass}`}>
+          <div className={`flex flex-col gap-4 border-b pb-6 sm:flex-row sm:items-start ${borderClass}`}>
             {accountPhotoUrl ? (
               <img src={accountPhotoUrl} alt="" className="h-20 w-20 shrink-0 rounded-2xl border-2 border-[#f6c58f] object-cover shadow-md" />
             ) : (
@@ -426,7 +474,26 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             </div>
           </div>
 
-          <div className="mt-5 grid grid-cols-2 gap-3">
+          {accountSection === 'profile' ? (
+            <form onSubmit={handleSaveProfile} className="mt-6 space-y-4">
+              <div className="flex items-center gap-3"><Pencil className="h-5 w-5 text-[#f4510b]" /><h3 className="text-lg font-black">Edit Profile</h3></div>
+              <label className="block"><span className={`mb-1.5 block text-xs font-bold ${mutedClass}`}>Name</span><input value={profileName} onChange={(event) => setProfileName(event.target.value)} className={`h-12 w-full rounded-xl border px-3 text-sm outline-none focus:border-[#f4510b] ${isDark ? 'border-[#3b3b3b] bg-[#242424] text-white' : 'border-[#e5e1df] bg-[#faf9f7] text-[#211e1d]'}`} /></label>
+              <label className="block"><span className={`mb-1.5 block text-xs font-bold ${mutedClass}`}>Profile picture URL</span><input type="url" value={profilePhoto} onChange={(event) => setProfilePhoto(event.target.value)} placeholder="https://..." className={`h-12 w-full rounded-xl border px-3 text-sm outline-none focus:border-[#f4510b] ${isDark ? 'border-[#3b3b3b] bg-[#242424] text-white' : 'border-[#e5e1df] bg-[#faf9f7] text-[#211e1d]'}`} /></label>
+              <div className={`rounded-xl border p-3 text-xs ${borderClass} ${mutedClass}`}>Email and phone number are managed by Firebase authentication. Email: <strong>{accountEmail || 'Not available'}</strong></div>
+              {profileMessage && <p className="text-xs font-semibold text-[#f4510b]">{profileMessage}</p>}
+              <div className="flex gap-2"><button type="button" onClick={() => setAccountSection('overview')} className={`flex-1 rounded-xl border px-4 py-3 text-sm font-bold ${borderClass}`}>Cancel</button><button type="submit" disabled={profileSaving} className="flex-1 rounded-xl bg-[#f4510b] px-4 py-3 text-sm font-bold text-white disabled:opacity-60">{profileSaving ? 'Saving...' : 'Save Profile'}</button></div>
+            </form>
+          ) : accountSection === 'security' ? (
+            <div className="mt-6 space-y-4">
+              <div className="flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-emerald-500" /><h3 className="text-lg font-black">Account Security</h3></div>
+              <div className={`rounded-2xl border p-4 ${borderClass} ${isDark ? 'bg-[#211f1c]' : 'bg-[#fff7ef]'}`}><p className="font-bold">Your account is protected</p><div className="mt-3 grid gap-2 text-sm"><span className={`flex items-center gap-2 ${emailVerified ? 'text-emerald-500' : mutedClass}`}><Check className="h-4 w-4" /> Email {emailVerified ? 'verified' : 'not verified'}</span><span className={`flex items-center gap-2 ${hasPhone ? 'text-emerald-500' : mutedClass}`}><Check className="h-4 w-4" /> Phone {hasPhone ? 'verified' : 'not verified'}</span><span className="flex items-center gap-2 text-emerald-500"><Check className="h-4 w-4" /> Secure sign-in enabled</span></div></div>
+              <div className={`rounded-xl border p-4 text-sm ${borderClass}`}><p className="font-bold">Login & Devices</p><p className={`mt-1 text-xs ${mutedClass}`}>This device is active. Firebase manages secure sessions.</p><button type="button" onClick={() => { onLogout(); showToast('Signed out of this device'); onClose(); }} className="mt-3 text-xs font-bold text-[#f4510b]">Sign out this device</button></div>
+              <button type="button" onClick={() => setAccountSection('overview')} className="text-sm font-bold text-[#f4510b]">Back to Account</button>
+            </div>
+          ) : null}
+
+          {accountSection === 'overview' && <>
+          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className={`rounded-2xl p-3 ${isDark ? 'bg-[#2a211a]' : 'bg-[#fff7ef]'}`}>
               <p className="text-[10px] font-bold uppercase tracking-wider text-[#a56c3c]">Account</p>
               <p className={`mt-1 text-sm font-bold ${isDark ? 'text-white' : 'text-[#3d3733]'}`}>Active</p>
@@ -435,7 +502,14 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               <p className="text-[10px] font-bold uppercase tracking-wider text-[#8b8581]">Shopping</p>
               <p className={`mt-1 text-sm font-bold ${isDark ? 'text-white' : 'text-[#3d3733]'}`}>Orders & cart</p>
             </div>
+            <button type="button" onClick={onOpenOrders} className={`rounded-2xl p-3 text-left ${isDark ? 'bg-[#242424]' : 'bg-[#f7f7f5]'}`}><p className="text-[10px] font-bold uppercase tracking-wider text-[#8b8581]">Orders</p><p className={`mt-1 text-sm font-bold ${isDark ? 'text-white' : 'text-[#3d3733]'}`}>{orderCount} orders</p></button>
+            <button type="button" onClick={onOpenCart} className={`rounded-2xl p-3 text-left ${isDark ? 'bg-[#242424]' : 'bg-[#f7f7f5]'}`}><p className="text-[10px] font-bold uppercase tracking-wider text-[#8b8581]">Cart</p><p className={`mt-1 text-sm font-bold ${isDark ? 'text-white' : 'text-[#3d3733]'}`}>{cartCount} items</p></button>
           </div>
+
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            {[['ACCOUNT', UserRound, [['Edit Profile', () => setAccountSection('profile')], ['Personal Information', () => setAccountSection('profile')], ['Saved Addresses', () => setAccountSection('profile')], ['Payment Methods', () => setAccountSection('security')], ['Security', () => setAccountSection('security')], ['Login & Devices', () => setAccountSection('security')]]], ['SHOPPING', ShoppingCart, [['My Orders', onOpenOrders], ['My Cart', onOpenCart], ['Wishlist', onOpenHelp], ['Recently Viewed', onOpenHelp], ['Buy Again', onOpenOrders]]], ['ORDERS', RotateCcw, [['Pending', onOpenOrders], ['Shipped', onOpenOrders], ['Delivered', onOpenOrders], ['Returns & Refunds', onOpenHelp]]], ['OTHER', Info, [['Notifications', onOpenHelp], ['Help & Support', onOpenHelp], ['Contact Us', onOpenHelp], ['Terms & Conditions', () => setLegalDocument('terms')], ['Privacy Policy', () => setLegalDocument('privacy')], ['About NeoMart', () => setLegalDocument('terms')]]]].map(([title, Icon, items]) => <section key={title as string} className={`rounded-2xl border p-4 ${borderClass}`}><div className="mb-3 flex items-center gap-2 text-[#f4510b]"><Icon className="h-4 w-4" /><h3 className="text-xs font-black tracking-widest">{title as string}</h3></div>{(items as Array<[string, (() => void) | undefined]>).map(([label, action]) => <button key={label} type="button" onClick={() => action?.()} className={`flex w-full items-center justify-between border-b py-2.5 text-left text-sm last:border-b-0 ${borderClass} hover:text-[#f4510b]`}><span>{label}</span><ChevronRight className="h-4 w-4" /></button>)}</section>)}
+          </div>
+          </>}
 
           <div className="mt-6 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-xs text-emerald-700">
