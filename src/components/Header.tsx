@@ -239,7 +239,7 @@ export const Header: React.FC<HeaderProps> = ({
                 title={isLoggedIn ? accountName || 'Account' : 'Account'}
               >
                 {accountPhotoUrl ? <img src={accountPhotoUrl} alt="" className="h-6 w-6 rounded-full object-cover" /> : <User className="w-5 h-5" />}
-                <span className="w-full text-center truncate text-[9px] font-medium leading-tight">
+                <span className="h-5 w-full overflow-hidden text-center text-[9px] font-semibold leading-[10px] break-words">
                   {isLoggedIn ? (accountName || 'Account') : 'Account'}
                 </span>
               </button>
