@@ -100,6 +100,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     return () => window.removeEventListener('pageshow', handlePageShow);
   }, []);
 
+  useEffect(() => {
+    if (resendCountdown <= 0) return;
+    const timer = window.setInterval(() => setResendCountdown((value) => Math.max(0, value - 1)), 1000);
+    return () => window.clearInterval(timer);
+  }, [resendCountdown]);
+
   if (!isOpen) return null;
 
   const isDark = theme === 'dark';
@@ -250,12 +256,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     }
     await handleGoogleSignIn();
   };
-
-  useEffect(() => {
-    if (resendCountdown <= 0) return;
-    const timer = window.setInterval(() => setResendCountdown((value) => Math.max(0, value - 1)), 1000);
-    return () => window.clearInterval(timer);
-  }, [resendCountdown]);
 
   const normalizedPhone = () => {
     const digits = phoneNumber.replace(/\D/g, '').replace(/^0+/, '');
