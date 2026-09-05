@@ -242,6 +242,9 @@ export default function App() {
       setCurrentUserEmail('');
       setAccountName('');
       setAccountPhotoUrl('');
+      setCart([]);
+      setOrders([]);
+      setCustomerOrderIds([]);
       localStorage.removeItem('neomart_logged_in');
       localStorage.removeItem('neomart_user_email');
       localStorage.removeItem('neomart_account_name');
@@ -265,12 +268,7 @@ export default function App() {
 
   // Cart state
   const [cart, setCart] = useState<CartItem[]>(() => {
-    try {
-      const saved = localStorage.getItem('neomart_cart');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
+    return [];
   });
   const [isCartOpen, setIsCartOpen] = useState(false);
 
@@ -287,25 +285,7 @@ export default function App() {
 
   // Orders state
   const [orders, setOrders] = useState<Order[]>(() => {
-    try {
-      const saved = localStorage.getItem('neomart_orders');
-      const storedOrders: Order[] = saved
-        ? (JSON.parse(saved) as Order[]).filter(
-            (order) => !sampleOrders.some((sampleOrder) => sampleOrder.id === order.id)
-          )
-        : [];
-      return storedOrders.map((order) =>
-        order.phone === SUPPORT_PHONE ? { ...order, phone: '' } : order
-      ).map((order) =>
-        !order.paymentConfirmed &&
-        order.paymentMethod !== 'Payment on Delivery' &&
-        (order.status === 'Out for Delivery' || order.status === 'Order Confirmed')
-          ? { ...order, status: 'Processing', paymentConfirmed: false }
-          : order
-      );
-    } catch {
-      return [];
-    }
+    return [];
   });
   const [isOrderTrackingOpen, setIsOrderTrackingOpen] = useState(Boolean(trackingPathOrderId));
   const [trackingOrderId, setTrackingOrderId] = useState<string | null>(trackingPathOrderId);
@@ -335,14 +315,7 @@ export default function App() {
       const [isOrderHistoryOpen, setIsOrderHistoryOpen] = useState(false);
       const [isSalesReportOpen, setIsSalesReportOpen] = useState(false);
       const [isCustomerManagementOpen, setIsCustomerManagementOpen] = useState(false);
-      const [customerOrderIds, setCustomerOrderIds] = useState<string[]>(() => {
-        try {
-          const saved = localStorage.getItem('neomart_customer_order_ids');
-          return saved ? JSON.parse(saved) : [];
-        } catch {
-          return [];
-        }
-      });
+      const [customerOrderIds, setCustomerOrderIds] = useState<string[]>([]);
     const [stockLevels, setStockLevels] = useState<Record<number, number>>(() => {
       try {
         const saved = localStorage.getItem('neomart_stock_levels');
@@ -416,6 +389,7 @@ export default function App() {
   const edgeSwipeStartRef = useRef<{ x: number; y: number; target: EventTarget | null } | null>(null);
   const edgeSwipeOffsetRef = useRef(0);
   const [edgeSwipeOffset, setEdgeSwipeOffset] = useState(0);
+  const loadedStorageUidRef = useRef<string | null>(null);
   const [platform] = useState<'ios' | 'android' | 'desktop'>(() => {
     const userAgent = navigator.userAgent;
     if (/iPad|iPhone|iPod/.test(userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) return 'ios';
@@ -694,10 +668,35 @@ export default function App() {
     localStorage.setItem('neomart_theme', theme);
   }, [theme]);
 
+  // Keep browser-only customer data isolated by Firebase UID.
+  useEffect(() => {
+    if (!currentUserUid) {
+      loadedStorageUidRef.current = null;
+      setCart([]);
+      setOrders([]);
+      setCustomerOrderIds([]);
+      return;
+    }
+    const read = <T,>(key: string, fallback: T): T => {
+      try {
+        const saved = localStorage.getItem(`neomart_${key}_${currentUserUid}`);
+        return saved ? JSON.parse(saved) as T : fallback;
+      } catch {
+        return fallback;
+      }
+    };
+    setCart(read<CartItem[]>('cart', []));
+    setOrders(read<Order[]>('orders', []).filter((order) => !sampleOrders.some((sampleOrder) => sampleOrder.id === order.id)));
+    setCustomerOrderIds(read<string[]>('customer_order_ids', []));
+    loadedStorageUidRef.current = currentUserUid;
+  }, [currentUserUid]);
+
   // Sync cart
   useEffect(() => {
-    localStorage.setItem('neomart_cart', JSON.stringify(cart));
-  }, [cart]);
+    if (loadedStorageUidRef.current === currentUserUid && currentUserUid) {
+      localStorage.setItem(`neomart_cart_${currentUserUid}`, JSON.stringify(cart));
+    }
+  }, [cart, currentUserUid]);
 
   // Sync reviews
   useEffect(() => {
@@ -706,8 +705,16 @@ export default function App() {
 
   // Sync orders
   useEffect(() => {
-    localStorage.setItem('neomart_orders', JSON.stringify(orders));
-  }, [orders]);
+    if (loadedStorageUidRef.current === currentUserUid && currentUserUid) {
+      localStorage.setItem(`neomart_orders_${currentUserUid}`, JSON.stringify(orders));
+    }
+  }, [orders, currentUserUid]);
+
+  useEffect(() => {
+    if (loadedStorageUidRef.current === currentUserUid && currentUserUid) {
+      localStorage.setItem(`neomart_customer_order_ids_${currentUserUid}`, JSON.stringify(customerOrderIds));
+    }
+  }, [customerOrderIds, currentUserUid]);
 
   // Keep customer and admin order lists synchronized across devices when Firebase is configured.
   useEffect(() => {
@@ -1119,7 +1126,6 @@ export default function App() {
     lastPlacedOrderIdRef.current = newOrderId;
     setCustomerOrderIds((previous) => {
       const updatedIds = [newOrderId, ...previous.filter((id) => id !== newOrderId)];
-      localStorage.setItem('neomart_customer_order_ids', JSON.stringify(updatedIds));
       return updatedIds;
     });
     const updated = [newOrder, ...orders];
@@ -2235,10 +2241,16 @@ export default function App() {
         onLogout={() => {
           void signOutUser();
           setIsLoggedIn(false);
+          setIsCartOpen(false);
+          setIsCheckoutOpen(false);
+          setIsLoginOpen(false);
           setCurrentUserUid('');
           setCurrentUserEmail('');
           setAccountName('');
           setAccountPhotoUrl('');
+          setCart([]);
+          setOrders([]);
+          setCustomerOrderIds([]);
           setIsAdminOpen(false);
           localStorage.removeItem('neomart_logged_in');
           localStorage.removeItem('neomart_user_email');
