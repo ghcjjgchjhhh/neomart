@@ -1014,6 +1014,11 @@ export default function App() {
 
   // Checkout flow
   const handleStartCheckout = () => {
+    if (!isLoggedIn || !auth?.currentUser || auth.currentUser.isAnonymous) {
+      showToast('Please sign in before checkout');
+      setIsLoginOpen(true);
+      return;
+    }
     openingCheckoutRef.current = true;
     setIsCheckoutOpen(true);
   };
@@ -1041,6 +1046,12 @@ export default function App() {
     _deliveryDetails?: DeliveryDetails,
     discountAmount = 0
   ) => {
+    if (!isLoggedIn || !auth?.currentUser || auth.currentUser.isAnonymous) {
+      setIsCheckoutOpen(false);
+      showToast('Please sign in before placing an order');
+      setIsLoginOpen(true);
+      return;
+    }
     setLastPaymentMethod(method);
 
     const unavailableItem = cart.find((item) => item.qty > getStockLevel(item.id));
