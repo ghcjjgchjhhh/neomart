@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, Check, Eye, EyeOff, Headphones, LockKeyhole, LogOut, Mail, Package, ShieldCheck, Tag, Truck, X } from 'lucide-react';
-import { sendPasswordResetEmail, signInWithGoogle } from '../config/firebase';
+import { sendPasswordResetEmail, signInWithEmailPassword, signInWithGoogle } from '../config/firebase';
 import { NeoMartLogo } from './NeoMartLogo';
 import { LegalModal } from './LegalModal';
 
@@ -99,20 +99,39 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     event.preventDefault();
     const value = identifier.trim();
     const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-    const phone = value.replace(/\D/g, '');
-    const isPhone = phone.length >= 10 && phone.length <= 15;
 
-    if (!value || (!isEmail && !isPhone)) {
-      showToast('Please enter a valid email address or mobile number');
+    if (!value || !isEmail) {
+      showToast('Please enter a valid email address');
+      return;
+    }
+
+    if (!password) {
+      showToast('Please enter your password');
       return;
     }
 
     setLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    await onLoginSuccess(value, value.includes('@') ? value.split('@')[0] : undefined);
-    setLoading(false);
-    showToast('Login successful! Welcome back');
-    onClose();
+    try {
+      const user = await signInWithEmailPassword(value, password);
+      await onLoginSuccess(user.email || user.uid, user.displayName || value.split('@')[0], user.photoURL || undefined);
+      showToast('Login successful! Welcome back');
+      onClose();
+    } catch (error: unknown) {
+      const code = typeof error === 'object' && error !== null && 'code' in error ? String(error.code) : '';
+      if (code === 'auth/invalid-credential' || code === 'auth/user-not-found' || code === 'auth/wrong-password') {
+        showToast('Incorrect email or password');
+      } else if (code === 'auth/operation-not-allowed') {
+        showToast('Email and password sign-in is not enabled yet. Please use Google sign-in or contact support.');
+      } else if (code === 'auth/too-many-requests') {
+        showToast('Too many attempts. Please wait a moment and try again.');
+      } else if (code === 'auth/network-request-failed') {
+        showToast('Unable to connect right now. Check your internet connection and try again.');
+      } else {
+        showToast('We could not sign you in right now. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handlePasswordReset = async (event: React.FormEvent) => {
