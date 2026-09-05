@@ -10,7 +10,7 @@ import {
   Lock
 } from 'lucide-react';
 import { CartItem, PaymentMethodType, DeliveryDetails, SavedAddress } from '../types';
-import { nigerianStates, stateCities } from '../data/locations';
+import { getLocalGovernmentAreas, nigerianStates } from '../data/locations';
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -41,8 +41,14 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [delivery, setDelivery] = useState<DeliveryDetails>({
     fullName: '',
     state: '',
+    lga: '',
     city: '',
     address: '',
+    town: '',
+    street: '',
+    houseNumber: '',
+    apartment: '',
+    landmark: '',
     phone: '',
     country: 'Nigeria',
     notes: ''
@@ -65,6 +71,13 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [showStateDropdown, setShowStateDropdown] = useState(false);
   const [citySearch, setCitySearch] = useState('');
   const [showCityDropdown, setShowCityDropdown] = useState(false);
+  const [lgaSearch, setLgaSearch] = useState('');
+  const [showLgaDropdown, setShowLgaDropdown] = useState(false);
+  const [townSearch, setTownSearch] = useState('');
+  const [townSuggestions, setTownSuggestions] = useState<string[]>([]);
+  const [streetSearch, setStreetSearch] = useState('');
+  const [streetSuggestions, setStreetSuggestions] = useState<Array<{ name: string; street: string; city: string; displayName: string }>>([]);
+  const [locationLoading, setLocationLoading] = useState(false);
 
   if (!isOpen) return null;
 
@@ -80,10 +93,40 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     s.toLowerCase().includes(stateSearch.toLowerCase())
   );
 
-  const availableCities = delivery.state ? stateCities[delivery.state] || [delivery.state] : [];
-  const filteredCities = availableCities.filter((c) =>
-    c.toLowerCase().includes(citySearch.toLowerCase())
-  );
+  const availableLgas = delivery.state ? getLocalGovernmentAreas(delivery.state) : [];
+  const filteredLgas = availableLgas.filter((lga) => lga.toLowerCase().includes(lgaSearch.toLowerCase()));
+
+  useEffect(() => {
+    if (!delivery.state || !delivery.lga || townSearch.trim().length < 2) {
+      setTownSuggestions([]);
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      setLocationLoading(true);
+      void fetch(`/api/geocode?q=${encodeURIComponent(townSearch)}&state=${encodeURIComponent(delivery.state)}&lga=${encodeURIComponent(delivery.lga || '')}`)
+        .then((result) => result.ok ? result.json() : { suggestions: [] })
+        .then((data) => setTownSuggestions([...new Set((data.suggestions || []).map((item: { city?: string; name?: string }) => item.city || item.name).filter(Boolean))] as string[]))
+        .catch(() => setTownSuggestions([]))
+        .finally(() => setLocationLoading(false));
+    }, 500);
+    return () => window.clearTimeout(timer);
+  }, [delivery.state, delivery.lga, townSearch]);
+
+  useEffect(() => {
+    if (!delivery.state || !delivery.lga || !delivery.city || streetSearch.trim().length < 2) {
+      setStreetSuggestions([]);
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      setLocationLoading(true);
+      void fetch(`/api/geocode?q=${encodeURIComponent(streetSearch)}&state=${encodeURIComponent(delivery.state)}&lga=${encodeURIComponent(delivery.lga || '')}&city=${encodeURIComponent(delivery.city)}`)
+        .then((result) => result.ok ? result.json() : { suggestions: [] })
+        .then((data) => setStreetSuggestions(data.suggestions || []))
+        .catch(() => setStreetSuggestions([]))
+        .finally(() => setLocationLoading(false));
+    }, 500);
+    return () => window.clearTimeout(timer);
+  }, [delivery.state, delivery.lga, delivery.city, streetSearch]);
 
   const handleSubmitOrder = (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,11 +145,15 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       return;
     }
     if (!delivery.city) {
-      showToast('Please select your City / LGA');
+      showToast('Please select your town or city');
       return;
     }
-    if (!delivery.address.trim()) {
-      showToast('Please enter your delivery street address');
+    if (!delivery.lga) {
+      showToast('Please select your local government area');
+      return;
+    }
+    if (!delivery.street?.trim() || !delivery.houseNumber?.trim()) {
+      showToast('Please select a street and enter your house or building number');
       return;
     }
     if (!delivery.phone.trim() || delivery.phone.replace(/\D/g, '').length < 10) {
@@ -118,10 +165,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       return;
     }
 
+    const finalAddress = [delivery.street, `House ${delivery.houseNumber}`, delivery.apartment && `Apartment ${delivery.apartment}`, delivery.landmark && `Near ${delivery.landmark}`].filter(Boolean).join(', ');
+    const completedDelivery = { ...delivery, address: finalAddress, town: delivery.city };
     setIsProcessing(true);
     setTimeout(() => {
       setIsProcessing(false);
-      onCompleteOrder(paymentMethod, paymentMethod === 'delivery' ? delivery : undefined, discount);
+      onCompleteOrder(paymentMethod, paymentMethod === 'delivery' ? completedDelivery : undefined, discount);
     }, 1000);
   };
 
@@ -190,6 +239,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   onClick={() => {
                     setShowStateDropdown(!showStateDropdown);
                     setShowCityDropdown(false);
+                    setShowLgaDropdown(false);
                   }}
                   className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#18181b] text-gray-800 dark:text-gray-200 flex justify-between items-center text-left cursor-pointer"
                 >
@@ -214,7 +264,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                       <button
                         key={st}
                         onClick={() => {
-                          setDelivery({ ...delivery, state: st, city: '' });
+                          setDelivery({ ...delivery, state: st, lga: '', city: '', town: '', street: '', address: '' });
                           setShowStateDropdown(false);
                         }}
                         className="w-full text-left px-3 py-1.5 hover:bg-[#fff3e0] dark:hover:bg-[#2a1a00] text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-800 last:border-0 cursor-pointer text-xs"
@@ -226,47 +276,47 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 )}
               </div>
 
-              {/* City Picker */}
+              {/* LGA Picker */}
               <div className="relative">
                 <label className="block font-semibold text-gray-600 dark:text-gray-400 mb-1 text-[11px]">
-                  City / LGA
+                  Local Government Area
                 </label>
                 <button
                   type="button"
                   onClick={() => {
-                    setShowCityDropdown(!showCityDropdown);
+                    setShowLgaDropdown(!showLgaDropdown);
                     setShowStateDropdown(false);
                   }}
                   className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#18181b] text-gray-800 dark:text-gray-200 flex justify-between items-center text-left cursor-pointer"
                 >
-                  <span className="truncate">{delivery.city || 'Select City / LGA'}</span>
+                  <span className="truncate">{delivery.lga || 'Select LGA / Area Council'}</span>
                   <ChevronDown className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                 </button>
 
-                {showCityDropdown && (
+                {showLgaDropdown && (
                   <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#18181b] border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl z-30 max-h-44 overflow-y-auto">
                     <div className="p-2 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2">
                       <Search className="w-3.5 h-3.5 text-gray-400" />
                       <input
                         type="text"
-                        value={citySearch}
-                        onChange={(e) => setCitySearch(e.target.value)}
-                        placeholder="Search city..."
+                        value={lgaSearch}
+                        onChange={(e) => setLgaSearch(e.target.value)}
+                        placeholder="Search LGA..."
                         className="w-full text-xs bg-transparent focus:outline-none text-gray-800 dark:text-gray-200"
                         autoFocus
                       />
                     </div>
-                    {filteredCities.map((ct) => (
+                    {filteredLgas.map((lga) => (
                       <button
-                        key={ct}
+                        key={lga}
                         type="button"
                         onClick={() => {
-                          setDelivery({ ...delivery, city: ct });
-                          setShowCityDropdown(false);
+                          setDelivery({ ...delivery, lga, city: '', town: '', street: '', address: '' });
+                          setShowLgaDropdown(false);
                         }}
                         className="w-full text-left px-3 py-1.5 hover:bg-[#fff3e0] dark:hover:bg-[#2a1a00] text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-800 last:border-0 cursor-pointer text-xs"
                       >
-                        {ct}
+                        {lga}
                       </button>
                     ))}
                   </div>
@@ -274,19 +324,21 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               </div>
             </div>
 
-            {/* Street Address */}
+            <div className="relative">
+              <label className="block font-semibold text-gray-600 dark:text-gray-400 mb-1 text-[11px]">Town / City / Community</label>
+              <input type="text" value={delivery.city || ''} disabled={!delivery.lga} onChange={(event) => { setDelivery({ ...delivery, city: event.target.value, town: event.target.value, street: '', address: '' }); setTownSearch(event.target.value); }} placeholder={delivery.lga ? 'Search town or city' : 'Select an LGA first'} className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#18181b] text-gray-800 dark:text-gray-200 focus:outline-none focus:border-[#f68b1e] disabled:opacity-50" />
+              {townSuggestions.length > 0 && <div className="absolute left-0 right-0 top-full z-30 mt-1 max-h-44 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-[#18181b]">{townSuggestions.map((town) => <button key={town} type="button" onClick={() => { setDelivery({ ...delivery, city: town, town, street: '', address: '' }); setTownSearch(town); setTownSuggestions([]); }} className="block w-full border-b border-gray-100 px-3 py-2 text-left text-xs text-gray-700 hover:bg-[#fff3e0] dark:border-gray-800 dark:text-gray-300 dark:hover:bg-[#2a1a00]">{town}</button>)}</div>}
+              {locationLoading && <span className="mt-1 block text-[10px] text-gray-400">Searching verified map data...</span>}
+            </div>
+
+            {/* Street and Building */}
             <div>
-              <label className="block font-semibold text-gray-600 dark:text-gray-400 mb-1 text-[11px]">
-                Street Address &amp; House Number
-              </label>
-              <input
-                type="text"
-                required
-                value={delivery.address}
-                onChange={(e) => setDelivery({ ...delivery, address: e.target.value })}
-                placeholder="Street address, house/flat number, landmarks"
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#18181b] text-gray-800 dark:text-gray-200 focus:outline-none focus:border-[#f68b1e]"
-              />
+              <label className="block font-semibold text-gray-600 dark:text-gray-400 mb-1 text-[11px]">Street</label>
+              <input type="text" value={delivery.street || ''} disabled={!delivery.city} onChange={(event) => { setDelivery({ ...delivery, street: event.target.value, address: event.target.value }); setStreetSearch(event.target.value); }} placeholder={delivery.city ? 'Search street' : 'Select a town or city first'} className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#18181b] text-gray-800 dark:text-gray-200 focus:outline-none focus:border-[#f68b1e] disabled:opacity-50" />
+              {streetSuggestions.length > 0 && <div className="relative z-30 mt-1 max-h-44 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-[#18181b]">{streetSuggestions.map((suggestion) => <button key={`${suggestion.displayName}-${suggestion.street}`} type="button" onClick={() => { setDelivery({ ...delivery, street: suggestion.street || suggestion.name, address: suggestion.street || suggestion.name }); setStreetSearch(suggestion.street || suggestion.name); setStreetSuggestions([]); }} className="block w-full border-b border-gray-100 px-3 py-2 text-left text-xs text-gray-700 hover:bg-[#fff3e0] dark:border-gray-800 dark:text-gray-300 dark:hover:bg-[#2a1a00]">{suggestion.name}<span className="mt-0.5 block truncate text-[10px] text-gray-400">{suggestion.displayName}</span></button>)}</div>}
+              <div className="mt-3 grid gap-3 sm:grid-cols-2"><input type="text" value={delivery.houseNumber || ''} onChange={(event) => setDelivery({ ...delivery, houseNumber: event.target.value })} placeholder="House / building number" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-800 dark:border-gray-700 dark:bg-[#18181b] dark:text-gray-200" /><input type="text" value={delivery.apartment || ''} onChange={(event) => setDelivery({ ...delivery, apartment: event.target.value })} placeholder="Apartment / suite (optional)" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-800 dark:border-gray-700 dark:bg-[#18181b] dark:text-gray-200" /></div>
+              <input type="text" value={delivery.landmark || ''} onChange={(event) => setDelivery({ ...delivery, landmark: event.target.value })} placeholder="Landmark (optional)" className="mt-3 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-800 dark:border-gray-700 dark:bg-[#18181b] dark:text-gray-200" />
+              <p className="mt-2 text-[10px] text-gray-400">Street suggestions use OpenStreetMap data. <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer" className="underline">Attribution</a></p>
             </div>
 
             {/* Phone */}

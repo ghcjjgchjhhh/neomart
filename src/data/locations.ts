@@ -1,47 +1,13 @@
-export const nigerianStates: string[] = [
-  'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno',
-  'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'FCT Abuja', 'Gombe',
-  'Imo', 'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos',
-  'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers', 'Sokoto',
-  'Taraba', 'Yobe', 'Zamfara'
-];
+import { getLGAsByState, getStateByName, getStates } from '@some19ice/nigeria-geo-core';
 
-export const stateCities: Record<string, string[]> = {
-  Abia: ['Aba', 'Umuahia', 'Ohafia', 'Nsukka'],
-  Adamawa: ['Yola', 'Mubi', 'Numan', 'Jimeta'],
-  'Akwa Ibom': ['Uyo', 'Eket', 'Ikot Ekpene', 'Oron'],
-  Anambra: ['Awka', 'Onitsha', 'Nnewi', 'Ekwulobia'],
-  Bauchi: ['Bauchi', 'Azare', 'Katagum', 'Misau'],
-  Bayelsa: ['Yenagoa', 'Brass', 'Ogbia', 'Sagbama'],
-  Benue: ['Makurdi', 'Otukpo', 'Gboko', 'Katsina-Ala'],
-  Borno: ['Maiduguri', 'Biu', 'Dikwa', 'Kaga'],
-  'Cross River': ['Calabar', 'Ugep', 'Ogoja', 'Ikom'],
-  Delta: ['Asaba', 'Warri', 'Ughelli', 'Sapele'],
-  Ebonyi: ['Abakaliki', 'Afikpo', 'Onueke', 'Ishielu'],
-  Edo: ['Benin City', 'Auchi', 'Ekpoma', 'Uromi'],
-  Ekiti: ['Ado-Ekiti', 'Ikere', 'Ijero', 'Efon Alaaye'],
-  Enugu: ['Enugu', 'Nsukka', 'Agbani', 'Awgu'],
-  'FCT Abuja': ['Garki', 'Wuse', 'Maitama', 'Gwagwalada', 'Kuje', 'Kubwa', 'Jabi'],
-  Gombe: ['Gombe', 'Kumo', 'Dukku', 'Bajoga'],
-  Imo: ['Owerri', 'Orlu', 'Okigwe', 'Mbaise'],
-  Jigawa: ['Dutse', 'Hadejia', 'Gumel', 'Birnin Kudu'],
-  Kaduna: ['Kaduna', 'Zaria', 'Kafanchan', 'Soba'],
-  Kano: ['Kano', 'Kazaure', 'Rano', 'Wudil', 'Nassarawa'],
-  Katsina: ['Katsina', 'Funtua', 'Daura', 'Jibia'],
-  Kebbi: ['Birnin Kebbi', 'Argungu', 'Yauri', 'Zuru'],
-  Kogi: ['Lokoja', 'Okene', 'Anyigba', 'Kabba'],
-  Kwara: ['Ilorin', 'Offa', 'Jebba', 'Kaiama'],
-  Lagos: ['Ikeja', 'Lekki Phase 1', 'Victoria Island', 'Surulere', 'Yaba', 'Ajah (Sangotedo)', 'Ikorodu', 'Alimosho'],
-  Nasarawa: ['Lafia', 'Keffi', 'Akwanga', 'Doma'],
-  Niger: ['Minna', 'Bida', 'Kontagora', 'Suleja'],
-  Ogun: ['Abeokuta', 'Sagamu', 'Ijebu-Ode', 'Owode', 'Ota'],
-  Ondo: ['Akure', 'Ondo', 'Ikare', 'Owo'],
-  Osun: ['Osogbo', 'Ile-Ife', 'Ikirun', 'Ede'],
-  Oyo: ['Ibadan', 'Ogbomoso', 'Saki', 'Iseyin', 'Bodija'],
-  Plateau: ['Jos', 'Bukuru', 'Pankshin', 'Mangu'],
-  Rivers: ['Port Harcourt', 'Bonny', 'Ahoada', 'Obio-Akpor'],
-  Sokoto: ['Sokoto', 'Gwadabawa', 'Tambuwal', 'Binji'],
-  Taraba: ['Jalingo', 'Wukari', 'Serti', 'Gembu'],
-  Yobe: ['Damaturu', 'Potiskum', 'Nguru', 'Gashua'],
-  Zamfara: ['Gusau', 'Kaura Namoda', 'Talata Mafara', 'Maru']
+export const nigerianStates = getStates().map((state) => state.name);
+
+export const getStateId = (stateName: string) => getStateByName(stateName)?.id || '';
+
+export const getLocalGovernmentAreas = (stateName: string) => {
+  const stateId = getStateId(stateName);
+  return getLGAsByState(stateId).map((lga) => lga.name);
 };
+
+// Kept as a compatibility export for older consumers. New checkout code uses the LGA API above.
+export const stateCities: Record<string, string[]> = {};

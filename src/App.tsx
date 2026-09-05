@@ -1071,7 +1071,7 @@ export default function App() {
     const calculatedTotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
 
     const fullAddress = _deliveryDetails?.address
-      ? `${_deliveryDetails.address}, ${_deliveryDetails.city}, ${_deliveryDetails.state}, ${_deliveryDetails.country || 'Nigeria'}`
+      ? `${_deliveryDetails.country || 'Nigeria'}, ${_deliveryDetails.state}, ${_deliveryDetails.lga || ''}, ${_deliveryDetails.city}, ${_deliveryDetails.address}`.replace(/, ,/g, ',')
       : 'Plot 8, Sangotedo, Lekki-Epe Expressway, Lagos';
 
     const newOrder: Order = {

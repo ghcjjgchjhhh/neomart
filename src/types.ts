@@ -101,8 +101,14 @@ export type PaymentMethodType = 'bank' | 'card' | 'delivery';
 export interface DeliveryDetails {
   fullName?: string;
   state: string;
+  lga?: string;
   city: string;
   address: string;
+  town?: string;
+  street?: string;
+  houseNumber?: string;
+  apartment?: string;
+  landmark?: string;
   phone: string;
   country?: string;
   notes?: string;
