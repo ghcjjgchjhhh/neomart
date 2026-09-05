@@ -14,7 +14,7 @@ interface LoginModalProps {
 }
 
 const GoogleIcon = () => (
-  <svg className="h-7 w-7" viewBox="0 0 24 24" aria-hidden="true">
+  <svg className="h-6 w-6" viewBox="0 0 24 24" aria-hidden="true">
     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
     <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
     <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
@@ -104,58 +104,58 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/65 p-0 sm:p-5">
-      <div className="relative my-auto w-full max-w-105 rounded-3xl bg-white px-6 py-8 text-[#211e1d] shadow-2xl sm:px-8 sm:py-9">
-        <button onClick={onClose} aria-label="Close" className="absolute right-4 top-4 flex h-11 w-11 items-center justify-center rounded-full bg-[#f5f5f3] text-[#5d5a58] transition hover:bg-[#ececea] cursor-pointer sm:right-5 sm:top-5">
-          <X className="h-6 w-6" strokeWidth={2.2} />
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/65 p-4 sm:p-5">
+      <div className="relative my-auto w-full max-w-95 rounded-3xl bg-white px-5 py-6 text-[#211e1d] shadow-2xl sm:px-7 sm:py-7">
+        <button onClick={onClose} aria-label="Close" className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-[#f5f5f3] text-[#5d5a58] transition hover:bg-[#ececea] cursor-pointer sm:right-4 sm:top-4">
+          <X className="h-5 w-5" strokeWidth={2.2} />
         </button>
 
         <div className="flex justify-center">
-          <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-linear-to-br from-[#ff9d00] to-[#f4510b] shadow-[0_10px_18px_rgba(244,81,11,0.2)]">
-            <NeoMartLogo size="xl" showText={false} />
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-linear-to-br from-[#ff9d00] to-[#f4510b] shadow-[0_8px_15px_rgba(244,81,11,0.2)]">
+            <NeoMartLogo size="lg" showText={false} />
           </div>
         </div>
 
-        <h1 className="mt-7 text-center text-[1.8rem] font-black leading-tight tracking-tight sm:text-[2.15rem]">Welcome to NeoMart</h1>
-        <p className="mx-auto mt-2 max-w-90 text-center text-[1rem] leading-6 text-[#77716e] sm:text-[1.1rem]">Sign in to access your saved carts, orders, and rewards.</p>
+        <h1 className="mt-5 text-center text-[1.55rem] font-black leading-tight tracking-tight sm:text-[1.9rem]">Welcome to NeoMart</h1>
+        <p className="mx-auto mt-2 max-w-80 text-center text-[0.9rem] leading-5 text-[#77716e] sm:text-[1rem]">Sign in to access your saved carts, orders, and rewards.</p>
 
-        <button type="button" onClick={handleGoogleSignIn} disabled={loading} className="mt-8 flex h-16 w-full items-center justify-center gap-4 rounded-2xl border-2 border-[#d8d5d3] bg-white text-[1.15rem] font-semibold shadow-[0_3px_6px_rgba(0,0,0,0.08)] transition hover:bg-[#fffaf7] disabled:opacity-60 cursor-pointer sm:text-[1.3rem]">
+        <button type="button" onClick={handleGoogleSignIn} disabled={loading} className="mt-6 flex h-14 w-full items-center justify-center gap-3 rounded-2xl border-2 border-[#d8d5d3] bg-white text-[1rem] font-semibold shadow-[0_3px_6px_rgba(0,0,0,0.08)] transition hover:bg-[#fffaf7] disabled:opacity-60 cursor-pointer sm:text-[1.15rem]">
           <GoogleIcon />
           <span>{loading ? 'Connecting...' : 'Continue with Google'}</span>
         </button>
 
-        <div className="my-8 flex items-center gap-3 text-[0.9rem] font-medium text-[#aaa6a4] sm:gap-4 sm:text-[1rem]">
+        <div className="my-6 flex items-center gap-2 text-[0.75rem] font-medium text-[#aaa6a4] sm:gap-3 sm:text-[0.85rem]">
           <span className="h-px flex-1 bg-[#ddd9d7]" />
           <span>OR WITH EMAIL</span>
           <span className="h-px flex-1 bg-[#ddd9d7]" />
         </div>
 
-        <form onSubmit={handleEmailSignIn} className="space-y-5">
+        <form onSubmit={handleEmailSignIn} className="space-y-4">
           <label className="block">
-            <span className="mb-2 block text-[0.9rem] font-extrabold uppercase tracking-wide text-[#494542]">Email address</span>
-            <span className="flex h-14 items-center gap-3 rounded-2xl border-2 border-[#d9d6d4] px-4 text-[#9b9693] focus-within:border-[#f4510b]">
-              <Mail className="h-6 w-6 shrink-0" strokeWidth={1.8} />
-              <input type="text" value={identifier} onChange={(event) => setIdentifier(event.target.value)} placeholder="you@example.com" className="w-full bg-transparent text-[1rem] text-[#302d2b] outline-none placeholder:text-[#aaa6a4] sm:text-[1.1rem]" />
+            <span className="mb-1.5 block text-[0.78rem] font-extrabold uppercase tracking-wide text-[#494542]">Email address</span>
+            <span className="flex h-12 items-center gap-3 rounded-xl border-2 border-[#d9d6d4] px-3.5 text-[#9b9693] focus-within:border-[#f4510b]">
+              <Mail className="h-5 w-5 shrink-0" strokeWidth={1.8} />
+              <input type="text" value={identifier} onChange={(event) => setIdentifier(event.target.value)} placeholder="you@example.com" className="w-full bg-transparent text-[0.9rem] text-[#302d2b] outline-none placeholder:text-[#aaa6a4] sm:text-[1rem]" />
             </span>
           </label>
 
           <label className="block">
-            <span className="mb-2 block text-[0.9rem] font-extrabold uppercase tracking-wide text-[#494542]">Password</span>
-            <span className="flex h-14 items-center gap-3 rounded-2xl border-2 border-[#d9d6d4] px-4 text-[#9b9693] focus-within:border-[#f4510b]">
-              <LockKeyhole className="h-6 w-6 shrink-0" strokeWidth={1.8} />
-              <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="••••••••" className="w-full bg-transparent text-[1rem] text-[#302d2b] outline-none placeholder:text-[#aaa6a4] sm:text-[1.1rem]" />
+            <span className="mb-1.5 block text-[0.78rem] font-extrabold uppercase tracking-wide text-[#494542]">Password</span>
+            <span className="flex h-12 items-center gap-3 rounded-xl border-2 border-[#d9d6d4] px-3.5 text-[#9b9693] focus-within:border-[#f4510b]">
+              <LockKeyhole className="h-5 w-5 shrink-0" strokeWidth={1.8} />
+              <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="••••••••" className="w-full bg-transparent text-[0.9rem] text-[#302d2b] outline-none placeholder:text-[#aaa6a4] sm:text-[1rem]" />
             </span>
           </label>
 
-          <button type="submit" disabled={loading} className="h-16 w-full rounded-2xl bg-[#f4510b] text-[1.35rem] font-extrabold text-white shadow-[0_7px_12px_rgba(244,81,11,0.25)] transition hover:bg-[#df4608] disabled:opacity-70 cursor-pointer">
+          <button type="submit" disabled={loading} className="h-14 w-full rounded-xl bg-[#f4510b] text-[1.2rem] font-extrabold text-white shadow-[0_7px_12px_rgba(244,81,11,0.25)] transition hover:bg-[#df4608] disabled:opacity-70 cursor-pointer">
             {loading ? 'Signing In...' : 'Sign In'}
           </button>
         </form>
 
-        <p className="mt-7 text-center text-[1rem] text-[#77716e] sm:text-[1.1rem]">Don't have an account? <button type="button" onClick={handleGoogleSignIn} className="font-extrabold text-[#d95b1c] underline underline-offset-4 cursor-pointer">Sign up now</button></p>
+        <p className="mt-6 text-center text-[0.88rem] text-[#77716e] sm:text-[1rem]">Don't have an account? <button type="button" onClick={handleGoogleSignIn} className="font-extrabold text-[#d95b1c] underline underline-offset-4 cursor-pointer">Sign up now</button></p>
 
-        <div className="mt-7 border-t border-[#e5e1df] pt-6 text-center">
-          <button type="button" onClick={handleGoogleSignIn} className="text-[0.9rem] font-medium text-[#9a572c] underline underline-offset-4 cursor-pointer sm:text-[1rem]">⚡ Tester Shortcut: Enter Demo Admin Mode</button>
+        <div className="mt-6 border-t border-[#e5e1df] pt-5 text-center">
+          <button type="button" onClick={handleGoogleSignIn} className="text-[0.78rem] font-medium text-[#9a572c] underline underline-offset-4 cursor-pointer sm:text-[0.9rem]">⚡ Tester Shortcut: Enter Demo Admin Mode</button>
         </div>
       </div>
     </div>
