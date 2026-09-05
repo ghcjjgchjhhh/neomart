@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, getRedirectResult, signInAnonymously, signInWithPopup, signInWithRedirect } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, getRedirectResult, sendPasswordResetEmail as firebaseSendPasswordResetEmail, signInAnonymously, signInWithPopup, signInWithRedirect } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -35,6 +35,11 @@ export async function signInWithGoogle() {
 
   const result = await signInWithPopup(auth, provider);
   return result.user;
+}
+
+export async function sendPasswordResetEmail(email: string) {
+  if (!auth) throw new Error('Firebase authentication is not configured');
+  await firebaseSendPasswordResetEmail(auth, email);
 }
 
 export async function getGoogleRedirectUser() {

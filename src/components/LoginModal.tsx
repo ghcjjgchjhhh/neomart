@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, Check, Eye, EyeOff, Headphones, LockKeyhole, LogOut, Mail, Package, ShieldCheck, Tag, Truck, X } from 'lucide-react';
-import { signInWithGoogle } from '../config/firebase';
+import { sendPasswordResetEmail, signInWithGoogle } from '../config/firebase';
 import { NeoMartLogo } from './NeoMartLogo';
 import { LegalModal } from './LegalModal';
 
@@ -33,7 +33,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   isLoggedIn,
   onLoginSuccess,
   onLogout,
-  showToast,
+  showToast: parentShowToast,
   isAccessBlocked = false,
   accountName = '',
   accountEmail = '',
@@ -45,10 +45,31 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [keepSignedIn, setKeepSignedIn] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [showResetScreen, setShowResetScreen] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+  const [resetError, setResetError] = useState('');
   const [legalDocument, setLegalDocument] = useState<'terms' | 'privacy' | null>(null);
 
+  const showToast = (message: string) => {
+    if (message === 'Password reset is coming soon') {
+      setResetEmail(identifier);
+      setResetError('');
+      setResetSent(false);
+      setShowResetScreen(true);
+      return;
+    }
+    parentShowToast(message);
+  };
+
   useEffect(() => {
-    if (!isOpen) setLegalDocument(null);
+    if (!isOpen) {
+      setLegalDocument(null);
+      setShowResetScreen(false);
+      setResetSent(false);
+      setResetError('');
+    }
   }, [isOpen]);
 
   if (!isOpen) return null;
@@ -92,6 +113,34 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     setLoading(false);
     showToast('Login successful! Welcome back');
     onClose();
+  };
+
+  const handlePasswordReset = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const value = resetEmail.trim();
+
+    if (!value || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+      setResetError('Enter a valid email address to continue.');
+      return;
+    }
+
+    setResetLoading(true);
+    setResetError('');
+    try {
+      await sendPasswordResetEmail(value);
+      setResetSent(true);
+    } catch (error: unknown) {
+      const code = typeof error === 'object' && error !== null && 'code' in error ? String(error.code) : '';
+      if (code === 'auth/invalid-email' || code === 'auth/missing-email') {
+        setResetError('Enter a valid email address to continue.');
+      } else if (code === 'auth/network-request-failed') {
+        setResetError('We could not connect right now. Check your internet connection and try again.');
+      } else {
+        setResetError('We could not send the reset link right now. Please check the email and try again.');
+      }
+    } finally {
+      setResetLoading(false);
+    }
   };
 
   if (isAccessBlocked) {
@@ -158,6 +207,36 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               Log Out
             </button>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (showResetScreen) {
+    return (
+      <div className="fixed inset-0 z-50 flex min-h-dvh items-center justify-center overflow-y-auto bg-[#070808] px-5 py-8 text-white sm:px-8">
+        <div className="relative w-full max-w-[470px] rounded-[22px] border border-[#292929] bg-[#181919] px-5 py-8 shadow-2xl sm:px-10 sm:py-10">
+          <button type="button" onClick={() => { setShowResetScreen(false); setResetSent(false); setResetError(''); }} aria-label="Back to sign in" className="absolute left-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-[#292a2a] text-[#c1c1c1] transition hover:bg-[#373838] hover:text-white"><ArrowLeft className="h-4 w-4" /></button>
+          <div className="flex justify-center"><div className="flex h-14 w-14 items-center justify-center rounded-[13px] bg-[#ff6a00] shadow-[0_8px_22px_rgba(255,106,0,0.22)]"><NeoMartLogo size="lg" showText={false} /></div></div>
+          {resetSent ? (
+            <div className="text-center">
+              <div className="mx-auto mt-6 flex h-12 w-12 items-center justify-center rounded-full bg-[#ff6a00]/15 text-[#ff6a00]"><Check className="h-6 w-6" /></div>
+              <h1 className="mt-5 text-[24px] font-extrabold tracking-[-0.5px]">Password reset link sent!</h1>
+              <p className="mx-auto mt-2 max-w-[330px] text-[13px] leading-5 text-[#999b9b]">Check your email for instructions to create a new password.</p>
+              <button type="button" onClick={() => { setShowResetScreen(false); setResetSent(false); setResetError(''); }} className="mt-7 h-14 w-full rounded-[10px] bg-[#ff6a00] text-[14px] font-extrabold text-white shadow-[0_8px_18px_rgba(255,106,0,0.18)] transition hover:bg-[#e95f00]">Back to Sign In</button>
+            </div>
+          ) : (
+            <>
+              <h1 className="mt-6 text-center text-[24px] font-extrabold tracking-[-0.5px]">Reset your password</h1>
+              <p className="mx-auto mt-2 max-w-[340px] text-center text-[13px] leading-5 text-[#999b9b]">Enter the email address associated with your NeoMart account and we&apos;ll send you a password reset link.</p>
+              <form onSubmit={handlePasswordReset} className="mt-7">
+                <label className="block"><span className="mb-1.5 block text-[10px] font-bold uppercase tracking-wide text-[#dedede]">Email address</span><span className="flex h-12 items-center gap-3 rounded-[9px] border border-[#4a4b4b] bg-[#1b1c1c] px-3 text-[#898b8b] focus-within:border-[#ff6a00]"><Mail className="h-[17px] w-[17px] shrink-0" /><input type="email" value={resetEmail} onChange={(event) => { setResetEmail(event.target.value); setResetError(''); }} placeholder="you@example.com" autoComplete="email" className="w-full bg-transparent text-[13px] text-white outline-none placeholder:text-[#888a8a]" /></span></label>
+                {resetError && <p role="alert" className="mt-2 text-[11px] leading-4 text-[#ff9a72]">{resetError}</p>}
+                <button type="submit" disabled={resetLoading} className="mt-5 h-14 w-full rounded-[10px] bg-[#ff6a00] text-[14px] font-extrabold text-white shadow-[0_8px_18px_rgba(255,106,0,0.18)] transition hover:bg-[#e95f00] disabled:cursor-not-allowed disabled:opacity-70">{resetLoading ? 'Sending Reset Link...' : 'Send Reset Link'}</button>
+              </form>
+              <button type="button" onClick={() => { setShowResetScreen(false); setResetError(''); }} className="mt-5 block w-full text-center text-[12px] font-bold text-[#ff6a00] hover:underline">Back to Sign In</button>
+            </>
+          )}
         </div>
       </div>
     );
