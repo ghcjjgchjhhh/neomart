@@ -1021,6 +1021,13 @@ export default function App() {
   // Checkout flow
   const handleStartCheckout = () => {
     setIsCartOpen(false);
+    if (!isLoggedIn || !auth?.currentUser || auth.currentUser.isAnonymous) {
+      showToast('Please sign in before checkout');
+      checkoutAfterLoginRef.current = true;
+      localStorage.setItem('neomart_checkout_after_login', 'true');
+      setIsLoginOpen(true);
+      return;
+    }
     openingCheckoutRef.current = true;
     setIsCheckoutOpen(true);
   };
