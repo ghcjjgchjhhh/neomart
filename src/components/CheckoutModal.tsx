@@ -103,6 +103,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [streetSearch, setStreetSearch] = useState('');
   const [streetSuggestions, setStreetSuggestions] = useState<Array<{ name: string; street: string; city: string; displayName: string }>>([]);
   const [locationLoading, setLocationLoading] = useState(false);
+  const [formError, setFormError] = useState('');
 
   useEffect(() => {
     if (!delivery.state || !delivery.lga || townSearch.trim().length < 2) {
@@ -153,38 +154,44 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
   const handleSubmitOrder = (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError('');
+
+    const reject = (message: string) => {
+      setFormError(message);
+      showToast(message);
+    };
 
     if (cart.length === 0) {
-      showToast('Your cart is empty');
+      reject('Your cart is empty');
       return;
     }
 
     if (!delivery.state) {
-      showToast('Please select your delivery state');
+      reject('Please select your delivery state');
       return;
     }
     if (!delivery.fullName?.trim()) {
-      showToast('Please enter the recipient full name');
+      reject('Please enter the recipient full name');
       return;
     }
     if (!delivery.city) {
-      showToast('Please select your town or city');
+      reject('Please select your town or city');
       return;
     }
     if (!delivery.lga) {
-      showToast('Please select your local government area');
+      reject('Please select your local government area');
       return;
     }
     if (!delivery.street?.trim() || !delivery.houseNumber?.trim()) {
-      showToast('Please select a street and enter your house or building number');
+      reject('Please select a street and enter your house or building number');
       return;
     }
     if (!delivery.phone.trim() || delivery.phone.replace(/\D/g, '').length < 10) {
-      showToast('Please provide a valid Nigerian contact phone number');
+      reject('Please provide a valid Nigerian contact phone number');
       return;
     }
     if (couponCode.trim() && !couponApplied) {
-      showToast('Apply a valid coupon before confirming the order');
+      reject('Apply a valid coupon before confirming the order');
       return;
     }
 
@@ -218,6 +225,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
         {/* Body Content */}
         <form onSubmit={handleSubmitOrder} className="p-4 sm:p-6 space-y-5 text-xs">
+          {formError && <div role="alert" className="rounded-xl border border-red-300 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300">{formError}</div>}
           {/* Delivery Details */}
           <div className="border border-gray-200 dark:border-gray-700/80 rounded-xl p-4 bg-gray-50/50 dark:bg-[#202024]/50 space-y-3">
             <div className="flex items-center justify-between">
