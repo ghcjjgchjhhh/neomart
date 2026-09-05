@@ -13,7 +13,7 @@ import {
 } from 'firebase/firestore';
 import { db, ensureFirebaseAuth, auth } from './firebase';
 import { Order } from '../types';
-import { FulfillmentStatus } from '../types';
+import { FulfillmentStatus, SavedAddress } from '../types';
 
 export async function saveOrder(order: Order) {
   if (!db || !(await ensureFirebaseAuth())) {
@@ -45,6 +45,17 @@ export async function getCustomerProfile(): Promise<DocumentData | null> {
   if (!db || !(await ensureFirebaseAuth()) || !auth?.currentUser) return null;
   const snapshot = await getDoc(doc(db, 'users', auth.currentUser.uid));
   return snapshot.exists() ? snapshot.data() : null;
+}
+
+export async function saveCustomerAddresses(addresses: SavedAddress[]) {
+  if (!db || !(await ensureFirebaseAuth()) || !auth?.currentUser) {
+    throw new Error('Firebase customer addresses are not configured');
+  }
+  await setDoc(doc(db, 'users', auth.currentUser.uid), {
+    savedAddresses: addresses,
+    updatedAt: new Date().toISOString(),
+  }, { merge: true });
+  return true;
 }
 
 export async function confirmOrderPayment(orderId: string) {

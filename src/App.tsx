@@ -43,7 +43,7 @@ type AdminSection = 'overview' | 'orders' | 'confirmations' | 'inventory' | 'rep
 
 import { allProducts as initialProducts, flashProductIds } from './data/products';
 import { initialReviews, sampleOrders } from './data/ordersAndReviews';
-import { confirmOrderPayment, getCustomerProfile, getOrders, saveOrder, saveCustomerProfile, subscribeToOrders, updateOrderStatus, updateOrderDelivery, saveStockLevel, subscribeToStock, subscribeToCustomerAccountState, updateCustomerAccountState, getCustomerAccountState } from './config/ordersService';
+import { confirmOrderPayment, getCustomerProfile, getOrders, saveOrder, saveCustomerProfile, saveCustomerAddresses, subscribeToOrders, updateOrderStatus, updateOrderDelivery, saveStockLevel, subscribeToStock, subscribeToCustomerAccountState, updateCustomerAccountState, getCustomerAccountState } from './config/ordersService';
 import { auth, getGoogleRedirectUser, signOutUser, subscribeToAuthState } from './config/firebase';
 import {
   Product,
@@ -53,7 +53,8 @@ import {
   CategoryId,
   HelpSectionType,
   PaymentMethodType,
-  DeliveryDetails
+  DeliveryDetails,
+  SavedAddress
 } from './types';
 
 import {
@@ -325,6 +326,7 @@ export default function App() {
   const [isPaymentSuccessOpen, setIsPaymentSuccessOpen] = useState(false);
   const [lastPaymentMethod, setLastPaymentMethod] = useState<PaymentMethodType>('delivery');
   const [savedDeliveryDetails, setSavedDeliveryDetails] = useState<DeliveryDetails | null>(null);
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
 
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [currentView, setCurrentView] = useState<'store' | 'admin'>(isAdminPath ? 'admin' : 'store');
@@ -488,20 +490,26 @@ export default function App() {
   }, [currentUserEmail, sessionStartedAt]);
 
   useEffect(() => {
-    if (!currentUserEmail.includes('@')) {
+    const signedInUser = auth?.currentUser;
+    if (!signedInUser || signedInUser.isAnonymous) {
       setSavedDeliveryDetails(null);
+      setSavedAddresses([]);
       return;
     }
     let isActive = true;
     void getCustomerProfile().then((profile) => {
       if (!isActive) return;
       const saved = profile?.savedDeliveryDetails as Partial<DeliveryDetails> | undefined;
+      const storedAddresses = Array.isArray(profile?.savedAddresses) ? profile.savedAddresses as SavedAddress[] : [];
+      setSavedAddresses(storedAddresses);
       if (saved?.state && saved.city && saved.address && saved.phone) {
         setSavedDeliveryDetails({
+          fullName: saved.fullName || accountName,
           state: saved.state,
           city: saved.city,
           address: saved.address,
           phone: saved.phone,
+          country: saved.country || 'Nigeria',
           notes: saved.notes || '',
         });
       }
@@ -509,7 +517,7 @@ export default function App() {
     return () => {
       isActive = false;
     };
-  }, [currentUserEmail, sessionStartedAt]);
+  }, [currentUserEmail, currentUserUid, sessionStartedAt]);
 
   useEffect(() => {
     const previousRestoration = window.history.scrollRestoration;
@@ -1052,7 +1060,7 @@ export default function App() {
     const calculatedTotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
 
     const fullAddress = _deliveryDetails?.address
-      ? `${_deliveryDetails.address}, ${_deliveryDetails.city}, ${_deliveryDetails.state}`
+      ? `${_deliveryDetails.address}, ${_deliveryDetails.city}, ${_deliveryDetails.state}, ${_deliveryDetails.country || 'Nigeria'}`
       : 'Plot 8, Sangotedo, Lekki-Epe Expressway, Lagos';
 
     const newOrder: Order = {
@@ -1061,7 +1069,7 @@ export default function App() {
       orderSource: 'customer',
       phone: _deliveryDetails?.phone?.trim() || '',
       email: currentUserEmail.includes('@') ? currentUserEmail : '',
-      customerName: accountName || undefined,
+      customerName: _deliveryDetails?.fullName?.trim() || accountName || undefined,
       date: new Date().toISOString().split('T')[0],
       eta: new Date(Date.now() + 2 * 86400000).toISOString().split('T')[0],
       status: method === 'delivery' ? 'Order Placed' : 'Processing',
@@ -1098,19 +1106,33 @@ export default function App() {
     void saveOrder(newOrder).catch(() => {
       showToast('Order saved locally. Firebase sync is unavailable.');
     });
-    if (_deliveryDetails && newOrder.email) {
-      const previous = savedDeliveryDetails;
-      const deliveryChanged = JSON.stringify(previous || null) !== JSON.stringify(_deliveryDetails);
-      if (deliveryChanged) {
-        setSavedDeliveryDetails(_deliveryDetails);
-        void saveCustomerProfile({
-          email: newOrder.email,
-          phone: newOrder.phone,
-          savedDeliveryDetails: _deliveryDetails,
-          savedAddresses: [newOrder.address],
-          lastOrderId: newOrder.id,
-        }).catch(() => {});
-      }
+    if (_deliveryDetails && auth?.currentUser && !auth.currentUser.isAnonymous) {
+      const deliveryAddress = _deliveryDetails as DeliveryDetails & Partial<SavedAddress>;
+      const savedAddress: SavedAddress = {
+        id: deliveryAddress.id || `address-${Date.now()}`,
+        label: deliveryAddress.label || (savedAddresses.length ? 'Other' : 'Home'),
+        fullName: _deliveryDetails.fullName || accountName,
+        state: _deliveryDetails.state,
+        city: _deliveryDetails.city,
+        address: _deliveryDetails.address,
+        phone: _deliveryDetails.phone,
+        country: _deliveryDetails.country || 'Nigeria',
+        notes: _deliveryDetails.notes || '',
+        isDefault: true,
+      };
+      const nextAddresses = [savedAddress, ...savedAddresses.filter((address) => address.id !== savedAddress.id)].map((address) => ({
+        ...address,
+        isDefault: address.id === savedAddress.id,
+      }));
+      setSavedDeliveryDetails(_deliveryDetails);
+      setSavedAddresses(nextAddresses);
+      void saveCustomerAddresses(nextAddresses).catch(() => showToast('Order placed, but saved delivery information could not sync.'));
+      void saveCustomerProfile({
+        email: newOrder.email,
+        phone: newOrder.phone,
+        savedDeliveryDetails: _deliveryDetails,
+        lastOrderId: newOrder.id,
+      }).catch(() => {});
     }
     void fetch('/api/notify-order', {
       method: 'POST',
@@ -2099,6 +2121,7 @@ export default function App() {
         onClose={() => setIsCheckoutOpen(false)}
         cart={cart}
         initialDelivery={savedDeliveryDetails}
+        savedAddresses={savedAddresses}
         onCompleteOrder={handleCompleteOrder}
         showToast={showToast}
       />
@@ -2129,6 +2152,13 @@ export default function App() {
         cartCount={cart.reduce((total, item) => total + item.qty, 0)}
         hasPhone={Boolean(auth?.currentUser?.phoneNumber)}
         emailVerified={Boolean(auth?.currentUser?.emailVerified)}
+        savedAddresses={savedAddresses}
+        onSaveAddresses={async (addresses) => {
+          await saveCustomerAddresses(addresses);
+          setSavedAddresses(addresses);
+          const defaultAddress = addresses.find((address) => address.isDefault) || addresses[0] || null;
+          setSavedDeliveryDetails(defaultAddress);
+        }}
         onOpenOrders={() => { setIsLoginOpen(false); setIsOrderHistoryOpen(true); }}
         onOpenCart={() => { setIsLoginOpen(false); setIsCartOpen(true); }}
         onOpenHelp={() => { setIsLoginOpen(false); handleOpenHelpSection('live-chat'); }}

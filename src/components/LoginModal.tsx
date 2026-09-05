@@ -3,6 +3,7 @@ import { ArrowLeft, Bell, Check, ChevronRight, CreditCard, Eye, EyeOff, FileText
 import { createPhoneRecaptcha, registerWithEmailPassword, sendPasswordResetEmail, sendPhoneVerificationCode, sendVerificationEmail, signInWithEmailPassword, signInWithGoogle, signOutUser, updateFirebaseProfile } from '../config/firebase';
 import { NeoMartLogo } from './NeoMartLogo';
 import { LegalModal } from './LegalModal';
+import type { SavedAddress } from '../types';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -24,6 +25,8 @@ interface LoginModalProps {
   onOpenCart?: () => void;
   onOpenHelp?: () => void;
   onSaveProfile?: (profile: { displayName: string; photoURL: string }) => Promise<void>;
+  savedAddresses?: SavedAddress[];
+  onSaveAddresses?: (addresses: SavedAddress[]) => Promise<void>;
 }
 
 const GoogleIcon = () => (
@@ -55,6 +58,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   onOpenCart,
   onOpenHelp,
   onSaveProfile,
+  savedAddresses = [],
+  onSaveAddresses,
 }) => {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
@@ -82,11 +87,14 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const phoneConfirmationRef = useRef<import('firebase/auth').ConfirmationResult | null>(null);
   const phoneVerifierRef = useRef<import('firebase/auth').RecaptchaVerifier | null>(null);
   const [legalDocument, setLegalDocument] = useState<'terms' | 'privacy' | null>(null);
-  const [accountSection, setAccountSection] = useState<'overview' | 'profile' | 'security'>('overview');
+  const [accountSection, setAccountSection] = useState<'overview' | 'profile' | 'addresses' | 'security'>('overview');
   const [profileName, setProfileName] = useState(accountName);
   const [profilePhoto, setProfilePhoto] = useState(accountPhotoUrl);
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileMessage, setProfileMessage] = useState('');
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
+  const [addressDraft, setAddressDraft] = useState<SavedAddress>({ id: '', label: 'Home', fullName: '', state: '', city: '', address: '', phone: '', country: 'Nigeria', notes: '', isDefault: false });
+  const [addressMessage, setAddressMessage] = useState('');
 
   const showToast = (message: string) => {
     if (message === 'Password reset is coming soon') {
@@ -110,6 +118,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       setPhoneNumber('');
       setAccountSection('overview');
       setProfileMessage('');
+      setEditingAddressId(null);
+      setAddressMessage('');
       setLegalDocument(null);
       setShowResetScreen(false);
       setResetSent(false);
@@ -316,6 +326,42 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     }
   };
 
+  const openAddressEditor = (address?: SavedAddress) => {
+    setEditingAddressId(address?.id || 'new');
+    setAddressDraft(address || { id: `address-${Date.now()}`, label: 'Home', fullName: accountName, state: '', city: '', address: '', phone: '', country: 'Nigeria', notes: '', isDefault: savedAddresses.length === 0 });
+    setAddressMessage('');
+    setAccountSection('addresses');
+  };
+
+  const saveAddress = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!addressDraft.label.trim() || !addressDraft.fullName?.trim() || !addressDraft.state || !addressDraft.city || !addressDraft.address.trim() || addressDraft.phone.replace(/\D/g, '').length < 10) {
+      setAddressMessage('Complete the name, phone, address, city, and state fields.');
+      return;
+    }
+    const next = editingAddressId && editingAddressId !== 'new'
+      ? savedAddresses.map((address) => address.id === editingAddressId ? { ...addressDraft, id: editingAddressId } : address)
+      : [...savedAddresses, addressDraft];
+    const normalized = addressDraft.isDefault ? next.map((address) => ({ ...address, isDefault: address.id === addressDraft.id })) : next;
+    try {
+      await onSaveAddresses?.(normalized);
+      setAddressMessage('Address saved.');
+      setEditingAddressId(null);
+    } catch {
+      setAddressMessage('We could not save this address right now.');
+    }
+  };
+
+  const deleteAddress = async (id: string) => {
+    const next = savedAddresses.filter((address) => address.id !== id);
+    if (next.length > 0 && !next.some((address) => address.isDefault)) next[0].isDefault = true;
+    await onSaveAddresses?.(next);
+  };
+
+  const makeDefaultAddress = async (id: string) => {
+    await onSaveAddresses?.(savedAddresses.map((address) => ({ ...address, isDefault: address.id === id })));
+  };
+
   const normalizedPhone = () => {
     const rawDigits = phoneNumber.replace(/\D/g, '');
     const countryDigits = countryCode.replace(/\D/g, '');
@@ -483,6 +529,14 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               {profileMessage && <p className="text-xs font-semibold text-[#f4510b]">{profileMessage}</p>}
               <div className="flex gap-2"><button type="button" onClick={() => setAccountSection('overview')} className={`flex-1 rounded-xl border px-4 py-3 text-sm font-bold ${borderClass}`}>Cancel</button><button type="submit" disabled={profileSaving} className="flex-1 rounded-xl bg-[#f4510b] px-4 py-3 text-sm font-bold text-white disabled:opacity-60">{profileSaving ? 'Saving...' : 'Save Profile'}</button></div>
             </form>
+          ) : accountSection === 'addresses' ? (
+            <div className="mt-6 space-y-4">
+              <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-3"><MapPin className="h-5 w-5 text-[#f4510b]" /><h3 className="text-lg font-black">Saved Addresses</h3></div><button type="button" onClick={() => openAddressEditor()} className="rounded-xl bg-[#f4510b] px-3 py-2 text-xs font-bold text-white">Add Address</button></div>
+              {savedAddresses.length === 0 && <p className={`rounded-xl border p-4 text-sm ${borderClass} ${mutedClass}`}>No saved addresses yet. Add one to speed up checkout.</p>}
+              {savedAddresses.map((address) => <div key={address.id} className={`rounded-xl border p-4 ${borderClass}`}><div className="flex items-start justify-between gap-3"><div><p className="font-bold">{address.label} {address.isDefault && <span className="text-[10px] text-[#f4510b]">DEFAULT</span>}</p><p className={`mt-1 text-xs ${mutedClass}`}>{address.fullName} · {address.phone}</p><p className={`mt-1 text-xs ${mutedClass}`}>{address.address}, {address.city}, {address.state}, {address.country}</p></div><div className="flex shrink-0 gap-2"><button type="button" onClick={() => openAddressEditor(address)} className="text-xs font-bold text-[#f4510b]">Edit</button><button type="button" onClick={() => void deleteAddress(address.id)} className="text-xs font-bold text-red-500">Delete</button></div></div>{!address.isDefault && <button type="button" onClick={() => void makeDefaultAddress(address.id)} className="mt-3 text-xs font-bold text-[#f4510b]">Set as default</button>}</div>)}
+              {editingAddressId !== null && <form onSubmit={saveAddress} className={`space-y-3 rounded-xl border p-4 ${borderClass}`}><p className="font-bold">{savedAddresses.some((address) => address.id === editingAddressId) ? 'Edit address' : 'New address'}</p><div className="grid gap-3 sm:grid-cols-2"><input value={addressDraft.label} onChange={(event) => setAddressDraft({ ...addressDraft, label: event.target.value })} placeholder="Label, e.g. Home" className="rounded-lg border bg-transparent px-3 py-2 text-sm" /><input value={addressDraft.fullName || ''} onChange={(event) => setAddressDraft({ ...addressDraft, fullName: event.target.value })} placeholder="Full name" className="rounded-lg border bg-transparent px-3 py-2 text-sm" /><input value={addressDraft.phone} onChange={(event) => setAddressDraft({ ...addressDraft, phone: event.target.value })} placeholder="Phone number" className="rounded-lg border bg-transparent px-3 py-2 text-sm" /><input value={addressDraft.country || 'Nigeria'} onChange={(event) => setAddressDraft({ ...addressDraft, country: event.target.value })} placeholder="Country" className="rounded-lg border bg-transparent px-3 py-2 text-sm" /><input value={addressDraft.state} onChange={(event) => setAddressDraft({ ...addressDraft, state: event.target.value })} placeholder="State" className="rounded-lg border bg-transparent px-3 py-2 text-sm" /><input value={addressDraft.city} onChange={(event) => setAddressDraft({ ...addressDraft, city: event.target.value })} placeholder="City / LGA" className="rounded-lg border bg-transparent px-3 py-2 text-sm" /></div><input value={addressDraft.address} onChange={(event) => setAddressDraft({ ...addressDraft, address: event.target.value })} placeholder="Delivery address" className="w-full rounded-lg border bg-transparent px-3 py-2 text-sm" /><textarea value={addressDraft.notes || ''} onChange={(event) => setAddressDraft({ ...addressDraft, notes: event.target.value })} placeholder="Optional delivery instructions" rows={2} className="w-full resize-none rounded-lg border bg-transparent px-3 py-2 text-sm" /><label className="flex items-center gap-2 text-xs font-semibold"><input type="checkbox" checked={Boolean(addressDraft.isDefault)} onChange={(event) => setAddressDraft({ ...addressDraft, isDefault: event.target.checked })} /> Set as default delivery address</label>{addressMessage && <p className="text-xs font-semibold text-[#f4510b]">{addressMessage}</p>}<div className="flex gap-2"><button type="button" onClick={() => setEditingAddressId(null)} className={`flex-1 rounded-lg border px-3 py-2 text-xs font-bold ${borderClass}`}>Cancel</button><button type="submit" className="flex-1 rounded-lg bg-[#f4510b] px-3 py-2 text-xs font-bold text-white">Save Address</button></div></form>}
+              <button type="button" onClick={() => setAccountSection('overview')} className="text-sm font-bold text-[#f4510b]">Back to Account</button>
+            </div>
           ) : accountSection === 'security' ? (
             <div className="mt-6 space-y-4">
               <div className="flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-emerald-500" /><h3 className="text-lg font-black">Account Security</h3></div>
@@ -507,7 +561,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           </div>
 
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            {[['ACCOUNT', UserRound, [['Edit Profile', () => setAccountSection('profile')], ['Personal Information', () => setAccountSection('profile')], ['Saved Addresses', () => setAccountSection('profile')], ['Payment Methods', () => setAccountSection('security')], ['Security', () => setAccountSection('security')], ['Login & Devices', () => setAccountSection('security')]]], ['SHOPPING', ShoppingCart, [['My Orders', onOpenOrders], ['My Cart', onOpenCart], ['Wishlist', onOpenHelp], ['Recently Viewed', onOpenHelp], ['Buy Again', onOpenOrders]]], ['ORDERS', RotateCcw, [['Pending', onOpenOrders], ['Shipped', onOpenOrders], ['Delivered', onOpenOrders], ['Returns & Refunds', onOpenHelp]]], ['OTHER', Info, [['Notifications', onOpenHelp], ['Help & Support', onOpenHelp], ['Contact Us', onOpenHelp], ['Terms & Conditions', () => setLegalDocument('terms')], ['Privacy Policy', () => setLegalDocument('privacy')], ['About NeoMart', () => setLegalDocument('terms')]]]].map(([title, Icon, items]) => <section key={title as string} className={`rounded-2xl border p-4 ${borderClass}`}><div className="mb-3 flex items-center gap-2 text-[#f4510b]"><Icon className="h-4 w-4" /><h3 className="text-xs font-black tracking-widest">{title as string}</h3></div>{(items as Array<[string, (() => void) | undefined]>).map(([label, action]) => <button key={label} type="button" onClick={() => action?.()} className={`flex w-full items-center justify-between border-b py-2.5 text-left text-sm last:border-b-0 ${borderClass} hover:text-[#f4510b]`}><span>{label}</span><ChevronRight className="h-4 w-4" /></button>)}</section>)}
+            {[['ACCOUNT', UserRound, [['Edit Profile', () => setAccountSection('profile')], ['Personal Information', () => setAccountSection('profile')], ['Saved Addresses', () => setAccountSection('addresses')], ['Payment Methods', () => setAccountSection('security')], ['Security', () => setAccountSection('security')], ['Login & Devices', () => setAccountSection('security')]]], ['SHOPPING', ShoppingCart, [['My Orders', onOpenOrders], ['My Cart', onOpenCart], ['Wishlist', onOpenHelp], ['Recently Viewed', onOpenHelp], ['Buy Again', onOpenOrders]]], ['ORDERS', RotateCcw, [['Pending', onOpenOrders], ['Shipped', onOpenOrders], ['Delivered', onOpenOrders], ['Returns & Refunds', onOpenHelp]]], ['OTHER', Info, [['Notifications', onOpenHelp], ['Help & Support', onOpenHelp], ['Contact Us', onOpenHelp], ['Terms & Conditions', () => setLegalDocument('terms')], ['Privacy Policy', () => setLegalDocument('privacy')], ['About NeoMart', () => setLegalDocument('terms')]]]].map(([title, Icon, items]) => <section key={title as string} className={`rounded-2xl border p-4 ${borderClass}`}><div className="mb-3 flex items-center gap-2 text-[#f4510b]"><Icon className="h-4 w-4" /><h3 className="text-xs font-black tracking-widest">{title as string}</h3></div>{(items as Array<[string, (() => void) | undefined]>).map(([label, action]) => <button key={label} type="button" onClick={() => action?.()} className={`flex w-full items-center justify-between border-b py-2.5 text-left text-sm last:border-b-0 ${borderClass} hover:text-[#f4510b]`}><span>{label}</span><ChevronRight className="h-4 w-4" /></button>)}</section>)}
           </div>
           </>}
 

@@ -9,7 +9,7 @@ import {
   CheckCircle2,
   Lock
 } from 'lucide-react';
-import { CartItem, PaymentMethodType, DeliveryDetails } from '../types';
+import { CartItem, PaymentMethodType, DeliveryDetails, SavedAddress } from '../types';
 import { nigerianStates, stateCities } from '../data/locations';
 
 interface CheckoutModalProps {
@@ -17,6 +17,7 @@ interface CheckoutModalProps {
   onClose: () => void;
   cart: CartItem[];
   initialDelivery?: DeliveryDetails | null;
+  savedAddresses?: SavedAddress[];
   onCompleteOrder: (method: PaymentMethodType, deliveryDetails?: DeliveryDetails, discountAmount?: number) => void;
   showToast: (msg: string) => void;
 }
@@ -26,6 +27,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   onClose,
   cart,
   initialDelivery,
+  savedAddresses = [],
   onCompleteOrder,
   showToast
 }) => {
@@ -33,19 +35,30 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [couponCode, setCouponCode] = useState('');
   const [couponApplied, setCouponApplied] = useState(false);
+  const [selectedAddressId, setSelectedAddressId] = useState('new');
 
   // Delivery state
   const [delivery, setDelivery] = useState<DeliveryDetails>({
+    fullName: '',
     state: '',
     city: '',
     address: '',
     phone: '',
+    country: 'Nigeria',
     notes: ''
   });
 
   useEffect(() => {
-    if (isOpen && initialDelivery) setDelivery(initialDelivery);
-  }, [initialDelivery, isOpen]);
+    if (!isOpen) return;
+    const preferred = savedAddresses.find((address) => address.isDefault) || savedAddresses[0];
+    if (preferred) {
+      setDelivery(preferred);
+      setSelectedAddressId(preferred.id);
+    } else if (initialDelivery) {
+      setDelivery(initialDelivery);
+      setSelectedAddressId('legacy');
+    }
+  }, [initialDelivery, isOpen, savedAddresses]);
 
   // State / City Picker UI state
   const [stateSearch, setStateSearch] = useState('');
@@ -82,6 +95,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
     if (!delivery.state) {
       showToast('Please select your delivery state');
+      return;
+    }
+    if (!delivery.fullName?.trim()) {
+      showToast('Please enter the recipient full name');
       return;
     }
     if (!delivery.city) {
@@ -139,6 +156,26 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded">
                 Doorstep Express
               </span>
+            </div>
+
+            {savedAddresses.length > 0 && (
+              <div className="space-y-2">
+                <label className="block font-semibold text-gray-600 dark:text-gray-400 text-[11px]">Saved Delivery Information</label>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {savedAddresses.map((savedAddress) => (
+                    <button key={savedAddress.id} type="button" onClick={() => { setDelivery(savedAddress); setSelectedAddressId(savedAddress.id); }} className={`rounded-lg border px-3 py-2 text-left text-xs ${selectedAddressId === savedAddress.id ? 'border-[#f68b1e] bg-[#fff3e0] dark:bg-[#2a1a00]' : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-[#18181b]'}`}>
+                      <span className="block font-bold text-gray-800 dark:text-gray-200">{savedAddress.label}{savedAddress.isDefault ? ' (Default)' : ''}</span>
+                      <span className="mt-1 block truncate text-gray-500 dark:text-gray-400">{savedAddress.address}, {savedAddress.city}</span>
+                    </button>
+                  ))}
+                </div>
+                <button type="button" onClick={() => { setSelectedAddressId('new'); setDelivery({ fullName: '', state: '', city: '', address: '', phone: '', country: 'Nigeria', notes: '' }); }} className="text-[11px] font-bold text-[#f68b1e] hover:underline">Use a different address</button>
+              </div>
+            )}
+
+            <div>
+              <label className="block font-semibold text-gray-600 dark:text-gray-400 mb-1 text-[11px]">Recipient Full Name</label>
+              <input type="text" required value={delivery.fullName || ''} onChange={(e) => { setSelectedAddressId('new'); setDelivery({ ...delivery, fullName: e.target.value }); }} placeholder="Enter recipient name" className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#18181b] text-gray-800 dark:text-gray-200 focus:outline-none focus:border-[#f68b1e]" />
             </div>
 
             {/* State and City Selector */}
@@ -262,9 +299,19 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 required
                 value={delivery.phone}
                 onChange={(e) => setDelivery({ ...delivery, phone: e.target.value })}
-                placeholder="e.g. 08135648242"
+                placeholder="Enter contact phone number"
                 className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#18181b] text-gray-800 dark:text-gray-200 focus:outline-none focus:border-[#f68b1e]"
               />
+            </div>
+
+            <div>
+              <label className="block font-semibold text-gray-600 dark:text-gray-400 mb-1 text-[11px]">Country</label>
+              <input type="text" value={delivery.country || 'Nigeria'} onChange={(e) => setDelivery({ ...delivery, country: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#18181b] text-gray-800 dark:text-gray-200 focus:outline-none focus:border-[#f68b1e]" />
+            </div>
+
+            <div>
+              <label className="block font-semibold text-gray-600 dark:text-gray-400 mb-1 text-[11px]">Delivery Instructions (Optional)</label>
+              <textarea value={delivery.notes || ''} onChange={(e) => setDelivery({ ...delivery, notes: e.target.value })} placeholder="Add instructions for delivery" rows={2} className="w-full resize-none px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#18181b] text-gray-800 dark:text-gray-200 focus:outline-none focus:border-[#f68b1e]" />
             </div>
           </div>
 

@@ -99,11 +99,19 @@ export type HelpSectionType =
 export type PaymentMethodType = 'bank' | 'card' | 'delivery';
 
 export interface DeliveryDetails {
+  fullName?: string;
   state: string;
   city: string;
   address: string;
   phone: string;
+  country?: string;
   notes?: string;
+}
+
+export interface SavedAddress extends DeliveryDetails {
+  id: string;
+  label: string;
+  isDefault?: boolean;
 }
 
 export interface CardDetails {
