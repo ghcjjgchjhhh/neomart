@@ -199,8 +199,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
         <p className="mt-6 text-center text-[0.88rem] text-[#77716e] sm:text-[1rem]">Don't have an account? <button type="button" onClick={handleGoogleSignIn} className="font-extrabold text-[#d95b1c] underline underline-offset-4 cursor-pointer">Sign up now</button></p>
 
-        <div className="mt-6 border-t border-[#e5e1df] pt-5 text-center">
-          <button type="button" onClick={handleGoogleSignIn} className="text-[0.78rem] font-medium text-[#9a572c] underline underline-offset-4 cursor-pointer sm:text-[0.9rem]">⚡ Tester Shortcut: Enter Demo Admin Mode</button>
+        <div className="mt-6 border-t border-[#e5e1df] pt-5 text-center text-[0.78rem] leading-5 text-[#77716e] sm:text-[0.9rem]">
+          By continuing, you agree to our{' '}
+          <button type="button" className="font-semibold text-[#b66c43] underline underline-offset-2 cursor-pointer">Terms of Service</button>{' '}
+          and{' '}
+          <button type="button" className="font-semibold text-[#b66c43] underline underline-offset-2 cursor-pointer">Privacy Policy</button>.
         </div>
       </div>
     </div>
