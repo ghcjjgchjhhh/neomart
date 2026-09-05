@@ -451,7 +451,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/65 p-3 sm:p-5">
         <div className={`relative my-auto w-full max-w-3xl rounded-3xl p-4 shadow-2xl sm:p-7 ${panelClass}`}>
-          <button type="button" onClick={onClose} className={`mb-5 inline-flex items-center gap-2 text-sm font-bold transition hover:text-[#f4510b] cursor-pointer ${mutedClass}`}>
+          <button type="button" onClick={() => accountSection === 'overview' ? onClose() : setAccountSection('overview')} className={`mb-5 inline-flex items-center gap-2 text-sm font-bold transition hover:text-[#f4510b] cursor-pointer ${mutedClass}`}>
             <ArrowLeft className="h-4 w-4" />
             Back
           </button>
