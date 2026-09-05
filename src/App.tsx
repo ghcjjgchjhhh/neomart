@@ -411,6 +411,7 @@ export default function App() {
   const closingOverlayHistoryRef = useRef(false);
   const handlingPopOverlayRef = useRef(false);
   const openingCheckoutRef = useRef(false);
+  const checkoutAfterLoginRef = useRef(false);
   const catalogScrollPositionRef = useRef(0);
   const edgeSwipeStartRef = useRef<{ x: number; y: number; target: EventTarget | null } | null>(null);
   const edgeSwipeOffsetRef = useRef(0);
@@ -456,6 +457,11 @@ export default function App() {
         setAdminSection('overview');
         setCurrentView('admin');
         window.history.replaceState({}, '', '/admin');
+      }
+      if (email.toLowerCase() !== ADMIN_EMAIL && localStorage.getItem('neomart_checkout_after_login') === 'true') {
+        localStorage.removeItem('neomart_checkout_after_login');
+        openingCheckoutRef.current = true;
+        setIsCheckoutOpen(true);
       }
       showToast(user.providerData.some((provider) => provider.providerId === 'google.com') ? `Signed in with Google as ${email}` : `Signed in as ${email}`);
       });
@@ -1017,6 +1023,8 @@ export default function App() {
     if (!isLoggedIn || !auth?.currentUser || auth.currentUser.isAnonymous) {
       setIsCartOpen(false);
       showToast('Please sign in before checkout');
+      checkoutAfterLoginRef.current = true;
+      localStorage.setItem('neomart_checkout_after_login', 'true');
       setIsLoginOpen(true);
       return;
     }
@@ -2216,6 +2224,12 @@ export default function App() {
             createdAt: auth?.currentUser?.metadata.creationTime || new Date().toISOString(),
             lastSignInAt: auth?.currentUser?.metadata.lastSignInTime || new Date().toISOString(),
           }).catch(() => {});
+          if (checkoutAfterLoginRef.current || localStorage.getItem('neomart_checkout_after_login') === 'true') {
+            checkoutAfterLoginRef.current = false;
+            localStorage.removeItem('neomart_checkout_after_login');
+            openingCheckoutRef.current = true;
+            setIsCheckoutOpen(true);
+          }
         }}
         onLogout={() => {
           void signOutUser();
