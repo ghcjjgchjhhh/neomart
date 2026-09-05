@@ -269,8 +269,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   };
 
   const normalizedPhone = () => {
-    const digits = phoneNumber.replace(/\D/g, '').replace(/^0+/, '');
-    return `${countryCode}${digits}`;
+    const rawDigits = phoneNumber.replace(/\D/g, '');
+    const countryDigits = countryCode.replace(/\D/g, '');
+    const nationalDigits = rawDigits.startsWith(countryDigits)
+      ? rawDigits.slice(countryDigits.length)
+      : rawDigits.replace(/^0+/, '');
+    return `+${countryDigits}${nationalDigits}`;
   };
 
   const handleSendPhoneCode = async (event?: React.FormEvent) => {
@@ -292,7 +296,13 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       phoneVerifierRef.current?.clear();
       phoneVerifierRef.current = null;
       const code = typeof error === 'object' && error !== null && 'code' in error ? String(error.code) : '';
-      setPhoneError(code === 'auth/invalid-phone-number' ? 'Enter a valid phone number.' : code === 'auth/too-many-requests' ? 'Too many attempts. Please wait and try again.' : 'We could not send the code. Check the number and try again.');
+      if (code === 'auth/invalid-phone-number') setPhoneError('Enter a valid phone number.');
+      else if (code === 'auth/too-many-requests' || code === 'auth/quota-exceeded') setPhoneError('Too many attempts. Please wait and try again later.');
+      else if (code === 'auth/operation-not-allowed') setPhoneError('Phone sign-in is not enabled in Firebase yet.');
+      else if (code === 'auth/billing-not-enabled') setPhoneError('Firebase billing must be enabled for phone sign-in.');
+      else if (code === 'auth/captcha-check-failed') setPhoneError('Security verification failed. Refresh the page and try again.');
+      else if (code === 'auth/network-request-failed') setPhoneError('Network error. Check your connection and try again.');
+      else setPhoneError('We could not send the code. Check the number and try again.');
     } finally {
       setPhoneLoading(false);
     }
