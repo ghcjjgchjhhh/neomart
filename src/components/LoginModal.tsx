@@ -95,7 +95,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     }
     setLoading(true);
     try {
-      const user = await signInWithGoogle();
+      const user = await signInWithGoogle(identifier.trim() || undefined);
       if (!user) return;
       const name = user.displayName || user.email?.split('@')[0] || 'Google User';
       await onLoginSuccess(user.email || user.uid, user.displayName || user.email?.split('@')[0], user.photoURL || undefined);
@@ -219,6 +219,34 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       setResetLoading(false);
     }
   };
+
+  const handleEmailOnlyGoogleSignIn = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const value = identifier.trim();
+    if (!/^[^\s@]+@gmail\.com$/i.test(value)) {
+      showToast('Enter the Gmail address you want to use with NeoMart.');
+      return;
+    }
+    await handleGoogleSignIn();
+  };
+
+  if (!isLoggedIn && !isAccessBlocked) {
+    return (
+      <div className="fixed inset-0 z-50 flex min-h-dvh items-center justify-center overflow-y-auto bg-[#070808] px-5 py-8 text-white sm:px-8">
+        <div className="relative w-full max-w-[470px] rounded-[22px] border border-[#292929] bg-[#181919] px-5 py-8 shadow-2xl sm:px-10 sm:py-10">
+          <button type="button" onClick={onClose} aria-label="Close" className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-[#292a2a] text-[#c1c1c1] transition hover:bg-[#373838] hover:text-white"><X className="h-5 w-5" /></button>
+          <div className="flex justify-center"><div className="flex h-14 w-14 items-center justify-center rounded-[13px] bg-[#ff6a00] shadow-[0_8px_22px_rgba(255,106,0,0.22)]"><NeoMartLogo size="lg" showText={false} /></div></div>
+          <h1 className="mt-6 text-center text-[24px] font-extrabold tracking-[-0.5px]">Continue to NeoMart</h1>
+          <p className="mx-auto mt-2 max-w-[340px] text-center text-[13px] leading-5 text-[#999b9b]">Enter your Gmail address to choose your Google account and continue securely.</p>
+          <form onSubmit={handleEmailOnlyGoogleSignIn} className="mt-7">
+            <label className="block"><span className="mb-1.5 block text-[10px] font-bold uppercase tracking-wide text-[#dedede]">Gmail address</span><span className="flex h-12 items-center gap-3 rounded-[9px] border border-[#4a4b4b] bg-[#1b1c1c] px-3 text-[#898b8b] focus-within:border-[#ff6a00]"><Mail className="h-[17px] w-[17px] shrink-0" /><input type="email" value={identifier} onChange={(event) => setIdentifier(event.target.value)} placeholder="you@gmail.com" autoComplete="email" className="w-full bg-transparent text-[13px] text-white outline-none placeholder:text-[#888a8a]" /></span></label>
+            <button type="submit" disabled={loading} className="mt-5 flex h-14 w-full items-center justify-center gap-3 rounded-[10px] border border-[#4a4b4b] bg-transparent text-[14px] font-bold transition hover:bg-[#242525] disabled:cursor-not-allowed disabled:opacity-60"><GoogleIcon /><span>{loading ? 'Opening Google...' : 'Continue with Google'}</span></button>
+          </form>
+          <p className="mt-5 text-center text-[11px] leading-5 text-[#777979]">Google will securely verify your account. NeoMart never sees your Google password.</p>
+        </div>
+      </div>
+    );
+  }
 
   if (isAccessBlocked) {
     return (

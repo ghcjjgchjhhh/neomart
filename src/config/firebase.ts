@@ -17,10 +17,13 @@ const app = isFirebaseConfigured ? initializeApp(firebaseConfig) : null;
 export const db = app ? getFirestore(app) : null;
 export const auth = app ? getAuth(app) : null;
 
-export async function signInWithGoogle() {
+export async function signInWithGoogle(emailHint?: string) {
   if (!auth) throw new Error('Firebase authentication is not configured');
   const provider = new GoogleAuthProvider();
-  provider.setCustomParameters({ prompt: 'select_account' });
+  provider.setCustomParameters({
+    prompt: 'select_account',
+    ...(emailHint ? { login_hint: emailHint } : {}),
+  });
   const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
   if (isMobile) {
