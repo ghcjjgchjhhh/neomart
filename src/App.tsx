@@ -235,7 +235,7 @@ export default function App() {
   );
 
   useEffect(() => subscribeToAuthState((user) => {
-    if (!user) {
+    if (!user || user.isAnonymous) {
       setIsLoggedIn(false);
       setCurrentUserUid('');
       setCurrentUserEmail('');
