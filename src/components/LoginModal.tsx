@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ArrowLeft, Check, LockKeyhole, LogOut, Mail, ShieldCheck, X } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { ArrowLeft, Check, Eye, EyeOff, Headphones, LockKeyhole, LogOut, Mail, Package, ShieldCheck, Tag, Truck, X } from 'lucide-react';
 import { signInWithGoogle } from '../config/firebase';
 import { NeoMartLogo } from './NeoMartLogo';
 import { LegalModal } from './LegalModal';
@@ -42,8 +42,14 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 }) => {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [keepSignedIn, setKeepSignedIn] = useState(true);
   const [loading, setLoading] = useState(false);
   const [legalDocument, setLegalDocument] = useState<'terms' | 'privacy' | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) setLegalDocument(null);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -158,62 +164,15 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/65 p-4 sm:p-5">
-      <div className={`relative my-auto w-full max-w-95 rounded-3xl px-5 py-6 shadow-2xl sm:px-7 sm:py-7 ${panelClass}`}>
-        <button onClick={onClose} aria-label="Close" className={`absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full transition cursor-pointer sm:right-4 sm:top-4 ${isDark ? 'bg-[#2a2a2a] text-white hover:bg-[#353535]' : 'bg-[#f5f5f3] text-[#5d5a58] hover:bg-[#ececea]'}`}>
-          <X className="h-5 w-5" strokeWidth={2.2} />
-        </button>
-
-        <div className="flex justify-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-linear-to-br from-[#ff9d00] to-[#f4510b] shadow-[0_8px_15px_rgba(244,81,11,0.2)]">
-            <NeoMartLogo size="lg" showText={false} />
-          </div>
-        </div>
-
-        <h1 className="mt-5 text-center text-[1.55rem] font-black leading-tight tracking-tight sm:text-[1.9rem]">Welcome to NeoMart</h1>
-        <p className={`mx-auto mt-2 max-w-80 text-center text-[0.9rem] leading-5 sm:text-[1rem] ${mutedClass}`}>Sign in to access your saved carts, orders, and rewards.</p>
-
-        <button type="button" onClick={handleGoogleSignIn} disabled={loading} className={`mt-6 flex h-14 w-full items-center justify-center gap-3 rounded-2xl border-2 text-[1rem] font-semibold shadow-[0_3px_6px_rgba(0,0,0,0.08)] transition disabled:opacity-60 cursor-pointer sm:text-[1.15rem] ${isDark ? 'border-[#484848] bg-[#242424] text-white hover:bg-[#2d2d2d]' : 'border-[#d8d5d3] bg-white text-[#211e1d] hover:bg-[#fffaf7]'}`}>
-          <GoogleIcon />
-          <span>{loading ? 'Connecting...' : 'Continue with Google'}</span>
-        </button>
-
-        <div className="my-6 flex items-center gap-2 text-[0.75rem] font-medium text-[#aaa6a4] sm:gap-3 sm:text-[0.85rem]">
-          <span className={`h-px flex-1 ${isDark ? 'bg-[#444]' : 'bg-[#ddd9d7]'}`} />
-          <span>OR WITH EMAIL</span>
-          <span className={`h-px flex-1 ${isDark ? 'bg-[#444]' : 'bg-[#ddd9d7]'}`} />
-        </div>
-
-        <form onSubmit={handleEmailSignIn} className="space-y-4">
-          <label className="block">
-            <span className={`mb-1.5 block text-[0.78rem] font-extrabold uppercase tracking-wide ${isDark ? 'text-[#dedede]' : 'text-[#494542]'}`}>Email address</span>
-            <span className={`flex h-12 items-center gap-3 rounded-xl border-2 px-3.5 text-[#9b9693] focus-within:border-[#f4510b] ${isDark ? 'border-[#484848] bg-[#242424]' : 'border-[#d9d6d4] bg-white'}`}>
-              <Mail className="h-5 w-5 shrink-0" strokeWidth={1.8} />
-              <input type="text" value={identifier} onChange={(event) => setIdentifier(event.target.value)} placeholder="you@example.com" className={`w-full bg-transparent text-[0.9rem] outline-none placeholder:text-[#aaa6a4] sm:text-[1rem] ${isDark ? 'text-white' : 'text-[#302d2b]'}`} />
-            </span>
-          </label>
-
-          <label className="block">
-            <span className={`mb-1.5 block text-[0.78rem] font-extrabold uppercase tracking-wide ${isDark ? 'text-[#dedede]' : 'text-[#494542]'}`}>Password</span>
-            <span className={`flex h-12 items-center gap-3 rounded-xl border-2 px-3.5 text-[#9b9693] focus-within:border-[#f4510b] ${isDark ? 'border-[#484848] bg-[#242424]' : 'border-[#d9d6d4] bg-white'}`}>
-              <LockKeyhole className="h-5 w-5 shrink-0" strokeWidth={1.8} />
-              <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="••••••••" className={`w-full bg-transparent text-[0.9rem] outline-none placeholder:text-[#aaa6a4] sm:text-[1rem] ${isDark ? 'text-white' : 'text-[#302d2b]'}`} />
-            </span>
-          </label>
-
-          <button type="submit" disabled={loading} className="h-14 w-full rounded-xl bg-[#f4510b] text-[1.2rem] font-extrabold text-white shadow-[0_7px_12px_rgba(244,81,11,0.25)] transition hover:bg-[#df4608] disabled:opacity-70 cursor-pointer">
-            {loading ? 'Signing In...' : 'Sign In'}
-          </button>
-        </form>
-
-        <p className={`mt-6 text-center text-[0.88rem] sm:text-[1rem] ${mutedClass}`}>Don't have an account? <button type="button" onClick={handleGoogleSignIn} className="font-extrabold text-[#d95b1c] underline underline-offset-4 cursor-pointer">Sign up now</button></p>
-
-        <div className={`mt-6 border-t pt-5 text-center text-[0.78rem] leading-5 sm:text-[0.9rem] ${borderClass} ${mutedClass}`}>
-          By continuing, you agree to our{' '}
-          <button type="button" onClick={() => setLegalDocument('terms')} className="font-semibold text-[#b66c43] underline underline-offset-2 cursor-pointer">Terms of Service</button>{' '}
-          and{' '}
-          <button type="button" onClick={() => setLegalDocument('privacy')} className="font-semibold text-[#b66c43] underline underline-offset-2 cursor-pointer">Privacy Policy</button>.
-        </div>
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-[#070808] text-white">
+      <div className="mx-auto flex min-h-dvh w-full max-w-[1440px] items-stretch p-0 sm:p-2 lg:p-3">
+        <section className="relative hidden min-h-[calc(100dvh-24px)] flex-1 overflow-hidden rounded-[22px] border border-[#292929] bg-[#101111] px-12 py-14 lg:block xl:px-14">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_72%_43%,rgba(255,106,0,0.22),transparent_31%),radial-gradient(circle_at_45%_100%,rgba(255,106,0,0.05),transparent_35%)]" />
+          <div className="relative z-10 max-w-[360px]"><p className="text-[38px] font-black leading-[1.02] tracking-[-1.5px] text-[#f2f2f2]">Shop smarter.<br /><span className="text-[#ff6a00]">Live better.</span></p><p className="mt-5 text-[15px] leading-6 text-[#999b9b]">Discover the best products, unbeatable prices, and exclusive deals - all in one place.</p><div className="mt-8 space-y-4">{[[Tag, 'Best Prices', 'Find amazing deals every day.'], [ShieldCheck, 'Secure Payments', 'Your payments are safe with us.'], [Truck, 'Fast Delivery', 'Quick and reliable delivery to your door.']].map(([Icon, title, detail]) => <div key={title as string} className="flex items-center gap-3"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#303131] bg-[#1b1c1c] text-[#ff790f]"><Icon className="h-5 w-5" /></span><span><strong className="block text-[13px] text-[#f1f1f1]">{title as string}</strong><small className="text-[11px] text-[#8d8f8f]">{detail as string}</small></span></div>)}</div></div>
+          <div className="absolute right-[11%] top-[27%] h-[260px] w-[250px]"><div className="absolute bottom-2 left-0 h-20 w-56 rounded-[50%] border-t border-[#55504a] bg-[linear-gradient(180deg,#35302b,#171616)] shadow-[0_18px_35px_rgba(0,0,0,0.45)]" /><div className="absolute bottom-14 left-12 h-36 w-32 -skew-x-2 rounded-b-[18px] border border-[#3f4140] bg-[linear-gradient(110deg,#242727,#0b0c0c)] shadow-[15px_22px_26px_rgba(0,0,0,0.38)]"><span className="absolute left-1/2 top-16 -translate-x-1/2 text-[54px] font-black text-[#ff6a00]">n</span></div><div className="absolute bottom-[174px] left-[68px] h-16 w-14 rounded-t-[28px] border-[5px] border-b-0 border-[#171918]" /><div className="absolute right-[-8px] top-[-12px] h-12 w-14 rotate-[-12deg] rounded-md bg-[linear-gradient(135deg,#b8793c,#70451f)] shadow-lg" /><div className="absolute bottom-24 right-[-30px] h-14 w-16 rotate-[18deg] rounded-md bg-[linear-gradient(135deg,#8d5c31,#503116)] opacity-80 shadow-lg" /></div>
+          <div className="absolute bottom-14 left-12 right-12 grid grid-cols-4 divide-x divide-[#393939] rounded-2xl border border-[#2b2c2c] bg-[#1a1b1b]/90 py-5 text-center">{[[Package, '10M+', 'Happy Customers'], [Package, '1M+', 'Products'], [ShieldCheck, '100%', 'Secure'], [Headphones, '24/7', 'Customer Support']].map(([Icon, stat, label]) => <div key={label as string} className="flex items-center justify-center gap-2"><Icon className="hidden h-5 w-5 text-[#ff790f] xl:block" /><span><strong className="block text-[15px] text-[#ff790f]">{stat as string}</strong><small className="text-[9px] text-[#8e9090]">{label as string}</small></span></div>)}</div>
+        </section>
+        <section className="relative flex min-h-dvh w-full items-center justify-center bg-[#181919] px-5 py-8 sm:px-10 lg:min-h-[calc(100dvh-24px)] lg:w-[42%] lg:min-w-[540px] lg:rounded-[22px] lg:border lg:border-[#292929] lg:px-11"><button onClick={onClose} aria-label="Close" className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-[#292a2a] text-[#c1c1c1] transition hover:bg-[#373838] hover:text-white"><X className="h-5 w-5" /></button><div className="w-full max-w-[420px]"><div className="flex justify-center"><div className="flex h-14 w-14 items-center justify-center rounded-[13px] bg-[#ff6a00] shadow-[0_8px_22px_rgba(255,106,0,0.22)]"><NeoMartLogo size="lg" showText={false} /></div></div><h1 className="mt-4 text-center text-[24px] font-extrabold tracking-[-0.5px]">Welcome to NeoMart</h1><p className="mx-auto mt-1.5 max-w-[300px] text-center text-[13px] leading-5 text-[#999b9b]">Sign in to access your saved carts, orders, and rewards.</p><button type="button" onClick={handleGoogleSignIn} disabled={loading} className="mt-5 flex h-14 w-full items-center justify-center gap-3 rounded-[10px] border border-[#4a4b4b] bg-transparent text-[14px] font-bold transition hover:bg-[#242525] disabled:opacity-60"><GoogleIcon /><span>{loading ? 'Connecting...' : 'Continue with Google'}</span></button><div className="my-5 flex items-center gap-3 text-[10px] font-medium text-[#8d8f8f]"><span className="h-px flex-1 bg-[#414242]" /><span>OR WITH EMAIL</span><span className="h-px flex-1 bg-[#414242]" /></div><form onSubmit={handleEmailSignIn} className="space-y-3.5"><label className="block"><span className="mb-1.5 block text-[10px] font-bold uppercase tracking-wide text-[#dedede]">Email address</span><span className="flex h-12 items-center gap-3 rounded-[9px] border border-[#4a4b4b] bg-[#1b1c1c] px-3 text-[#898b8b] focus-within:border-[#ff6a00]"><Mail className="h-[17px] w-[17px] shrink-0" /><input type="email" value={identifier} onChange={(event) => setIdentifier(event.target.value)} placeholder="you@example.com" className="w-full bg-transparent text-[13px] text-white outline-none placeholder:text-[#888a8a]" /></span></label><label className="block"><span className="mb-1.5 block text-[10px] font-bold uppercase tracking-wide text-[#dedede]">Password</span><span className="flex h-12 items-center gap-3 rounded-[9px] border border-[#4a4b4b] bg-[#1b1c1c] px-3 text-[#898b8b] focus-within:border-[#ff6a00]"><LockKeyhole className="h-[17px] w-[17px] shrink-0" /><input type={showPassword ? 'text' : 'password'} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="••••••••" className="w-full bg-transparent text-[13px] text-white outline-none placeholder:text-[#888a8a]" /><button type="button" aria-label={showPassword ? 'Hide password' : 'Show password'} onClick={() => setShowPassword((value) => !value)} className="shrink-0 text-[#898b8b] hover:text-white">{showPassword ? <EyeOff className="h-[17px] w-[17px]" /> : <Eye className="h-[17px] w-[17px]" />}</button></span></label><div className="flex items-center justify-between pt-0.5 text-[11px]"><label className="flex items-center gap-2 text-[#a6a8a8]"><input type="checkbox" checked={keepSignedIn} onChange={(event) => setKeepSignedIn(event.target.checked)} className="h-4 w-4 accent-[#ff6a00]" />Keep me signed in</label><button type="button" onClick={() => showToast('Password reset is coming soon')} className="font-bold text-[#ff6a00] hover:underline">Forgot Password?</button></div><button type="submit" disabled={loading} className="mt-1 h-14 w-full rounded-[10px] bg-[#ff6a00] text-[14px] font-extrabold text-white shadow-[0_8px_18px_rgba(255,106,0,0.18)] transition hover:bg-[#e95f00] disabled:opacity-70">{loading ? 'Signing In...' : 'Sign In'}</button></form><p className="mt-3 text-center text-[12px] text-[#999b9b]">Don't have an account? <button type="button" onClick={handleGoogleSignIn} className="font-bold text-[#ff6a00] hover:underline">Sign up now</button></p><div className="mt-3 border-t border-[#303131] pt-3 text-center text-[10px] leading-4 text-[#858787]">By continuing, you agree to our <button type="button" onClick={() => setLegalDocument('terms')} className="text-[#ff6a00] underline">Terms of Service</button> and <button type="button" onClick={() => setLegalDocument('privacy')} className="text-[#ff6a00] underline">Privacy Policy</button>.</div></div></section>
       </div>
       {legalDocument && (
         <LegalModal

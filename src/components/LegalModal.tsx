@@ -247,19 +247,7 @@ Website: [Insert your official website]
 
 By using NeoMart, you confirm that you have read, understood, and agreed to these Terms & Conditions.`;
 
-const privacySections = [
-  ['Information We Collect', 'NeoMart may collect information you provide, including your name, email address, phone number, delivery address, account details, order information, and messages sent to customer support. We may also collect device, browser, usage, and technical information needed to operate and secure the Platform.'],
-  ['How We Use Information', 'We use information to create and manage accounts, process orders and payments, arrange delivery, provide customer support, improve products and services, prevent fraud and abuse, send important service messages, and comply with legal obligations.'],
-  ['Sharing Information', 'We may share information with sellers, delivery partners, payment providers, authentication services, hosting providers, analytics providers, customer support providers, and authorities where required by law. We do not sell personal information for unrelated purposes.'],
-  ['Storage and Security', 'We use reasonable technical and organizational measures to protect personal information. No online service can guarantee absolute security. You are responsible for protecting your password and notifying NeoMart if you believe your account has been compromised.'],
-  ['Cookies and Local Storage', 'NeoMart may use cookies, local storage, and similar technologies to remember preferences, keep you signed in, maintain carts, improve performance, and understand how the Platform is used. You can manage storage through your browser settings, although some features may not work correctly if it is disabled.'],
-  ['Your Choices', 'You may review or update some account information through the Platform. You may also contact NeoMart support about access, correction, or deletion requests, subject to applicable law and legitimate business needs.'],
-  ['Children and Changes', 'NeoMart is not intended for children who cannot legally use online marketplace services. We may update this Privacy Policy from time to time and will provide reasonable notice of significant changes.'],
-  ['Contact', 'For privacy questions or requests, contact NeoMart through the customer support channels provided within the Platform.'],
-];
-
 export const LegalModal: React.FC<LegalModalProps> = ({ document, onBack, onClose, isDark }) => {
-  const sections = privacySections;
   const title = document === 'terms' ? 'NeoMart Terms & Conditions' : 'NeoMart Privacy Policy';
   const panel = isDark ? 'bg-[#1a1a1a] text-[#f3f3f3]' : 'bg-white text-[#211e1d]';
   const muted = isDark ? 'text-[#bdbdbd]' : 'text-[#77716e]';
@@ -281,19 +269,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({ document, onBack, onClos
           <p className={`mt-2 text-sm ${muted}`}>Last Updated: September 5, 2026</p>
           {document === 'terms' ? (
             <pre className={`mt-6 whitespace-pre-wrap font-sans text-sm leading-6 ${muted}`}>{termsText}</pre>
-          ) : (
-            <>
-              <p className={`mt-6 text-sm leading-6 ${muted}`}>This Privacy Policy explains how NeoMart collects, uses, stores, and protects information when you use the NeoMart Platform.</p>
-              <div className="mt-7 space-y-6">
-            {sections.map(([heading, text]) => (
-              <section key={heading}>
-                <h2 className="text-base font-extrabold text-[#f4510b]">{heading}</h2>
-                <p className={`mt-2 text-sm leading-6 ${muted}`}>{text}</p>
-              </section>
-            ))}
-              </div>
-            </>
-          )}
+          ) : <pre className={`mt-6 whitespace-pre-wrap font-sans text-sm leading-6 ${muted}`}>{termsText}</pre>}
         </main>
       </div>
     </div>
