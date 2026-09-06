@@ -29,6 +29,7 @@ interface OrderTrackingModalProps {
   orderId?: string | null;
   ordersList?: Order[];
   showToast: (msg: string) => void;
+  isRiderMode?: boolean;
 }
 
 interface UserLocation {
@@ -45,7 +46,8 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
   onClose,
   orderId,
   ordersList = sampleOrders,
-  showToast
+  showToast,
+  isRiderMode = false
 }) => {
   if (!isOpen) return null;
 
@@ -147,10 +149,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
           accuracy: acc,
         };
         setUserLocation(loc);
-        void saveSharedLocation(orderId || selectedOrder.id, {
-          ...loc,
-          updatedAt: new Date().toISOString(),
-        });
+        if (isRiderMode) void saveSharedLocation(orderId || selectedOrder.id, { ...loc, updatedAt: new Date().toISOString() });
         setPermissionStatus('granted');
         setLastPingTime(new Date());
         addLog(`✅ GPS lock verified: Accuracy ±${Math.round(acc)}m`);
@@ -173,12 +172,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                 ? { ...prev, latitude: wLat, longitude: wLng, accuracy: wAcc }
                 : { latitude: wLat, longitude: wLng, accuracy: wAcc }
             );
-            void saveSharedLocation(orderId || selectedOrder.id, {
-              latitude: wLat,
-              longitude: wLng,
-              accuracy: wAcc,
-              updatedAt: new Date().toISOString(),
-            });
+            if (isRiderMode) void saveSharedLocation(orderId || selectedOrder.id, { latitude: wLat, longitude: wLng, accuracy: wAcc, updatedAt: new Date().toISOString() });
             setLastPingTime(new Date());
           },
           () => {},
@@ -216,7 +210,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
 
   // Trigger permission check on open
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && isRiderMode) {
       requestLocationPermission();
     }
     return () => {
@@ -224,7 +218,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
         navigator.geolocation.clearWatch(watchIdRef.current);
       }
     };
-  }, [isOpen]);
+  }, [isOpen, isRiderMode]);
 
   useEffect(() => {
     if (!isOpen || !selectedOrder.id) return;

@@ -7,6 +7,9 @@ interface OrderHistoryModalProps {
   onClose: () => void;
   orders: Order[];
   onTrackOrder: (orderId: string) => void;
+  onReorder?: (order: Order) => void;
+  onContactSupport?: (order: Order, subject: string) => void;
+  onDownloadReceipt?: (order: Order) => void;
 }
 
 export const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({
@@ -14,6 +17,9 @@ export const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({
   onClose,
   orders,
   onTrackOrder,
+  onReorder,
+  onContactSupport,
+  onDownloadReceipt,
 }) => {
   if (!isOpen) return null;
 
@@ -49,9 +55,12 @@ export const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({
                   <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{order.items.length} item{order.items.length === 1 ? '' : 's'}</span>
                   <strong className="text-[#f68b1e]">₦{order.total.toLocaleString('en-NG')}</strong>
                 </div>
-                <button onClick={() => onTrackOrder(order.id)} className="w-full py-2 rounded-lg bg-[#f68b1e] text-white text-xs font-bold hover:bg-[#e07a10]">
-                  Track order
-                </button>
+                <div className="grid grid-cols-2 gap-2">
+                  <button onClick={() => onTrackOrder(order.id)} className="py-2 rounded-lg bg-[#f68b1e] text-white text-xs font-bold hover:bg-[#e07a10]">Track order</button>
+                  <button onClick={() => onReorder?.(order)} className="py-2 rounded-lg border border-[#f68b1e] text-[#f68b1e] text-xs font-bold hover:bg-[#fff3e0] dark:hover:bg-[#2a1a00]">Reorder</button>
+                  <button onClick={() => onDownloadReceipt?.(order)} className="py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-xs font-bold">Receipt</button>
+                  <button onClick={() => onContactSupport?.(order, order.status === 'Delivered' ? 'Return request' : 'Cancel order request')} className="py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-xs font-bold">{order.status === 'Delivered' ? 'Request return' : 'Request cancel'}</button>
+                </div>
               </div>
             ))
           )}

@@ -291,6 +291,7 @@ export default function App() {
     return [];
   });
   const [isOrderTrackingOpen, setIsOrderTrackingOpen] = useState(Boolean(trackingPathOrderId));
+  const [isRiderTrackingMode, setIsRiderTrackingMode] = useState(false);
   const [trackingOrderId, setTrackingOrderId] = useState<string | null>(trackingPathOrderId);
   const [lastPlacedOrderId, setLastPlacedOrderId] = useState<string | null>(null);
   const lastPlacedOrderIdRef = useRef<string | null>(null);
@@ -761,6 +762,9 @@ export default function App() {
               ? 'Your order has been confirmed by NeoMart.'
               : `Your order is now ${order.status}.`
           );
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('NeoMart order update', { body: `Order #${order.id} is now ${order.status}.`, icon: '/favicon.ico' });
+          }
         }
       }
       remoteStatusesRef.current = Object.fromEntries(
@@ -1049,8 +1053,9 @@ export default function App() {
     setIsCheckoutOpen(true);
   };
 
-  const handleOpenLiveTracking = (orderId?: string) => {
+  const handleOpenLiveTracking = (orderId?: string, riderMode = false) => {
     const nextOrderId = orderId || null;
+    setIsRiderTrackingMode(riderMode);
     setTrackingOrderId(nextOrderId);
     setIsOrderTrackingOpen(true);
     if (nextOrderId) {
@@ -1383,7 +1388,7 @@ export default function App() {
                         <td className="px-5 py-4 whitespace-nowrap">{order.date}</td>
                         <td className="px-5 py-4"><select value={order.status === 'Order Confirmed' ? 'Processing' : order.status} onChange={(event) => { const status = event.target.value as Order['status']; setOrders((items) => items.map((item) => item.id === order.id ? { ...item, status } : item)); void updateOrderStatus(order.id, status).catch(() => showToast('Could not sync status. Check Firebase connection.')); }} className="rounded-lg border border-gray-700 bg-gray-900 px-2 py-2 text-[11px] text-gray-200 outline-none focus:border-orange-500"><option value="Processing">Processing</option><option value="Packed">Packed</option><option value="Shipped">Shipped</option><option value="Out for Delivery">Out for Delivery</option><option value="Delivered">Delivered</option><option value="Cancelled">Cancelled</option></select></td>
                         <td className="px-5 py-4"><p className="font-semibold text-gray-200">{order.driverName || 'Unassigned'}</p><p className="mt-1 text-[11px] text-gray-500">{order.trackingNumber || 'No tracking number'}</p></td>
-                        <td className="px-5 py-4"><button type="button" onClick={() => handleOpenLiveTracking(order.id)} className="rounded-lg border border-cyan-500/40 px-2.5 py-2 font-bold text-cyan-300 hover:bg-cyan-500/10">Track order</button></td>
+                        <td className="px-5 py-4"><button type="button" onClick={() => handleOpenLiveTracking(order.id, true)} className="rounded-lg border border-cyan-500/40 px-2.5 py-2 font-bold text-cyan-300 hover:bg-cyan-500/10">Share rider location</button></td>
                       </tr>
                     ))}
                   </tbody>
@@ -2336,6 +2341,7 @@ export default function App() {
         orderId={trackingOrderId}
         ordersList={orders}
         showToast={showToast}
+        isRiderMode={isRiderTrackingMode}
       />
 
       <OrderHistoryModal
@@ -2345,6 +2351,43 @@ export default function App() {
         onTrackOrder={(orderId) => {
           setIsOrderHistoryOpen(false);
           handleOpenLiveTracking(orderId);
+        }}
+        onReorder={(order) => {
+          const additions = order.items.flatMap((item) => {
+            const product = products.find((candidate) => candidate.name === item.name);
+            return product ? [{ ...product, qty: item.qty }] : [];
+          });
+          if (additions.length === 0) {
+            showToast('Some products from this order are no longer available.');
+            return;
+          }
+          setCart((current) => {
+            const next = [...current];
+            additions.forEach((item) => {
+              const existing = next.find((cartItem) => cartItem.id === item.id);
+              if (existing) existing.qty += item.qty;
+              else next.push(item);
+            });
+            return next;
+          });
+          setIsOrderHistoryOpen(false);
+          setIsCartOpen(true);
+          showToast('Items added to your cart');
+        }}
+        onDownloadReceipt={(order) => {
+          const receipt = [`NeoMart receipt`, `Order #${order.id}`, `Date: ${order.date}`, `Total: NGN ${order.total.toLocaleString('en-NG')}`, '', ...order.items.map((item) => `${item.qty} x ${item.name}`)].join('\n');
+          const url = URL.createObjectURL(new Blob([receipt], { type: 'text/plain' }));
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `neomart-receipt-${order.id}.txt`;
+          link.click();
+          URL.revokeObjectURL(url);
+        }}
+        onContactSupport={(order, subject) => {
+          setIsOrderHistoryOpen(false);
+          setActiveHelpSection('help-support');
+          setIsHelpOpen(true);
+          showToast(`${subject} opened for order #${order.id}`);
         }}
       />
 
@@ -2373,7 +2416,7 @@ export default function App() {
         }}
         onOpenLiveGps={(orderId) => {
           setIsAdminOpen(false);
-          handleOpenLiveTracking(orderId);
+          handleOpenLiveTracking(orderId, true);
         }}
         onUpdateOrderStatus={(orderId, status) => {
           setOrders((prev) =>
