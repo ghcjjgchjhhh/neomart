@@ -223,7 +223,8 @@ export default function App() {
   });
 
   // Authentication state
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem('neomart_logged_in') === 'true');
+  const [authReady, setAuthReady] = useState(!auth);
   const [currentUserUid, setCurrentUserUid] = useState('');
   const [currentUserEmail, setCurrentUserEmail] = useState('');
   const [sessionStartedAt, setSessionStartedAt] = useState(() =>
@@ -237,6 +238,7 @@ export default function App() {
   );
 
   useEffect(() => subscribeToAuthState((user) => {
+    setAuthReady(true);
     if (!user || user.isAnonymous) {
       setIsLoggedIn(false);
       setCurrentUserUid('');

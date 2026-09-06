@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { createUserWithEmailAndPassword, getAuth, GoogleAuthProvider, getRedirectResult, onAuthStateChanged, RecaptchaVerifier, sendEmailVerification, sendPasswordResetEmail as firebaseSendPasswordResetEmail, signInAnonymously, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, signInWithPhoneNumber as firebaseSignInWithPhoneNumber, signOut as firebaseSignOut, updateProfile, type ConfirmationResult, type User } from 'firebase/auth';
+import { browserLocalPersistence, createUserWithEmailAndPassword, getAuth, GoogleAuthProvider, getRedirectResult, onAuthStateChanged, RecaptchaVerifier, sendEmailVerification, sendPasswordResetEmail as firebaseSendPasswordResetEmail, setPersistence, signInAnonymously, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, signInWithPhoneNumber as firebaseSignInWithPhoneNumber, signOut as firebaseSignOut, updateProfile, type ConfirmationResult, type User } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -16,6 +16,12 @@ export const isFirebaseConfigured = Boolean(firebaseConfig.projectId && firebase
 const app = isFirebaseConfigured ? initializeApp(firebaseConfig) : null;
 export const db = app ? getFirestore(app) : null;
 export const auth = app ? getAuth(app) : null;
+
+if (auth) {
+  void setPersistence(auth, browserLocalPersistence).catch((error) => {
+    console.error('Could not enable browser sign-in persistence:', error);
+  });
+}
 
 export async function signInWithGoogle(emailHint?: string) {
   if (!auth) throw new Error('Firebase authentication is not configured');
