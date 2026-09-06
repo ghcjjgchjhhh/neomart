@@ -43,6 +43,7 @@ interface CheckoutModalProps {
   cart: CartItem[];
   initialDelivery?: DeliveryDetails | null;
   savedAddresses?: SavedAddress[];
+  onSaveAddress?: (delivery: DeliveryDetails) => void;
   onCompleteOrder: (method: PaymentMethodType, deliveryDetails?: DeliveryDetails, discountAmount?: number) => void;
   showToast: (msg: string) => void;
 }
@@ -53,6 +54,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   cart,
   initialDelivery,
   savedAddresses = [],
+  onSaveAddress,
   onCompleteOrder,
   showToast
 }) => {
@@ -104,6 +106,19 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [streetSuggestions, setStreetSuggestions] = useState<Array<{ name: string; street: string; city: string; displayName: string }>>([]);
   const [locationLoading, setLocationLoading] = useState(false);
   const [formError, setFormError] = useState('');
+  const lastSavedAddressRef = React.useRef('');
+
+  useEffect(() => {
+    if (!isOpen || !onSaveAddress || selectedAddressId !== 'new') return;
+    if (!delivery.fullName?.trim() || !delivery.state || !delivery.lga || !delivery.city || !delivery.street?.trim() || !delivery.houseNumber?.trim() || !delivery.phone.trim()) return;
+    const addressKey = JSON.stringify(delivery);
+    if (addressKey === lastSavedAddressRef.current) return;
+    const timer = window.setTimeout(() => {
+      lastSavedAddressRef.current = addressKey;
+      onSaveAddress({ ...delivery, town: delivery.town || delivery.city, address: delivery.address || delivery.street });
+    }, 700);
+    return () => window.clearTimeout(timer);
+  }, [delivery, isOpen, onSaveAddress, selectedAddressId]);
 
   useEffect(() => {
     if (!delivery.state || !delivery.lga || townSearch.trim().length < 2) {

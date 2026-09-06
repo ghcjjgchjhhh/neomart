@@ -2174,6 +2174,31 @@ export default function App() {
         cart={cart}
         initialDelivery={savedDeliveryDetails}
         savedAddresses={savedAddresses}
+        onSaveAddress={(deliveryAddress) => {
+          if (!auth?.currentUser || auth.currentUser.isAnonymous) return;
+          const savedAddress: SavedAddress = {
+            id: `address-${auth.currentUser.uid}`,
+            label: 'Home',
+            fullName: deliveryAddress.fullName || accountName,
+            state: deliveryAddress.state,
+            lga: deliveryAddress.lga || '',
+            city: deliveryAddress.city,
+            address: deliveryAddress.address || deliveryAddress.street || '',
+            town: deliveryAddress.town || deliveryAddress.city,
+            street: deliveryAddress.street || '',
+            houseNumber: deliveryAddress.houseNumber || '',
+            apartment: deliveryAddress.apartment || '',
+            landmark: deliveryAddress.landmark || '',
+            phone: deliveryAddress.phone,
+            country: deliveryAddress.country || 'Nigeria',
+            notes: deliveryAddress.notes || '',
+            isDefault: true,
+          };
+          const nextAddresses = [savedAddress, ...savedAddresses.filter((address) => address.id !== savedAddress.id)].map((address) => ({ ...address, isDefault: address.id === savedAddress.id }));
+          setSavedDeliveryDetails(deliveryAddress);
+          setSavedAddresses(nextAddresses);
+          void saveCustomerAddresses(nextAddresses).catch(() => {});
+        }}
         onCompleteOrder={handleCompleteOrder}
         showToast={showToast}
       />
