@@ -70,8 +70,8 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [lastPingTime, setLastPingTime] = useState<Date>(new Date());
   const [telemetryLogs, setTelemetryLogs] = useState<string[]>([
-    'Connected to NeoMart Live GPS Gateway',
-    'Awaiting device location synchronization...',
+    'Connected to NeoMart GPS service',
+    'Waiting for device location synchronization...',
   ]);
 
   // Live courier simulation progress (0 to 100%)
@@ -318,8 +318,9 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
     return '₦' + amount.toLocaleString('en-NG');
   };
 
-  const mapCenterLat = userLocation?.latitude || 6.5244;
-  const mapCenterLng = userLocation?.longitude || 3.3792;
+  // Round the iframe center so normal GPS jitter does not reload the map on every ping.
+  const mapCenterLat = Number((userLocation?.latitude || 6.5244).toFixed(3));
+  const mapCenterLng = Number((userLocation?.longitude || 3.3792).toFixed(3));
   const osmEmbedUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${mapCenterLng - 0.02}%2C${mapCenterLat - 0.02}%2C${mapCenterLng + 0.02}%2C${mapCenterLat + 0.02}&layer=mapnik&marker=${mapCenterLat}%2C${mapCenterLng}`;
 
   // Status Stepper Definitions
@@ -682,9 +683,9 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
             <div className="flex items-center justify-between text-gray-400 text-[10px] pb-1.5 mb-2 border-b border-gray-800">
               <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
                 <Wifi className="w-3 h-3 text-emerald-500 animate-pulse" />
-                <span>INTERNET TELEMETRY STREAM</span>
+                <span>GPS CONNECTION LOG</span>
               </span>
-              <span className="text-gray-500">GATEWAY: LAG-NG-01 • SSL ENCRYPTED</span>
+              <span className="text-gray-500">DEVICE GPS • LAST SYNC {lastPingTime.toLocaleTimeString()}</span>
             </div>
             <div className="space-y-1">
               {telemetryLogs.map((log, idx) => (
@@ -709,7 +710,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                       step.done
                         ? 'bg-emerald-500 text-white ring-4 ring-emerald-100 dark:ring-emerald-950/60'
                         : step.active
-                        ? 'bg-[#f68b1e] text-white ring-4 ring-orange-100 dark:ring-orange-950/60 animate-bounce'
+                        ? 'bg-[#f68b1e] text-white ring-4 ring-orange-100 dark:ring-orange-950/60'
                         : 'bg-gray-200 dark:bg-gray-700 text-gray-400'
                     }`}
                   >
