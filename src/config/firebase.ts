@@ -17,10 +17,18 @@ const app = isFirebaseConfigured ? initializeApp(firebaseConfig) : null;
 export const db = app ? getFirestore(app) : null;
 export const auth = app ? getAuth(app) : null;
 
+let resolveAuthReady: () => void = () => undefined;
+const authReady = new Promise<void>((resolve) => {
+  resolveAuthReady = resolve;
+});
+
 if (auth) {
   void setPersistence(auth, browserLocalPersistence).catch((error) => {
     console.error('Could not enable browser sign-in persistence:', error);
   });
+  onAuthStateChanged(auth, () => resolveAuthReady());
+} else {
+  resolveAuthReady();
 }
 
 export async function signInWithGoogle(emailHint?: string) {
@@ -100,6 +108,7 @@ export async function getGoogleRedirectUser() {
 
 export async function ensureFirebaseAuth() {
   if (!auth) return false;
+  await authReady;
   if (!auth.currentUser) await signInAnonymously(auth);
   return true;
 }
