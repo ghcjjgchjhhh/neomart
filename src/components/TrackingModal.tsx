@@ -678,25 +678,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
             </div>
           </div>
 
-          {/* 3. Live Telemetry Console */}
-          <div className="p-4 sm:p-5 bg-black text-emerald-400 font-mono text-[11px]">
-            <div className="flex items-center justify-between text-gray-400 text-[10px] pb-1.5 mb-2 border-b border-gray-800">
-              <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
-                <Wifi className="w-3 h-3 text-emerald-500 animate-pulse" />
-                <span>GPS CONNECTION LOG</span>
-              </span>
-              <span className="text-gray-500">DEVICE GPS • LAST SYNC {lastPingTime.toLocaleTimeString()}</span>
-            </div>
-            <div className="space-y-1">
-              {telemetryLogs.map((log, idx) => (
-                <div key={idx} className="leading-tight opacity-90 truncate">
-                  {log}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* 4. Delivery Progress Stepper */}
+          {/* 3. Delivery Progress Stepper */}
           <div className="p-5 bg-white dark:bg-[#161616]">
             <h4 className="text-xs font-extrabold uppercase tracking-wider text-gray-400 mb-4">
               Tracking Timeline
