@@ -520,6 +520,19 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
               </div>
             </div>
 
+            <div className="mb-3 grid gap-2 rounded-2xl border border-white/10 bg-black/20 p-2 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
+              <div className="flex min-w-0 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-gray-200">
+                <MapPin className="h-4 w-4 shrink-0 text-blue-400" />
+                <span className="truncate">Your Location</span>
+                {userLocation && <span className="shrink-0 text-[9px] font-normal text-gray-400">(+-{Math.round(userLocation.accuracy)}m)</span>}
+              </div>
+              <div className="flex w-full overflow-hidden rounded-xl border border-white/20 bg-black/50 p-0.5 sm:w-auto">
+                <button type="button" onClick={() => setActiveMapView('osm_live')} className={`flex min-w-0 flex-1 items-center justify-center gap-1 px-3 py-2 text-[10px] font-bold sm:flex-none ${activeMapView === 'osm_live' ? 'bg-[#f68b1e] text-white' : 'text-gray-300 hover:bg-white/10'}`}><Layers className="h-3.5 w-3.5" />Map</button>
+                <button type="button" onClick={() => setActiveMapView('vector')} className={`flex min-w-0 flex-1 items-center justify-center gap-1 px-3 py-2 text-[10px] font-bold sm:flex-none ${activeMapView === 'vector' ? 'bg-[#f68b1e] text-white' : 'text-gray-300 hover:bg-white/10'}`}><Navigation className="h-3.5 w-3.5" />Delivery route</button>
+              </div>
+              <button type="button" onClick={requestLocationPermission} className="flex w-full items-center justify-center gap-1 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-[10px] font-bold text-gray-200 hover:bg-white/20 sm:w-auto" title="Refresh your location"><RefreshCw className={`h-3.5 w-3.5 ${permissionStatus === 'requesting' ? 'animate-spin text-[#f68b1e]' : ''}`} />Refresh location</button>
+            </div>
+
             {/* Interactive delivery map with live route and real GPS view */}
             <div className="w-full h-56 sm:h-64 rounded-2xl bg-[#0f141c] border border-gray-800 relative overflow-hidden shadow-2xl shadow-black/30">
               {activeMapView === 'osm_live' ? (
@@ -546,26 +559,6 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                 </div>
               )}
 
-              <div className="pointer-events-none absolute inset-3 z-20 flex flex-col justify-between gap-2">
-                <div className="grid min-w-0 grid-cols-1 items-start gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
-                  <div className="pointer-events-auto flex min-w-0 items-center gap-2 overflow-hidden rounded-xl border border-gray-200 bg-white/95 px-3 py-1.5 shadow-md backdrop-blur-md dark:border-gray-800 dark:bg-black/90">
-                    <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-blue-500 animate-pulse" />
-                    <div className="flex min-w-0 items-center gap-1 text-[11px] font-bold text-gray-900 dark:text-gray-100">
-                      <MapPin className="h-3.5 w-3.5 shrink-0 text-blue-600" />
-                      <span className="truncate">Your Location</span>
-                      {userLocation && <span className="shrink-0 text-[9px] font-normal text-gray-500">(±{Math.round(userLocation.accuracy)}m)</span>}
-                    </div>
-                  </div>
-                  <div className="pointer-events-auto flex w-full overflow-hidden rounded-xl border border-white/20 bg-black/65 p-0.5 shadow-lg backdrop-blur-md sm:w-auto">
-                    <button type="button" onClick={() => setActiveMapView('osm_live')} className={`flex min-w-0 flex-1 items-center justify-center gap-1 px-2.5 py-1.5 text-[10px] font-bold transition sm:flex-none ${activeMapView === 'osm_live' ? 'bg-[#f68b1e] text-white' : 'text-gray-300 hover:bg-white/10'}`}><Layers className="h-3.5 w-3.5" />Map</button>
-                    <button type="button" onClick={() => setActiveMapView('vector')} className={`flex min-w-0 flex-1 items-center justify-center gap-1 px-2.5 py-1.5 text-[10px] font-bold transition sm:flex-none ${activeMapView === 'vector' ? 'bg-[#f68b1e] text-white' : 'text-gray-300 hover:bg-white/10'}`}><Navigation className="h-3.5 w-3.5" />Delivery route</button>
-                  </div>
-                </div>
-                <div className="grid min-w-0 grid-cols-1 items-end gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
-                  <div className="pointer-events-auto min-w-0 truncate rounded-xl border border-white/10 bg-black/75 px-3 py-1.5 text-[11px] text-gray-300 shadow-md backdrop-blur-md"><span className="mr-2 inline-block h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />Rider: <strong>Musa Garba</strong> • LAG-482-KT</div>
-                  <button type="button" onClick={requestLocationPermission} className="pointer-events-auto flex w-full items-center justify-center gap-1 rounded-xl border border-gray-200 bg-white/95 px-3 py-1.5 text-[11px] font-bold text-gray-700 shadow-md backdrop-blur-md transition-all hover:text-[#f68b1e] dark:border-gray-800 dark:bg-black/90 dark:text-gray-300 sm:w-auto" title="Refresh your location"><RefreshCw className={`h-3.5 w-3.5 ${permissionStatus === 'requesting' ? 'animate-spin text-[#f68b1e]' : ''}`} /><span>Refresh location</span></button>
-                </div>
-              </div>
             </div>
 
             {/* Courier Profile & Contact Strip */}
