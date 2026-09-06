@@ -519,14 +519,36 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
               </div>
             </div>
 
-            {/* Interactive Real OpenStreetMap GPS Map */}
-            <div className="w-full h-56 sm:h-64 rounded-2xl bg-[#0f141c] border border-gray-800 relative overflow-hidden shadow-inner">
-              <iframe
-                title="NeoMart Live Delivery GPS Map"
-                src={osmEmbedUrl}
-                className="w-full h-full border-0 pointer-events-auto filter dark:invert-[0.88] dark:hue-rotate-180"
-                loading="lazy"
-              />
+            {/* Interactive delivery map with live route and real GPS view */}
+            <div className="w-full h-56 sm:h-64 rounded-2xl bg-[#0f141c] border border-gray-800 relative overflow-hidden shadow-2xl shadow-black/30">
+              {activeMapView === 'osm_live' ? (
+                <iframe
+                  title="NeoMart Live Delivery GPS Map"
+                  src={osmEmbedUrl}
+                  className="w-full h-full border-0 pointer-events-auto filter dark:invert-[0.88] dark:hue-rotate-180"
+                  loading="lazy"
+                />
+              ) : (
+                <div className="relative h-full w-full overflow-hidden bg-[#101923]">
+                  <div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'linear-gradient(28deg, transparent 46%, #5b7180 47%, #5b7180 48%, transparent 49%), linear-gradient(118deg, transparent 45%, #344958 46%, #344958 47%, transparent 48%), linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px)', backgroundSize: '170px 140px, 210px 170px, 34px 34px, 34px 34px' }} />
+                  <div className="absolute -left-12 top-10 h-32 w-[125%] rotate-[15deg] border-y border-white/10 bg-white/[0.03]" />
+                  <div className="absolute -right-16 bottom-0 h-28 w-[120%] -rotate-[18deg] border-y border-white/10 bg-white/[0.03]" />
+                  <svg viewBox="0 0 600 260" className="absolute inset-0 h-full w-full" preserveAspectRatio="none" aria-label="Live courier route">
+                    <path d="M55 210 C140 190 120 115 220 130 S315 220 375 155 S455 55 545 55" fill="none" stroke="rgba(255,255,255,.18)" strokeWidth="14" strokeLinecap="round" />
+                    <path d="M55 210 C140 190 120 115 220 130 S315 220 375 155 S455 55 545 55" fill="none" stroke="#f68b1e" strokeWidth="5" strokeLinecap="round" strokeDasharray={`${Math.max(8, courierProgress * 7)} 900`} />
+                    <circle cx="55" cy="210" r="9" fill="#22c55e" stroke="white" strokeWidth="3" />
+                    <circle cx="545" cy="55" r="9" fill="#ef4444" stroke="white" strokeWidth="3" />
+                    <circle cx={55 + (490 * courierProgress / 100)} cy={210 - (155 * courierProgress / 100)} r="8" fill="#f68b1e" stroke="white" strokeWidth="3" />
+                  </svg>
+                  <span className="absolute bottom-3 left-4 rounded-lg bg-black/60 px-2 py-1 text-[10px] font-bold text-gray-300">Pickup hub</span>
+                  <span className="absolute right-4 top-3 rounded-lg bg-black/60 px-2 py-1 text-[10px] font-bold text-gray-300">Your doorstep</span>
+                </div>
+              )}
+
+              <div className="absolute right-3 top-3 flex overflow-hidden rounded-xl border border-white/20 bg-black/65 p-0.5 shadow-lg backdrop-blur-md">
+                <button type="button" onClick={() => setActiveMapView('osm_live')} className={`flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-bold transition ${activeMapView === 'osm_live' ? 'bg-[#f68b1e] text-white' : 'text-gray-300 hover:bg-white/10'}`}><Layers className="h-3.5 w-3.5" />Map</button>
+                <button type="button" onClick={() => setActiveMapView('vector')} className={`flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-bold transition ${activeMapView === 'vector' ? 'bg-[#f68b1e] text-white' : 'text-gray-300 hover:bg-white/10'}`}><Navigation className="h-3.5 w-3.5" />Live route</button>
+              </div>
 
               {/* Top Map HUD Overlays */}
               <div className="absolute top-3 left-3 right-3 flex items-start justify-between pointer-events-none">
