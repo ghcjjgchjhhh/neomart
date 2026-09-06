@@ -264,6 +264,20 @@ export default function App() {
     localStorage.setItem('neomart_user_email', email);
     localStorage.setItem('neomart_account_name', name);
     if (user.photoURL) localStorage.setItem('neomart_account_photo_url', user.photoURL);
+    if (email.toLowerCase() === ADMIN_EMAIL) {
+      setAdminSection('overview');
+      setCurrentView('admin');
+      setIsLoginOpen(false);
+      setIsCartOpen(false);
+      setIsCheckoutOpen(false);
+      setIsHelpOpen(false);
+      setIsOrderHistoryOpen(false);
+      setIsOrderTrackingOpen(false);
+      setIsPaymentSuccessOpen(false);
+      if (window.location.pathname.toLowerCase() !== '/admin') {
+        window.history.replaceState({ neomartView: 'admin', adminSection: 'overview' }, '', '/admin');
+      }
+    }
   }), []);
 
   const [isLoginOpen, setIsLoginOpen] = useState(false);
