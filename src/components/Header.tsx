@@ -247,7 +247,7 @@ export const Header: React.FC<HeaderProps> = ({
               {/* Help (Opens Help Center on Mobile) */}
               <div className="relative">
                 <button
-                  onClick={() => setIsHelpOpen(!isHelpOpen)}
+                  onClick={() => onOpenHelpSection('help-support')}
                   className="p-2 rounded-lg hover:bg-white/20 transition-colors text-white cursor-pointer"
                   aria-label="Help Center"
                   title="Help & Customer Care"
@@ -484,7 +484,7 @@ export const Header: React.FC<HeaderProps> = ({
             <div ref={helpMenuRef} className="relative">
               <button
                 id="helpButton"
-                onClick={() => setIsHelpOpen(!isHelpOpen)}
+                onClick={() => onOpenHelpSection('help-support')}
                 className="flex flex-col items-center justify-center px-3 py-1 rounded-lg hover:bg-white/20 transition-colors text-white text-xs cursor-pointer"
                 aria-expanded={isHelpOpen}
               >
