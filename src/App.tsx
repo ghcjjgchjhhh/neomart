@@ -45,7 +45,7 @@ type AdminSection = 'overview' | 'orders' | 'confirmations' | 'inventory' | 'rep
 import { allProducts as initialProducts, flashProductIds } from './data/products';
 import { initialReviews, sampleOrders } from './data/ordersAndReviews';
 import { confirmOrderPayment, getCustomerProfile, getOrders, saveOrder, saveCustomerProfile, saveCustomerAddresses, subscribeToOrders, updateOrderStatus, updateOrderDelivery, saveStockLevel, subscribeToStock, subscribeToCustomerAccountState, updateCustomerAccountState, getCustomerAccountState } from './config/ordersService';
-import { auth, getGoogleRedirectUser, signOutUser, subscribeToAuthState } from './config/firebase';
+import { auth, getGoogleRedirectResultUser, signOutUser, subscribeToAuthState } from './config/firebase';
 import {
   Product,
   CartItem,
@@ -407,7 +407,7 @@ export default function App() {
   ]);
 
   useEffect(() => {
-    void getGoogleRedirectUser().then((user) => {
+    void getGoogleRedirectResultUser().then((user) => {
       if (!user || user.isAnonymous) return;
       const email = user.email || user.uid;
       const name = user.displayName || email.split('@')[0];
@@ -440,7 +440,8 @@ export default function App() {
         openingCheckoutRef.current = true;
         setIsCheckoutOpen(true);
       }
-      showToast(user.providerData.some((provider) => provider.providerId === 'google.com') ? `Signed in with Google as ${email}` : `Signed in as ${email}`);
+      const isNewGoogleAccount = user.metadata.creationTime === user.metadata.lastSignInTime;
+      showToast(isNewGoogleAccount ? 'Welcome to NeoMart' : 'Welcome back');
       });
     }).catch(() => {
       showToast('Google sign-in failed. Check Firebase Google sign-in settings.');

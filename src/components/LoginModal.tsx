@@ -175,7 +175,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       if (!user) return;
       const name = user.displayName || user.email?.split('@')[0] || 'Google User';
       await onLoginSuccess(user.email || user.uid, user.displayName || user.email?.split('@')[0], user.photoURL || undefined);
-      showToast(`Signed in with Google as ${user.email || name}`);
+      const isNewGoogleAccount = user.metadata.creationTime === user.metadata.lastSignInTime;
+      showToast(isNewGoogleAccount ? 'Welcome to NeoMart' : 'Welcome back');
       onClose();
     } catch {
       showToast('Google sign-in failed. Enable Google in Firebase, then try again.');

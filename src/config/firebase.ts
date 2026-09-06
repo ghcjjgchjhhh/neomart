@@ -106,6 +106,12 @@ export async function getGoogleRedirectUser() {
   return auth.currentUser || null;
 }
 
+export async function getGoogleRedirectResultUser() {
+  if (!auth) return null;
+  const result = await getRedirectResult(auth);
+  return result?.user || null;
+}
+
 export async function ensureFirebaseAuth() {
   if (!auth) return false;
   await authReady;
