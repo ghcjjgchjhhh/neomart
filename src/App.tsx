@@ -2279,6 +2279,7 @@ export default function App() {
         onClose={() => setIsHelpOpen(false)}
         onSelectSection={setActiveHelpSection}
         onStartShopping={() => {
+          setIsHelpOpen(false);
           setIsSearching(false);
           setSelectedCategory('all');
           setSelectedProductId(null);
