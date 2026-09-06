@@ -48,6 +48,7 @@ export const HelpCenterModal: React.FC<HelpCenterModalProps> = ({ isOpen, sectio
   const [attachment, setAttachment] = useState('');
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({ subject: '', category: 'Orders', description: '', orderId: '' });
+  const [showSupport, setShowSupport] = useState(section === 'help-support' || section === 'live-chat');
   const knownReplies = useRef<Record<string, number>>({});
 
   useEffect(() => {
@@ -68,6 +69,10 @@ export const HelpCenterModal: React.FC<HelpCenterModalProps> = ({ isOpen, sectio
     });
     return unsubscribe;
   }, [isOpen]);
+
+  useEffect(() => {
+    setShowSupport(section === 'help-support' || section === 'live-chat');
+  }, [section]);
 
   const visibleCategories = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -109,7 +114,7 @@ export const HelpCenterModal: React.FC<HelpCenterModalProps> = ({ isOpen, sectio
   };
 
   if (!isOpen) return null;
-  const showingSupport = section === 'help-support' || section === 'live-chat';
+  const showingSupport = showSupport;
   const customerOrders = orders.filter((order) => order.orderSource === 'customer');
 
   return (
@@ -121,8 +126,8 @@ export const HelpCenterModal: React.FC<HelpCenterModalProps> = ({ isOpen, sectio
         </header>
         <div className="grid min-h-0 flex-1 md:grid-cols-[220px_1fr]">
           <aside className="border-b border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-[#202024] md:border-b-0 md:border-r">
-            <button type="button" onClick={() => onSelectSection('help-support')} className={`mb-3 flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-extrabold ${showingSupport ? 'bg-orange-500 text-white' : 'text-gray-700 dark:text-gray-200'}`}><Ticket className="h-4 w-4" />Support centre</button>
-            <div className="grid max-h-40 grid-cols-2 gap-1 overflow-y-auto md:block md:max-h-none">{categories.map(([title]) => <button key={title} type="button" onClick={() => { setSearch(title); onSelectSection('help-support'); }} className="block w-full rounded-lg px-3 py-2 text-left text-xs font-bold text-gray-600 dark:text-gray-300">{title}</button>)}</div>
+            <button type="button" onClick={() => { setShowSupport(true); onSelectSection('help-support'); }} className={`mb-3 flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-extrabold ${showingSupport ? 'bg-orange-500 text-white' : 'text-gray-700 dark:text-gray-200'}`}><Ticket className="h-4 w-4" />Support centre</button>
+            <div className="grid max-h-40 grid-cols-2 gap-1 overflow-y-auto md:block md:max-h-none">{categories.map(([title]) => <button key={title} type="button" onClick={() => { setSearch(title); setShowSupport(false); }} className={`block w-full rounded-lg px-3 py-2 text-left text-xs font-bold ${!showingSupport && search.toLowerCase() === title.toLowerCase() ? 'bg-orange-100 text-orange-700 dark:bg-orange-950/30 dark:text-orange-300' : 'text-gray-600 dark:text-gray-300'}`}>{title}</button>)}</div>
             <div className="mt-4 hidden border-t border-gray-200 pt-4 dark:border-gray-700 md:block"><p className="px-3 text-[10px] font-bold uppercase tracking-widest text-gray-500">Quick contact</p><a href="https://wa.me/2348135648242" target="_blank" rel="noreferrer" className="mt-2 flex items-center gap-2 px-3 py-2 text-xs font-bold text-emerald-600"><MessageCircle className="h-4 w-4" />WhatsApp Support</a><a href="mailto:support@neomart.ng" className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-gray-600 dark:text-gray-300"><Mail className="h-4 w-4" />Email Support</a></div>
           </aside>
           <main className="min-h-0 overflow-y-auto p-4 sm:p-6">
@@ -131,7 +136,7 @@ export const HelpCenterModal: React.FC<HelpCenterModalProps> = ({ isOpen, sectio
                 <div className="relative"><Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="How can we help you?" className="w-full rounded-2xl border border-gray-300 bg-gray-50 py-4 pl-12 pr-4 text-sm outline-none focus:border-orange-500 dark:border-gray-700 dark:bg-[#202024]" /></div>
                 <div className="grid gap-3 sm:grid-cols-2">{visibleCategories.map(([title, items]) => <section key={title} className="rounded-2xl border border-gray-200 p-4 dark:border-gray-800"><h3 className="mb-3 flex items-center gap-2 font-black text-gray-900 dark:text-white"><HelpCircle className="h-4 w-4 text-orange-500" />{title}</h3>{items.map((item) => <div key={item} className="border-b border-gray-100 last:border-0 dark:border-gray-800"><button type="button" onClick={() => setExpanded(expanded === item ? null : item)} className="flex w-full items-center justify-between gap-3 py-2 text-left text-xs font-bold text-gray-700 dark:text-gray-300"><span>{item}</span><ChevronDown className={`h-4 w-4 shrink-0 ${expanded === item ? 'rotate-180 text-orange-500' : 'text-gray-400'}`} /></button>{expanded === item && <p className="pb-3 text-xs leading-5 text-gray-500 dark:text-gray-400">{answerFor(item)}</p>}</div>)}</section>)}</div>
                 {visibleCategories.length === 0 && <p className="rounded-2xl border border-dashed p-8 text-center text-sm text-gray-500">No help articles matched that search.</p>}
-                <div className="grid gap-3 border-t border-gray-200 pt-5 sm:grid-cols-2 dark:border-gray-800"><button type="button" onClick={() => onSelectSection('help-support')} className="rounded-xl bg-orange-500 px-4 py-3 text-sm font-bold text-white">Contact Support</button><button type="button" onClick={onStartShopping} className="rounded-xl border border-gray-300 px-4 py-3 text-sm font-bold text-gray-700 dark:border-gray-700 dark:text-gray-200">Continue shopping</button></div>
+                <div className="grid gap-3 border-t border-gray-200 pt-5 sm:grid-cols-2 dark:border-gray-800"><button type="button" onClick={() => { setShowSupport(true); onSelectSection('help-support'); }} className="rounded-xl bg-orange-500 px-4 py-3 text-sm font-bold text-white">Contact Support</button><button type="button" onClick={onStartShopping} className="rounded-xl border border-gray-300 px-4 py-3 text-sm font-bold text-gray-700 dark:border-gray-700 dark:text-gray-200">Continue shopping</button></div>
               </div>
             ) : (
               <div className="space-y-5">
