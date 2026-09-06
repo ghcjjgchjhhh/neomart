@@ -434,6 +434,13 @@ export default function App() {
       if (email.toLowerCase() === ADMIN_EMAIL) {
         setAdminSection('overview');
         setCurrentView('admin');
+        setIsLoginOpen(false);
+        setIsCartOpen(false);
+        setIsCheckoutOpen(false);
+        setIsHelpOpen(false);
+        setIsOrderHistoryOpen(false);
+        setIsOrderTrackingOpen(false);
+        setIsPaymentSuccessOpen(false);
         window.history.replaceState({}, '', '/admin');
       }
       if (email.toLowerCase() !== ADMIN_EMAIL && localStorage.getItem('neomart_checkout_after_login') === 'true') {
@@ -2275,8 +2282,15 @@ export default function App() {
           if (id.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
             setAdminSection('overview');
             setCurrentView('admin');
+            setIsLoginOpen(false);
+            setIsCartOpen(false);
+            setIsCheckoutOpen(false);
+            setIsHelpOpen(false);
+            setIsOrderHistoryOpen(false);
+            setIsOrderTrackingOpen(false);
+            setIsPaymentSuccessOpen(false);
             if (window.location.pathname.toLowerCase() !== '/admin') {
-              window.history.pushState({ neomartView: 'admin' }, '', '/admin');
+              window.history.pushState({ neomartView: 'admin', adminSection: 'overview' }, '', '/admin');
             }
           }
           void saveCustomerProfile({
