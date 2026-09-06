@@ -62,7 +62,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [searchError, setSearchError] = useState('');
   const [showItemsList, setShowItemsList] = useState(false);
-  const [activeMapView, setActiveMapView] = useState<'osm_live' | 'vector'>('osm_live');
+  const [activeMapView, setActiveMapView] = useState<'osm_live' | 'vector'>('vector');
 
   // Real GPS State
   const [permissionStatus, setPermissionStatus] = useState<'idle' | 'requesting' | 'granted' | 'denied' | 'error'>('idle');
@@ -384,11 +384,11 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                 </h3>
                 <span className="flex items-center gap-1 text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                  ONLINE GPS
+                  LIVE
                 </span>
               </div>
               <p className="text-[11px] text-gray-400">
-                Direct phone GPS integration with live delivery routing
+                Follow your delivery progress in real time
               </p>
             </div>
           </div>
@@ -546,18 +546,18 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                 </div>
               )}
 
-              <div className="absolute right-3 top-3 flex overflow-hidden rounded-xl border border-white/20 bg-black/65 p-0.5 shadow-lg backdrop-blur-md">
+              <div className="absolute right-3 top-3 z-20 flex overflow-hidden rounded-xl border border-white/20 bg-black/65 p-0.5 shadow-lg backdrop-blur-md">
                 <button type="button" onClick={() => setActiveMapView('osm_live')} className={`flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-bold transition ${activeMapView === 'osm_live' ? 'bg-[#f68b1e] text-white' : 'text-gray-300 hover:bg-white/10'}`}><Layers className="h-3.5 w-3.5" />Map</button>
                 <button type="button" onClick={() => setActiveMapView('vector')} className={`flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-bold transition ${activeMapView === 'vector' ? 'bg-[#f68b1e] text-white' : 'text-gray-300 hover:bg-white/10'}`}><Navigation className="h-3.5 w-3.5" />Live route</button>
               </div>
 
               {/* Top Map HUD Overlays */}
               <div className="absolute top-3 left-3 right-3 flex items-start justify-between pointer-events-none">
-                <div className="bg-white/95 dark:bg-black/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-gray-200 dark:border-gray-800 shadow-md flex items-center gap-2 pointer-events-auto">
+                <div className="pointer-events-auto flex max-w-[48%] items-center gap-2 overflow-hidden rounded-xl border border-gray-200 bg-white/95 px-3 py-1.5 shadow-md backdrop-blur-md dark:border-gray-800 dark:bg-black/90">
                   <div className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-ping" />
                   <div className="text-[11px] font-bold text-gray-900 dark:text-gray-100 flex items-center gap-1">
                     <MapPin className="w-3.5 h-3.5 text-blue-600" />
-                    <span>Your Location</span>
+                    <span className="truncate">Your Location</span>
                     {userLocation && (
                       <span className="text-[9px] text-gray-500 font-normal">
                         (±{Math.round(userLocation.accuracy)}m)
@@ -578,9 +578,9 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
               </div>
 
               {/* Map Floating Dispatch Pill */}
-              <div className="absolute bottom-3 left-3 bg-black/75 backdrop-blur-md px-3 py-1.5 rounded-xl text-[11px] text-gray-300 border border-white/10 flex items-center gap-2">
+              <div className="absolute bottom-3 left-3 max-w-[68%] truncate rounded-xl border border-white/10 bg-black/75 px-3 py-1.5 text-[11px] text-gray-300 shadow-md backdrop-blur-md">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>Rider: <strong>Musa Garba</strong> • LAG-482-KT</span>
+                <span className="ml-2">Rider: <strong>Musa Garba</strong> • LAG-482-KT</span>
               </div>
             </div>
 
