@@ -547,7 +547,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
               )}
 
               <div className="pointer-events-none absolute inset-3 z-20 flex flex-col justify-between gap-2">
-                <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
+                <div className="grid min-w-0 grid-cols-1 items-start gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
                   <div className="pointer-events-auto flex min-w-0 items-center gap-2 overflow-hidden rounded-xl border border-gray-200 bg-white/95 px-3 py-1.5 shadow-md backdrop-blur-md dark:border-gray-800 dark:bg-black/90">
                     <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-blue-500 animate-pulse" />
                     <div className="flex min-w-0 items-center gap-1 text-[11px] font-bold text-gray-900 dark:text-gray-100">
@@ -556,14 +556,14 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                       {userLocation && <span className="shrink-0 text-[9px] font-normal text-gray-500">(±{Math.round(userLocation.accuracy)}m)</span>}
                     </div>
                   </div>
-                  <div className="pointer-events-auto flex overflow-hidden rounded-xl border border-white/20 bg-black/65 p-0.5 shadow-lg backdrop-blur-md">
-                    <button type="button" onClick={() => setActiveMapView('osm_live')} className={`flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-bold transition ${activeMapView === 'osm_live' ? 'bg-[#f68b1e] text-white' : 'text-gray-300 hover:bg-white/10'}`}><Layers className="h-3.5 w-3.5" />Map</button>
-                    <button type="button" onClick={() => setActiveMapView('vector')} className={`flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-bold transition ${activeMapView === 'vector' ? 'bg-[#f68b1e] text-white' : 'text-gray-300 hover:bg-white/10'}`}><Navigation className="h-3.5 w-3.5" />Delivery route</button>
+                  <div className="pointer-events-auto flex w-full overflow-hidden rounded-xl border border-white/20 bg-black/65 p-0.5 shadow-lg backdrop-blur-md sm:w-auto">
+                    <button type="button" onClick={() => setActiveMapView('osm_live')} className={`flex min-w-0 flex-1 items-center justify-center gap-1 px-2.5 py-1.5 text-[10px] font-bold transition sm:flex-none ${activeMapView === 'osm_live' ? 'bg-[#f68b1e] text-white' : 'text-gray-300 hover:bg-white/10'}`}><Layers className="h-3.5 w-3.5" />Map</button>
+                    <button type="button" onClick={() => setActiveMapView('vector')} className={`flex min-w-0 flex-1 items-center justify-center gap-1 px-2.5 py-1.5 text-[10px] font-bold transition sm:flex-none ${activeMapView === 'vector' ? 'bg-[#f68b1e] text-white' : 'text-gray-300 hover:bg-white/10'}`}><Navigation className="h-3.5 w-3.5" />Delivery route</button>
                   </div>
                 </div>
-                <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-end gap-2">
+                <div className="grid min-w-0 grid-cols-1 items-end gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
                   <div className="pointer-events-auto min-w-0 truncate rounded-xl border border-white/10 bg-black/75 px-3 py-1.5 text-[11px] text-gray-300 shadow-md backdrop-blur-md"><span className="mr-2 inline-block h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />Rider: <strong>Musa Garba</strong> • LAG-482-KT</div>
-                  <button type="button" onClick={requestLocationPermission} className="pointer-events-auto flex shrink-0 items-center gap-1 rounded-xl border border-gray-200 bg-white/95 px-3 py-1.5 text-[11px] font-bold text-gray-700 shadow-md backdrop-blur-md transition-all hover:text-[#f68b1e] dark:border-gray-800 dark:bg-black/90 dark:text-gray-300" title="Refresh your location"><RefreshCw className={`h-3.5 w-3.5 ${permissionStatus === 'requesting' ? 'animate-spin text-[#f68b1e]' : ''}`} /><span>Refresh location</span></button>
+                  <button type="button" onClick={requestLocationPermission} className="pointer-events-auto flex w-full items-center justify-center gap-1 rounded-xl border border-gray-200 bg-white/95 px-3 py-1.5 text-[11px] font-bold text-gray-700 shadow-md backdrop-blur-md transition-all hover:text-[#f68b1e] dark:border-gray-800 dark:bg-black/90 dark:text-gray-300 sm:w-auto" title="Refresh your location"><RefreshCw className={`h-3.5 w-3.5 ${permissionStatus === 'requesting' ? 'animate-spin text-[#f68b1e]' : ''}`} /><span>Refresh location</span></button>
                 </div>
               </div>
             </div>
