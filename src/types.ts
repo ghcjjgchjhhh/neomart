@@ -94,7 +94,34 @@ export type HelpSectionType =
   | 'cancel-order'
   | 'returns-refunds'
   | 'cookie-preferences'
-  | 'live-chat';
+  | 'live-chat'
+  | 'help-support';
+
+export type SupportTicketStatus = 'Open' | 'In Progress' | 'Resolved' | 'Closed';
+
+export interface SupportMessage {
+  id: string;
+  senderId: string;
+  senderRole: 'customer' | 'admin';
+  text: string;
+  createdAt: string;
+}
+
+export interface SupportTicket {
+  id: string;
+  userId: string;
+  customerEmail?: string;
+  customerName?: string;
+  subject: string;
+  category: string;
+  description: string;
+  orderId?: string;
+  attachmentName?: string;
+  status: SupportTicketStatus;
+  createdAt: string;
+  updatedAt: string;
+  messages: SupportMessage[];
+}
 
 export type PaymentMethodType = 'bank' | 'card' | 'delivery';
 

@@ -24,6 +24,7 @@ import { Footer } from './components/Footer';
 import { Toast } from './components/Toast';
 import { SplashScreen } from './components/SplashScreen';
 import { AdminInventoryRoom } from './components/AdminInventoryRoom';
+import { AdminSupportRoom } from './components/AdminSupportRoom';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -1444,8 +1445,8 @@ export default function App() {
       if (adminSection === 'support') {
         return (
           <AdminRoom onBack={() => navigateAdminSection('overview')}>
-            <div><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f97316]">Operations</p><h1 className="mt-2 text-3xl font-black text-white">Support chat</h1><p className="mt-2 text-sm text-gray-400">Keep customer and order support in one place.</p></div>
-            <div className="rounded-2xl border border-gray-800 bg-gradient-to-br from-gray-900/70 to-gray-950/50 p-6"><div className="mb-5 flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-500/15"><MessageCircle className="h-5 w-5 text-emerald-300" /></div><div><p className="font-bold text-white">NeoMart support assistant</p><p className="text-xs text-emerald-300">Online and monitoring orders</p></div></div><div className="max-h-72 space-y-3 overflow-y-auto">{adminChatMessages.map((message, index) => <div key={`${message.text}-${index}`} className={`max-w-[85%] rounded-xl px-4 py-3 text-sm ${message.from === 'admin' ? 'ml-auto bg-orange-500/15 text-orange-100' : 'bg-gray-800 text-gray-300'}`}>{message.text}</div>)}</div><form className="mt-5 flex gap-2" onSubmit={(event) => { event.preventDefault(); const message = adminChatInput.trim(); if (!message) return; setAdminChatMessages((items) => [...items, { from: 'admin', text: message }]); setAdminChatInput(''); }}><input value={adminChatInput} onChange={(event) => setAdminChatInput(event.target.value)} placeholder="Write a support note..." className="min-w-0 flex-1 rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-sm text-white outline-none placeholder:text-gray-600 focus:border-orange-500" /><button type="submit" aria-label="Send support message" className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-orange-500 text-white hover:bg-orange-400"><Send className="h-4 w-4" /></button></form></div>
+            <AdminSectionHeader eyebrow="Operations" title="Support tickets" description="Review customer issues, reply, and manage ticket status." />
+            <AdminSupportRoom onToast={showToast} />
           </AdminRoom>
         );
       }
@@ -2283,6 +2284,7 @@ export default function App() {
           setSelectedProductId(null);
         }}
         showToast={showToast}
+        orders={orders}
         onOpenLiveTracking={handleOpenLiveTracking}
       />
 

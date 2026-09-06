@@ -54,5 +54,15 @@ service cloud.firestore {
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
       allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
+
+    match /supportTickets/{ticketId} {
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow read: if request.auth != null && (resource.data.userId == request.auth.uid || request.auth.token.admin == true);
+      allow update: if request.auth != null && (
+        request.auth.token.admin == true ||
+        (resource.data.userId == request.auth.uid && request.resource.data.userId == resource.data.userId && request.resource.data.messages.size() >= resource.data.messages.size())
+      );
+      allow delete: if request.auth != null && request.auth.token.admin == true;
+    }
   }
 }

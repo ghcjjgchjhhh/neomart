@@ -5,6 +5,8 @@ import {
   getDocs,
   getDoc,
   onSnapshot,
+  query,
+  where,
   arrayUnion,
   setDoc,
   updateDoc,
@@ -13,7 +15,7 @@ import {
 } from 'firebase/firestore';
 import { db, ensureFirebaseAuth, auth } from './firebase';
 import { Order } from '../types';
-import { FulfillmentStatus, SavedAddress } from '../types';
+import { FulfillmentStatus, SavedAddress, SupportMessage, SupportTicket, SupportTicketStatus } from '../types';
 
 export async function saveOrder(order: Order) {
   if (!db || !(await ensureFirebaseAuth())) {
@@ -56,6 +58,62 @@ export async function saveCustomerAddresses(addresses: SavedAddress[]) {
     updatedAt: new Date().toISOString(),
   }, { merge: true });
   return true;
+}
+
+export async function createSupportTicket(ticket: Omit<SupportTicket, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'status' | 'messages'>) {
+  if (!db || !(await ensureFirebaseAuth()) || !auth?.currentUser || auth.currentUser.isAnonymous) throw new Error('Sign in is required to submit a support ticket');
+  const now = new Date().toISOString();
+  const ticketId = `TKT-${Date.now().toString(36).toUpperCase()}`;
+  const message: SupportMessage = { id: `${ticketId}-1`, senderId: auth.currentUser.uid, senderRole: 'customer', text: ticket.description, createdAt: now };
+  const created: SupportTicket = {
+    ...ticket,
+    id: ticketId,
+    userId: auth.currentUser.uid,
+    customerEmail: ticket.customerEmail || auth.currentUser.email || undefined,
+    customerName: ticket.customerName || auth.currentUser.displayName || undefined,
+    status: 'Open',
+    createdAt: now,
+    updatedAt: now,
+    messages: [message],
+  };
+  await setDoc(doc(db, 'supportTickets', ticketId), created);
+  return created;
+}
+
+export async function getCustomerSupportTickets(): Promise<SupportTicket[]> {
+  if (!db || !(await ensureFirebaseAuth()) || !auth?.currentUser || auth.currentUser.isAnonymous) return [];
+  const snapshot = await getDocs(query(collection(db, 'supportTickets'), where('userId', '==', auth.currentUser.uid)));
+  return snapshot.docs.map((item) => item.data() as SupportTicket).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+}
+
+export function subscribeToCustomerSupportTickets(onTickets: (tickets: SupportTicket[]) => void) {
+  if (!db || !auth?.currentUser || auth.currentUser.isAnonymous) return () => undefined;
+  return onSnapshot(query(collection(db, 'supportTickets'), where('userId', '==', auth.currentUser.uid)), (snapshot) => {
+    onTickets(snapshot.docs.map((item) => item.data() as SupportTicket).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)));
+  });
+}
+
+export function subscribeToAllSupportTickets(onTickets: (tickets: SupportTicket[]) => void) {
+  if (!db || !auth?.currentUser || auth.currentUser.isAnonymous) return () => undefined;
+  return onSnapshot(collection(db, 'supportTickets'), (snapshot) => {
+    onTickets(snapshot.docs.map((item) => item.data() as SupportTicket).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)));
+  });
+}
+
+export async function replyToSupportTicket(ticketId: string, text: string) {
+  if (!db || !(await ensureFirebaseAuth()) || !auth?.currentUser || auth.currentUser.isAnonymous) throw new Error('Sign in is required');
+  const ticketRef = doc(db, 'supportTickets', ticketId);
+  const snapshot = await getDoc(ticketRef);
+  const isAdmin = auth.currentUser.getIdTokenResult ? (await auth.currentUser.getIdTokenResult()).claims.admin === true : false;
+  if (!snapshot.exists() || (!isAdmin && snapshot.data().userId !== auth.currentUser.uid)) throw new Error('Ticket not found');
+  const ticket = snapshot.data() as SupportTicket;
+  const message: SupportMessage = { id: `${ticketId}-${Date.now()}`, senderId: auth.currentUser.uid, senderRole: isAdmin ? 'admin' : 'customer', text, createdAt: new Date().toISOString() };
+  await updateDoc(ticketRef, { messages: [...ticket.messages, message], updatedAt: message.createdAt, ...(isAdmin ? { status: 'In Progress' } : {}) });
+}
+
+export async function updateSupportTicketStatus(ticketId: string, status: SupportTicketStatus) {
+  if (!db || !(await ensureFirebaseAuth())) throw new Error('Support is not configured');
+  await updateDoc(doc(db, 'supportTickets', ticketId), { status, updatedAt: new Date().toISOString() });
 }
 
 export async function confirmOrderPayment(orderId: string) {

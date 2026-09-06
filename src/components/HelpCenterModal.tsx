@@ -1,18 +1,7 @@
-import React, { useState } from 'react';
-import {
-  X,
-  ShoppingBag,
-  CreditCard,
-  Truck,
-  RotateCcw,
-  Cookie,
-  MessageSquare,
-  Send,
-  CheckCircle2,
-  AlertCircle
-} from 'lucide-react';
-import { HelpSectionType, Order } from '../types';
-import { sampleOrders } from '../data/ordersAndReviews';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronDown, HelpCircle, Mail, MessageCircle, Paperclip, Search, Send, Ticket, X } from 'lucide-react';
+import { HelpSectionType, Order, SupportTicket } from '../types';
+import { createSupportTicket, getCustomerSupportTickets, replyToSupportTicket, subscribeToCustomerSupportTickets } from '../config/ordersService';
 
 interface HelpCenterModalProps {
   isOpen: boolean;
@@ -20,760 +9,141 @@ interface HelpCenterModalProps {
   onClose: () => void;
   onSelectSection: (section: HelpSectionType) => void;
   onStartShopping: () => void;
-  showToast: (msg: string) => void;
+  showToast: (message: string) => void;
+  orders?: Order[];
   onOpenLiveTracking?: (orderId?: string) => void;
 }
 
-interface ChatMessage {
-  sender: 'user' | 'bot';
-  text: string;
-}
+const categories = [
+  ['Orders', ['How to place an order', 'Where is my order?', 'Track my order', 'Cancel an order', 'Change delivery address', 'Order delayed', 'Order not received']],
+  ['Delivery', ['Delivery areas', 'Delivery fees', 'Estimated delivery time', 'How delivery works', 'What happens when the rider arrives?', 'Order on Delivery / Cash on Delivery', 'What if I am not available?']],
+  ['Returns & Refunds', ['How to return an item', 'Return eligibility', 'Damaged item', 'Wrong item received', 'Missing item', 'Refund policy']],
+  ['Account & Security', ['Google sign-in problems', 'Forgot password', 'Change email or phone number', 'Manage account', 'Account security', 'Log out of other devices']],
+  ['Shopping', ['How to search for products', 'How to add products to cart', 'How to place an order', 'Wishlist', 'Product availability']],
+  ['Saved Addresses', ['Add delivery address', 'Edit address', 'Delete address', 'Set default address']],
+  ['Notifications', ['Order notifications', 'Delivery updates', 'Notification settings']],
+] as const;
 
-export const HelpCenterModal: React.FC<HelpCenterModalProps> = ({
-  isOpen,
-  section,
-  onClose,
-  onSelectSection,
-  onStartShopping,
-  showToast,
-  onOpenLiveTracking
-}) => {
+const answerFor = (item: string) => {
+  if (item === 'Order on Delivery / Cash on Delivery') return 'Payment Method: Order on Delivery. Pay when your order arrives. NeoMart does not require online payment for orders.';
+  if (item === 'How to place an order') return 'Browse products, add an item to your cart, choose Checkout, confirm your delivery address, and place the order. Payment is collected when your order arrives.';
+  if (item === 'What happens when the rider arrives?') return 'Receive your parcel and pay the exact Order on Delivery amount shown in your order summary.';
+  if (item === 'How to return an item' || item === 'Damaged item' || item === 'Wrong item received' || item === 'Missing item') return 'Submit a support ticket with your order number, a clear description, and an image when useful. Keep the item and packaging until support confirms next steps.';
+  if (item === 'Track my order' || item === 'Where is my order?') return 'Use Track Order in the navbar or open your order history. You can also contact support with your order number.';
+  if (item === 'Delivery fees') return 'Any delivery fee is shown clearly during checkout before you place the order.';
+  if (item === 'Estimated delivery time') return 'Your estimated delivery time is shown during checkout and may be updated after dispatch.';
+  if (item === 'Google sign-in problems') return 'Check that Google sign-in is enabled and try again. Submit a support ticket if the problem continues.';
+  if (item === 'Forgot password') return 'Use the password reset option in Account to receive a reset email.';
+  return `NeoMart support can help with ${item.toLowerCase()}. Submit a ticket with the relevant order number and details if you need personal assistance.`;
+};
+
+const dateText = (value: string) => new Date(value).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+
+export const HelpCenterModal: React.FC<HelpCenterModalProps> = ({ isOpen, section, onClose, onSelectSection, onStartShopping, showToast, orders = [] }) => {
+  const [search, setSearch] = useState('');
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [tickets, setTickets] = useState<SupportTicket[]>([]);
+  const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
+  const [reply, setReply] = useState('');
+  const [attachment, setAttachment] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [form, setForm] = useState({ subject: '', category: 'Orders', description: '', orderId: '' });
+  const knownReplies = useRef<Record<string, number>>({});
+
+  useEffect(() => {
+    if (!isOpen) return;
+    void getCustomerSupportTickets().then(setTickets).catch(() => setTickets([]));
+    const unsubscribe = subscribeToCustomerSupportTickets((next) => {
+      setTickets(next);
+      setSelectedTicket((current) => current ? next.find((ticket) => ticket.id === current.id) || current : current);
+      next.forEach((ticket) => {
+        const previousCount = knownReplies.current[ticket.id];
+        const adminReplyCount = ticket.messages.filter((message) => message.senderRole === 'admin').length;
+        if (previousCount !== undefined && adminReplyCount > previousCount) {
+          showToast(`NeoMart Support replied to ${ticket.id}`);
+          if ('Notification' in window && Notification.permission === 'granted') new Notification('NeoMart Support replied', { body: `Open ticket ${ticket.id} to read the reply.` });
+        }
+        knownReplies.current[ticket.id] = adminReplyCount;
+      });
+    });
+    return unsubscribe;
+  }, [isOpen]);
+
+  const visibleCategories = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return categories;
+    return categories.map(([title, items]) => [title, items.filter((item) => `${title} ${item} ${answerFor(item)}`.toLowerCase().includes(term))] as const).filter(([, items]) => items.length);
+  }, [search]);
+
+  const submitTicket = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!form.subject.trim() || !form.description.trim()) return;
+    setBusy(true);
+    try {
+      const ticket = await createSupportTicket({ subject: form.subject.trim(), category: form.category, description: form.description.trim(), orderId: form.orderId.trim() || undefined, attachmentName: attachment || undefined });
+      setTickets((current) => [ticket, ...current]);
+      setSelectedTicket(ticket);
+      setForm({ subject: '', category: 'Orders', description: '', orderId: '' });
+      setAttachment('');
+      showToast(`Ticket ${ticket.id} submitted`);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Sign in to submit a support ticket');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const sendReply = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!selectedTicket || !reply.trim()) return;
+    setBusy(true);
+    try {
+      await replyToSupportTicket(selectedTicket.id, reply.trim());
+      setReply('');
+      showToast('Reply sent to support');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Could not send reply');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   if (!isOpen) return null;
-
-  // Track Order State
-  const [trackOrderId, setTrackOrderId] = useState('');
-  const [trackContact, setTrackContact] = useState('');
-  const [trackedOrder, setTrackedOrder] = useState<Order | null>(null);
-  const [trackError, setTrackError] = useState('');
-
-  // Cancel Order State
-  const [cancelOrderId, setCancelOrderId] = useState('');
-  const [cancelContact, setCancelContact] = useState('');
-  const [cancelOrderObj, setCancelOrderObj] = useState<Order | null>(null);
-  const [cancelReason, setCancelReason] = useState('Ordered by mistake');
-  const [cancelError, setCancelError] = useState('');
-  const [cancelSuccess, setCancelSuccess] = useState(false);
-
-  // Return Order State
-  const [returnOrderId, setReturnOrderId] = useState('');
-  const [returnContact, setReturnContact] = useState('');
-  const [returnOrderObj, setReturnOrderObj] = useState<Order | null>(null);
-  const [returnReason, setReturnReason] = useState('Damaged product');
-  const [returnError, setReturnError] = useState('');
-  const [returnSubmitted, setReturnSubmitted] = useState(false);
-
-  // Cookie State
-  const [cookies, setCookies] = useState({
-    essential: true,
-    analytics: true,
-    functional: true,
-    marketing: false
-  });
-
-  // Chat State
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      sender: 'bot',
-      text: 'Hello! 👋 Welcome to NeoMart 24/7 Customer Care. How can we assist you today?'
-    }
-  ]);
-  const [chatInput, setChatInput] = useState('');
-
-  const sectionTitles: Record<HelpSectionType, string> = {
-    'place-order': 'How to Place an Order',
-    'payment-options': 'Payment & Checkout Options',
-    'track-order': 'Track Your Order',
-    'cancel-order': 'Cancel an Order',
-    'returns-refunds': 'Returns & Refund Policy',
-    'cookie-preferences': 'Cookie & Privacy Preferences',
-    'live-chat': 'NeoMart Live Support'
-  };
-
-  const handleTrackSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setTrackError('');
-    setTrackedOrder(null);
-
-    const found = sampleOrders.find(
-      (o) =>
-        o.id.toLowerCase() === trackOrderId.trim().toLowerCase() &&
-        (o.phone.includes(trackContact.trim()) || o.email.toLowerCase().includes(trackContact.trim().toLowerCase()))
-    );
-
-    if (found) {
-      setTrackedOrder(found);
-    } else {
-      setTrackError('Order not found. Please verify Order ID (e.g. NM-48291) and your registered phone number or email.');
-    }
-  };
-
-  const handleCancelSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setCancelError('');
-    setCancelOrderObj(null);
-    setCancelSuccess(false);
-
-    const found = sampleOrders.find(
-      (o) =>
-        o.id.toLowerCase() === cancelOrderId.trim().toLowerCase() &&
-        (o.phone.includes(cancelContact.trim()) || o.email.toLowerCase().includes(cancelContact.trim().toLowerCase()))
-    );
-
-    if (found) {
-      if (['Shipped', 'Out for Delivery', 'Delivered'].includes(found.status)) {
-        setCancelError('This order has already been dispatched/shipped and cannot be cancelled automatically. You can initiate a return upon receipt.');
-      } else {
-        setCancelOrderObj(found);
-      }
-    } else {
-      setCancelError('Could not find order. Please verify details.');
-    }
-  };
-
-  const handleConfirmCancel = () => {
-    if (cancelOrderObj) {
-      cancelOrderObj.status = 'Cancelled';
-      setCancelSuccess(true);
-      showToast(`Order #${cancelOrderObj.id} cancelled successfully.`);
-    }
-  };
-
-  const handleReturnSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setReturnError('');
-    setReturnOrderObj(null);
-    setReturnSubmitted(false);
-
-    const found = sampleOrders.find(
-      (o) =>
-        o.id.toLowerCase() === returnOrderId.trim().toLowerCase() &&
-        (o.phone.includes(returnContact.trim()) || o.email.toLowerCase().includes(returnContact.trim().toLowerCase()))
-    );
-
-    if (found) {
-      setReturnOrderObj(found);
-    } else {
-      setReturnError('Could not find order. Please verify details.');
-    }
-  };
-
-  const handleSendChat = (textToSend?: string) => {
-    const text = (textToSend || chatInput).trim();
-    if (!text) return;
-
-    const userMsg: ChatMessage = { sender: 'user', text };
-    setMessages((prev) => [...prev, userMsg]);
-    if (!textToSend) setChatInput('');
-
-    // Generate smart reply
-    setTimeout(() => {
-      let reply = 'Thank you for reaching out to NeoMart Support. An agent will review your query shortly.';
-      const lower = text.toLowerCase();
-      if (lower.includes('order') && lower.includes('place')) {
-        reply = 'To place an order, browse products, add them to your cart, click checkout, select bank/card/delivery, and confirm!';
-      } else if (lower.includes('payment') || lower.includes('pay') || lower.includes('card')) {
-        reply = 'We support GTBank Transfer, Visa/Mastercard, and Cash on Delivery across major Nigerian cities.';
-      } else if (lower.includes('track')) {
-        reply = 'You can track any active order using the Track Order tool with your Order ID (e.g. NM-48291).';
-      } else if (lower.includes('cancel')) {
-        reply = 'Orders that are processing or packed can be cancelled from the Cancel Order tab.';
-      } else if (lower.includes('return') || lower.includes('refund')) {
-        reply = 'NeoMart provides a 7-day hassle-free return window for damaged, incorrect, or defective items.';
-      } else if (lower.includes('agent') || lower.includes('human')) {
-        reply = 'Connecting you to Senior Support Officer Emeka... (Estimated wait time: < 1 minute). Hotline: 08135648242.';
-      }
-
-      setMessages((prev) => [...prev, { sender: 'bot', text: reply }]);
-    }, 600);
-  };
-
-  const allStatuses = [
-    'Order Placed',
-    'Order Confirmed',
-    'Processing',
-    'Packed',
-    'Shipped',
-    'Out for Delivery',
-    'Delivered'
-  ];
+  const showingSupport = section === 'help-support' || section === 'live-chat';
+  const customerOrders = orders.filter((order) => order.orderSource === 'customer');
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-2xs flex items-center justify-center p-3 sm:p-4 animate-fadeIn">
-      <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-2xl max-w-2xl w-full max-h-[92vh] overflow-y-auto shadow-2xl flex flex-col justify-between">
-        {/* Header */}
-        <div className="p-4 sm:p-5 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between sticky top-0 bg-white dark:bg-[#1a1a1a] z-10">
-          <div>
-            <span className="text-[10px] uppercase font-bold text-[#f68b1e] tracking-wider">
-              NeoMart Customer Help Center
-            </span>
-            <h3 className="font-extrabold text-lg sm:text-xl text-gray-900 dark:text-gray-100">
-              {sectionTitles[section]}
-            </h3>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Section Tabs Quick Switch */}
-        <div className="flex gap-1.5 p-3 overflow-x-auto bg-gray-50 dark:bg-[#222222] border-b border-gray-200 dark:border-gray-800 no-scrollbar text-xs">
-          <button
-            onClick={() => onSelectSection('place-order')}
-            className={`px-3 py-1.5 rounded-full font-bold whitespace-nowrap cursor-pointer transition-all ${
-              section === 'place-order'
-                ? 'bg-[#f68b1e] text-white'
-                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-            }`}
-          >
-            Place Order
-          </button>
-          <button
-            onClick={() => onSelectSection('payment-options')}
-            className={`px-3 py-1.5 rounded-full font-bold whitespace-nowrap cursor-pointer transition-all ${
-              section === 'payment-options'
-                ? 'bg-[#f68b1e] text-white'
-                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-            }`}
-          >
-            Payment
-          </button>
-          <button
-            onClick={() => onSelectSection('track-order')}
-            className={`px-3 py-1.5 rounded-full font-bold whitespace-nowrap cursor-pointer transition-all ${
-              section === 'track-order'
-                ? 'bg-[#f68b1e] text-white'
-                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-            }`}
-          >
-            Track Order
-          </button>
-          <button
-            onClick={() => onSelectSection('cancel-order')}
-            className={`px-3 py-1.5 rounded-full font-bold whitespace-nowrap cursor-pointer transition-all ${
-              section === 'cancel-order'
-                ? 'bg-[#f68b1e] text-white'
-                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-            }`}
-          >
-            Cancel Order
-          </button>
-          <button
-            onClick={() => onSelectSection('returns-refunds')}
-            className={`px-3 py-1.5 rounded-full font-bold whitespace-nowrap cursor-pointer transition-all ${
-              section === 'returns-refunds'
-                ? 'bg-[#f68b1e] text-white'
-                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-            }`}
-          >
-            Returns
-          </button>
-          <button
-            onClick={() => onSelectSection('live-chat')}
-            className={`px-3 py-1.5 rounded-full font-bold whitespace-nowrap cursor-pointer transition-all ${
-              section === 'live-chat'
-                ? 'bg-[#f68b1e] text-white'
-                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-            }`}
-          >
-            Live Chat
-          </button>
-        </div>
-
-        {/* Modal Body */}
-        <div className="p-4 sm:p-6 space-y-4 text-xs">
-          {/* 1. PLACE ORDER */}
-          {section === 'place-order' && (
-            <div className="space-y-4">
-              <div className="bg-[#fff3e0]/40 dark:bg-[#2a1a00]/30 p-4 rounded-xl border border-[#f68b1e]/20 space-y-2">
-                <h4 className="font-bold text-sm text-gray-900 dark:text-gray-100">
-                  Easy Steps to Shop on NeoMart
-                </h4>
-                <ol className="list-decimal list-inside space-y-1.5 text-gray-700 dark:text-gray-300">
-                  <li>Browse our catalog using the categories or search bar.</li>
-                  <li>Click on any product to view full specifications, photos, and customer reviews.</li>
-                  <li>Click <strong>Add to Cart</strong> to include it in your shopping bag.</li>
-                  <li>Open the cart drawer and click <strong>Proceed to Checkout</strong>.</li>
-                  <li>Choose your preferred payment method (Bank Transfer, Card, or Payment on Delivery).</li>
-                  <li>Provide your delivery address and confirm the order.</li>
-                </ol>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-2 backdrop-blur-sm sm:p-4">
+      <div className="flex max-h-[94vh] w-full max-w-6xl flex-col overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-2xl dark:border-gray-800 dark:bg-[#18181b]">
+        <header className="flex items-center justify-between gap-4 border-b border-gray-800 bg-[#222222] px-4 py-4 text-white sm:px-6">
+          <div><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-orange-300">NeoMart Customer Care</p><h2 className="mt-1 text-xl font-black sm:text-2xl">Help &amp; Support</h2><p className="mt-1 text-xs text-gray-300">Answers, order help, and direct support.</p></div>
+          <button type="button" onClick={onClose} aria-label="Close help and support" className="rounded-xl p-2 text-gray-300 hover:bg-white/10"><X className="h-5 w-5" /></button>
+        </header>
+        <div className="grid min-h-0 flex-1 md:grid-cols-[220px_1fr]">
+          <aside className="border-b border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-[#202024] md:border-b-0 md:border-r">
+            <button type="button" onClick={() => onSelectSection('help-support')} className={`mb-3 flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-extrabold ${showingSupport ? 'bg-orange-500 text-white' : 'text-gray-700 dark:text-gray-200'}`}><Ticket className="h-4 w-4" />Support centre</button>
+            <div className="grid max-h-40 grid-cols-2 gap-1 overflow-y-auto md:block md:max-h-none">{categories.map(([title]) => <button key={title} type="button" onClick={() => { setSearch(title); onSelectSection('help-support'); }} className="block w-full rounded-lg px-3 py-2 text-left text-xs font-bold text-gray-600 dark:text-gray-300">{title}</button>)}</div>
+            <div className="mt-4 hidden border-t border-gray-200 pt-4 dark:border-gray-700 md:block"><p className="px-3 text-[10px] font-bold uppercase tracking-widest text-gray-500">Quick contact</p><a href="https://wa.me/2348135648242" target="_blank" rel="noreferrer" className="mt-2 flex items-center gap-2 px-3 py-2 text-xs font-bold text-emerald-600"><MessageCircle className="h-4 w-4" />WhatsApp Support</a><a href="mailto:support@neomart.ng" className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-gray-600 dark:text-gray-300"><Mail className="h-4 w-4" />Email Support</a></div>
+          </aside>
+          <main className="min-h-0 overflow-y-auto p-4 sm:p-6">
+            {!showingSupport ? (
+              <div className="space-y-5">
+                <div className="relative"><Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="How can we help you?" className="w-full rounded-2xl border border-gray-300 bg-gray-50 py-4 pl-12 pr-4 text-sm outline-none focus:border-orange-500 dark:border-gray-700 dark:bg-[#202024]" /></div>
+                <div className="grid gap-3 sm:grid-cols-2">{visibleCategories.map(([title, items]) => <section key={title} className="rounded-2xl border border-gray-200 p-4 dark:border-gray-800"><h3 className="mb-3 flex items-center gap-2 font-black text-gray-900 dark:text-white"><HelpCircle className="h-4 w-4 text-orange-500" />{title}</h3>{items.map((item) => <div key={item} className="border-b border-gray-100 last:border-0 dark:border-gray-800"><button type="button" onClick={() => setExpanded(expanded === item ? null : item)} className="flex w-full items-center justify-between gap-3 py-2 text-left text-xs font-bold text-gray-700 dark:text-gray-300"><span>{item}</span><ChevronDown className={`h-4 w-4 shrink-0 ${expanded === item ? 'rotate-180 text-orange-500' : 'text-gray-400'}`} /></button>{expanded === item && <p className="pb-3 text-xs leading-5 text-gray-500 dark:text-gray-400">{answerFor(item)}</p>}</div>)}</section>)}</div>
+                {visibleCategories.length === 0 && <p className="rounded-2xl border border-dashed p-8 text-center text-sm text-gray-500">No help articles matched that search.</p>}
+                <div className="grid gap-3 border-t border-gray-200 pt-5 sm:grid-cols-2 dark:border-gray-800"><button type="button" onClick={() => onSelectSection('help-support')} className="rounded-xl bg-orange-500 px-4 py-3 text-sm font-bold text-white">Contact Support</button><button type="button" onClick={onStartShopping} className="rounded-xl border border-gray-300 px-4 py-3 text-sm font-bold text-gray-700 dark:border-gray-700 dark:text-gray-200">Continue shopping</button></div>
               </div>
-
-              <button
-                onClick={() => {
-                  onClose();
-                  onStartShopping();
-                }}
-                className="w-full bg-[#f68b1e] hover:bg-[#e07a10] text-white font-extrabold py-3 px-4 rounded-xl text-sm transition-all cursor-pointer shadow-md text-center"
-              >
-                Start Shopping Now →
-              </button>
-            </div>
-          )}
-
-          {/* 2. PAYMENT OPTIONS */}
-          {section === 'payment-options' && (
-            <div className="space-y-3">
-              <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#222222] space-y-2">
-                <div className="flex items-center gap-2 font-bold text-sm text-gray-900 dark:text-gray-100">
-                  <CreditCard className="w-4 h-4 text-[#f68b1e]" />
-                  <span>Available Nigerian Payment Channels</span>
+            ) : (
+              <div className="space-y-5">
+                <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-widest text-orange-500">Direct support</p><h3 className="mt-1 text-2xl font-black text-gray-900 dark:text-white">How can we help?</h3><p className="mt-1 text-sm text-gray-500">Live Chat, WhatsApp Support, Email Support, and tickets.</p></div><div className="flex gap-2"><a href="https://wa.me/2348135648242" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white"><MessageCircle className="h-4 w-4" />WhatsApp</a><a href="mailto:support@neomart.ng" className="inline-flex items-center gap-2 rounded-xl border border-gray-300 px-3 py-2 text-xs font-bold dark:border-gray-700"><Mail className="h-4 w-4" />Email</a></div></div>
+                <div className="grid gap-5 lg:grid-cols-2">
+                  <form onSubmit={submitTicket} className="space-y-3 rounded-2xl border border-gray-200 p-4 dark:border-gray-800"><h4 className="font-black text-gray-900 dark:text-white">Submit a Support Ticket</h4><input required value={form.subject} onChange={(event) => setForm({ ...form, subject: event.target.value })} placeholder="Subject" className="w-full rounded-xl border border-gray-300 bg-transparent px-3 py-3 text-sm outline-none focus:border-orange-500 dark:border-gray-700" /><select value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value })} className="w-full rounded-xl border border-gray-300 bg-transparent px-3 py-3 text-sm dark:border-gray-700"><option>Orders</option><option>Delivery</option><option>Returns &amp; Refunds</option><option>Account &amp; Security</option><option>Shopping</option><option>Saved Addresses</option><option>Notifications</option><option>Other</option></select><textarea required value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} placeholder="Describe the problem" rows={4} className="w-full resize-none rounded-xl border border-gray-300 bg-transparent px-3 py-3 text-sm outline-none focus:border-orange-500 dark:border-gray-700" /><select value={form.orderId} onChange={(event) => setForm({ ...form, orderId: event.target.value })} className="w-full rounded-xl border border-gray-300 bg-transparent px-3 py-3 text-sm dark:border-gray-700"><option value="">Order number (optional)</option>{customerOrders.map((order) => <option key={order.id} value={order.id}>#{order.id}</option>)}</select><label className="flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-gray-300 px-3 py-3 text-xs font-bold text-gray-500 dark:border-gray-700"><Paperclip className="h-4 w-4" />{attachment || 'Attach an image or file'}<input type="file" className="hidden" onChange={(event) => setAttachment(event.target.files?.[0]?.name || '')} /></label><button disabled={busy} type="submit" className="w-full rounded-xl bg-orange-500 px-4 py-3 text-sm font-bold text-white disabled:opacity-50">{busy ? 'Sending...' : 'Submit Ticket'}</button></form>
+                  <div className="space-y-3"><h4 className="font-black text-gray-900 dark:text-white">My Support Tickets</h4>{tickets.length === 0 ? <div className="rounded-2xl border border-dashed p-6 text-center text-sm text-gray-500">No tickets yet. Support is ready when you need us.</div> : tickets.map((ticket) => <button key={ticket.id} type="button" onClick={() => setSelectedTicket(ticket)} className={`w-full rounded-2xl border p-4 text-left ${selectedTicket?.id === ticket.id ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/20' : 'border-gray-200 dark:border-gray-800'}`}><div className="flex items-center justify-between gap-3"><span className="font-mono text-xs font-black">{ticket.id}</span><span className="rounded-full bg-orange-100 px-2 py-1 text-[10px] font-bold text-orange-700 dark:bg-orange-950/40 dark:text-orange-300">{ticket.status}</span></div><p className="mt-2 font-bold text-gray-900 dark:text-white">{ticket.subject}</p><p className="mt-1 text-[11px] text-gray-500">Updated {dateText(ticket.updatedAt)}</p></button>)}</div>
                 </div>
-                <ul className="space-y-2 text-gray-700 dark:text-gray-300">
-                  <li>
-                    <strong>1. Direct Bank Transfer (GTBank):</strong> Fast transfers directly to NeoMart's verified business account.
-                  </li>
-                  <li>
-                    <strong>2. Debit / Credit Card:</strong> Powered with end-to-end 256-bit encryption for Visa, Mastercard, and Verve.
-                  </li>
-                  <li>
-                    <strong>3. Payment on Delivery (POD):</strong> Inspect your parcel and pay upon arrival via cash or mobile POS in Lagos, Abuja, Port Harcourt, and other major states.
-                  </li>
-                </ul>
+                {selectedTicket && <div className="rounded-2xl border border-gray-200 p-4 dark:border-gray-800"><div className="flex items-start justify-between gap-3"><div><p className="font-mono text-xs font-black text-orange-500">{selectedTicket.id}</p><h4 className="mt-1 font-black text-gray-900 dark:text-white">{selectedTicket.subject}</h4><p className="mt-1 text-xs text-gray-500">{selectedTicket.status} · {dateText(selectedTicket.createdAt)}</p></div><button type="button" onClick={() => setSelectedTicket(null)} aria-label="Close ticket details"><X className="h-4 w-4" /></button></div><div className="mt-4 space-y-3">{selectedTicket.messages.map((message) => <div key={message.id} className={`rounded-xl p-3 text-sm ${message.senderRole === 'customer' ? 'ml-8 bg-orange-50 dark:bg-orange-950/20' : 'mr-8 bg-gray-100 dark:bg-gray-800'}`}><p className="text-gray-800 dark:text-gray-200">{message.text}</p><time className="mt-2 block text-[10px] text-gray-500">{message.senderRole === 'admin' ? 'NeoMart Support' : 'You'} · {dateText(message.createdAt)}</time></div>)}</div>{selectedTicket.status !== 'Closed' && <form onSubmit={sendReply} className="mt-4 flex gap-2"><input value={reply} onChange={(event) => setReply(event.target.value)} placeholder="Reply to support" className="min-w-0 flex-1 rounded-xl border border-gray-300 bg-transparent px-3 py-3 text-sm outline-none dark:border-gray-700" /><button disabled={busy} type="submit" aria-label="Send reply" className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-orange-500 text-white disabled:opacity-50"><Send className="h-4 w-4" /></button></form>}</div>}
               </div>
-            </div>
-          )}
-
-          {/* 3. TRACK ORDER */}
-          {section === 'track-order' && (
-            <div className="space-y-4">
-              <form onSubmit={handleTrackSubmit} className="space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">
-                      Order ID
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={trackOrderId}
-                      onChange={(e) => setTrackOrderId(e.target.value)}
-                      placeholder="e.g. NM-48291"
-                      className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#222222] text-gray-800 dark:text-gray-200 focus:outline-none focus:border-[#f68b1e]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">
-                      Phone Number or Email
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={trackContact}
-                      onChange={(e) => setTrackContact(e.target.value)}
-                      placeholder="e.g. 08012345678"
-                      className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#222222] text-gray-800 dark:text-gray-200 focus:outline-none focus:border-[#f68b1e]"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full bg-[#f68b1e] hover:bg-[#e07a10] text-white font-bold py-2.5 px-4 rounded-xl text-xs transition-colors cursor-pointer shadow-sm"
-                >
-                  Track Order
-                </button>
-              </form>
-
-              {trackError && (
-                <div className="p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl text-red-600 dark:text-red-400 flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>{trackError}</span>
-                </div>
-              )}
-
-              {trackedOrder && (
-                <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#222222] space-y-4 animate-fadeIn">
-                  <div className="flex justify-between items-center pb-2 border-b border-gray-200 dark:border-gray-700">
-                    <div>
-                      <span className="font-bold text-sm text-gray-900 dark:text-gray-100">
-                        Order #{trackedOrder.id}
-                      </span>
-                      <div className="text-[11px] text-gray-400">Placed on {trackedOrder.date}</div>
-                    </div>
-                    <span className="px-2.5 py-1 rounded-full bg-[#fff3e0] text-[#f68b1e] font-bold text-xs">
-                      {trackedOrder.status}
-                    </span>
-                  </div>
-
-                  {/* Status Timeline */}
-                  <div className="space-y-2">
-                    <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
-                      Tracking Progress
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      {allStatuses.slice(0, 4).map((st, i) => {
-                        const isDone =
-                          allStatuses.indexOf(trackedOrder.status) >=
-                          allStatuses.indexOf(st);
-                        return (
-                          <div
-                            key={i}
-                            className={`p-2 rounded-lg border text-center font-bold text-[11px] ${
-                              isDone
-                                ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 text-emerald-700 dark:text-emerald-300'
-                                : 'bg-gray-100 dark:bg-gray-800 border-gray-200 text-gray-400'
-                            }`}
-                          >
-                            {st}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="text-xs space-y-1 text-gray-700 dark:text-gray-300">
-                    <div>
-                      <strong>Delivery Address:</strong> {trackedOrder.address}
-                    </div>
-                    <div>
-                      <strong>Estimated Arrival:</strong> {trackedOrder.eta}
-                    </div>
-                    <div>
-                      <strong>Items:</strong> {trackedOrder.items.map((i) => i.name).join(', ')}
-                    </div>
-                  </div>
-
-                  {onOpenLiveTracking && (
-                    <button
-                      type="button"
-                      onClick={() => onOpenLiveTracking(trackedOrder.id)}
-                      className="w-full bg-[#f68b1e] hover:bg-[#e07a10] text-white font-bold py-2.5 px-4 rounded-xl text-xs transition-colors cursor-pointer"
-                    >
-                      Open live tracking →
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* 4. CANCEL ORDER */}
-          {section === 'cancel-order' && (
-            <div className="space-y-4">
-              <form onSubmit={handleCancelSearch} className="space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">
-                      Order ID
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={cancelOrderId}
-                      onChange={(e) => setCancelOrderId(e.target.value)}
-                      placeholder="e.g. NM-48291"
-                      className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#222222] text-gray-800 dark:text-gray-200 focus:outline-none focus:border-[#f68b1e]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">
-                      Registered Phone / Email
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={cancelContact}
-                      onChange={(e) => setCancelContact(e.target.value)}
-                      placeholder="e.g. 08012345678"
-                      className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#222222] text-gray-800 dark:text-gray-200 focus:outline-none focus:border-[#f68b1e]"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full bg-[#f68b1e] hover:bg-[#e07a10] text-white font-bold py-2.5 px-4 rounded-xl text-xs transition-colors cursor-pointer"
-                >
-                  Find Order
-                </button>
-              </form>
-
-              {cancelError && (
-                <div className="p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl text-red-600 dark:text-red-400 text-xs">
-                  {cancelError}
-                </div>
-              )}
-
-              {cancelSuccess && (
-                <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl text-emerald-700 dark:text-emerald-300 text-xs flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 shrink-0" />
-                  <span>
-                    Your order has been cancelled. Any pre-authorized charges will be refunded within 24 hours.
-                  </span>
-                </div>
-              )}
-
-              {cancelOrderObj && !cancelSuccess && (
-                <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#222222] space-y-3">
-                  <div className="font-bold text-gray-900 dark:text-gray-100">
-                    Order #{cancelOrderObj.id} ({cancelOrderObj.status})
-                  </div>
-                  <div>
-                    <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">
-                      Reason for Cancellation
-                    </label>
-                    <select
-                      value={cancelReason}
-                      onChange={(e) => setCancelReason(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] text-gray-800 dark:text-gray-200 focus:outline-none"
-                    >
-                      <option>Ordered by mistake</option>
-                      <option>Found a better price</option>
-                      <option>Changed delivery location</option>
-                      <option>Delivery timeline too long</option>
-                    </select>
-                  </div>
-
-                  <button
-                    onClick={handleConfirmCancel}
-                    className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition-colors cursor-pointer"
-                  >
-                    Confirm Cancellation
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* 5. RETURNS & REFUNDS */}
-          {section === 'returns-refunds' && (
-            <div className="space-y-4">
-              <div className="p-4 rounded-xl bg-[#fff3e0]/40 dark:bg-[#2a1a00]/30 border border-[#f68b1e]/20 space-y-2">
-                <h4 className="font-bold text-sm text-gray-900 dark:text-gray-100">
-                  NeoMart 7-Day Free Return Policy
-                </h4>
-                <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                  Items can be returned within 7 calendar days after delivery if they are damaged, defective, or incorrect. Ensure original packaging and accessories remain intact.
-                </p>
-              </div>
-
-              <form onSubmit={handleReturnSearch} className="space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">
-                      Order ID
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={returnOrderId}
-                      onChange={(e) => setReturnOrderId(e.target.value)}
-                      placeholder="e.g. NM-48291"
-                      className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#222222] text-gray-800 dark:text-gray-200 focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">
-                      Phone Number or Email
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={returnContact}
-                      onChange={(e) => setReturnContact(e.target.value)}
-                      placeholder="e.g. 08012345678"
-                      className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#222222] text-gray-800 dark:text-gray-200 focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full bg-[#f68b1e] hover:bg-[#e07a10] text-white font-bold py-2.5 px-4 rounded-xl text-xs transition-colors cursor-pointer"
-                >
-                  Initiate Return Request
-                </button>
-              </form>
-
-              {returnError && (
-                <div className="p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl text-red-600 dark:text-red-400">
-                  {returnError}
-                </div>
-              )}
-
-              {returnSubmitted && (
-                <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 shrink-0" />
-                  <span>
-                    Your return request was logged. A customer care representative will contact you within 24 hours to schedule package pick-up.
-                  </span>
-                </div>
-              )}
-
-              {returnOrderObj && !returnSubmitted && (
-                <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#222222] space-y-3">
-                  <div className="font-bold text-gray-900 dark:text-gray-100">
-                    Select Reason for Return
-                  </div>
-                  <select
-                    value={returnReason}
-                    onChange={(e) => setReturnReason(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] text-gray-800 dark:text-gray-200 focus:outline-none"
-                  >
-                    <option>Damaged or broken product</option>
-                    <option>Wrong item sent</option>
-                    <option>Missing accessories / parts</option>
-                    <option>Item not as described</option>
-                  </select>
-
-                  <div>
-                    <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">
-                      Upload Photo Evidence (Optional)
-                    </label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#f68b1e] file:text-white hover:file:bg-[#e07a10] cursor-pointer"
-                    />
-                  </div>
-
-                  <button
-                    onClick={() => {
-                      setReturnSubmitted(true);
-                      showToast('Return request submitted.');
-                    }}
-                    className="w-full bg-[#f68b1e] hover:bg-[#e07a10] text-white font-bold py-2.5 px-4 rounded-xl text-xs transition-colors cursor-pointer"
-                  >
-                    Submit Return
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* 6. COOKIE PREFERENCES */}
-          {section === 'cookie-preferences' && (
-            <div className="space-y-4">
-              <div className="space-y-2.5">
-                <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-[#222222] border border-gray-200 dark:border-gray-800">
-                  <div>
-                    <div className="font-bold text-gray-900 dark:text-gray-100">Essential Cookies</div>
-                    <div className="text-[11px] text-gray-400">Required for cart and checkout security</div>
-                  </div>
-                  <span className="text-emerald-600 font-bold">Always On</span>
-                </div>
-
-                <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-[#222222] border border-gray-200 dark:border-gray-800">
-                  <div>
-                    <div className="font-bold text-gray-900 dark:text-gray-100">Analytics Cookies</div>
-                    <div className="text-[11px] text-gray-400">Help us improve search and site performance</div>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={cookies.analytics}
-                    onChange={(e) => setCookies({ ...cookies, analytics: e.target.checked })}
-                    className="w-4 h-4 accent-[#f68b1e] cursor-pointer"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-[#222222] border border-gray-200 dark:border-gray-800">
-                  <div>
-                    <div className="font-bold text-gray-900 dark:text-gray-100">Functional Cookies</div>
-                    <div className="text-[11px] text-gray-400">Remember your theme and recent searches</div>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={cookies.functional}
-                    onChange={(e) => setCookies({ ...cookies, functional: e.target.checked })}
-                    className="w-4 h-4 accent-[#f68b1e] cursor-pointer"
-                  />
-                </div>
-              </div>
-
-              <button
-                onClick={() => {
-                  showToast('Cookie preferences saved.');
-                  onClose();
-                }}
-                className="w-full bg-[#f68b1e] hover:bg-[#e07a10] text-white font-bold py-2.5 px-4 rounded-xl text-xs transition-colors cursor-pointer"
-              >
-                Save Preferences
-              </button>
-            </div>
-          )}
-
-          {/* 7. LIVE CHAT */}
-          {section === 'live-chat' && (
-            <div className="space-y-3">
-              {/* Chat window */}
-              <div className="h-64 overflow-y-auto bg-gray-50 dark:bg-[#222222] border border-gray-200 dark:border-gray-800 rounded-xl p-3 space-y-2.5">
-                {messages.map((m, idx) => (
-                  <div
-                    key={idx}
-                    className={`flex ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div
-                      className={`max-w-[80%] px-3.5 py-2 rounded-2xl text-xs leading-relaxed ${
-                        m.sender === 'user'
-                          ? 'bg-[#f68b1e] text-white rounded-br-none'
-                          : 'bg-white dark:bg-[#1a1a1a] text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-700 rounded-bl-none shadow-2xs'
-                      }`}
-                    >
-                      {m.text}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Quick Reply Pills */}
-              <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar text-[11px]">
-                <button
-                  type="button"
-                  onClick={() => handleSendChat('How do I place an order?')}
-                  className="px-2.5 py-1 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-[#fff3e0] dark:hover:bg-[#2a1a00] hover:text-[#f68b1e] text-gray-700 dark:text-gray-300 font-medium whitespace-nowrap cursor-pointer transition-colors"
-                >
-                  Place an order
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSendChat('What payment options do you accept?')}
-                  className="px-2.5 py-1 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-[#fff3e0] dark:hover:bg-[#2a1a00] hover:text-[#f68b1e] text-gray-700 dark:text-gray-300 font-medium whitespace-nowrap cursor-pointer transition-colors"
-                >
-                  Payment options
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSendChat('How can I track my order?')}
-                  className="px-2.5 py-1 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-[#fff3e0] dark:hover:bg-[#2a1a00] hover:text-[#f68b1e] text-gray-700 dark:text-gray-300 font-medium whitespace-nowrap cursor-pointer transition-colors"
-                >
-                  Track my order
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSendChat('I want to speak with an agent')}
-                  className="px-2.5 py-1 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-[#fff3e0] dark:hover:bg-[#2a1a00] hover:text-[#f68b1e] text-gray-700 dark:text-gray-300 font-medium whitespace-nowrap cursor-pointer transition-colors"
-                >
-                  Speak to agent
-                </button>
-              </div>
-
-              {/* Chat Input */}
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleSendChat();
-                }}
-                className="flex gap-2"
-              >
-                <input
-                  type="text"
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  placeholder="Type your message..."
-                  className="flex-1 px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#222222] text-gray-800 dark:text-gray-200 focus:outline-none focus:border-[#f68b1e]"
-                />
-                <button
-                  type="submit"
-                  className="bg-[#f68b1e] hover:bg-[#e07a10] text-white px-4 py-2.5 rounded-xl flex items-center justify-center transition-colors cursor-pointer"
-                >
-                  <Send className="w-4 h-4" />
-                </button>
-              </form>
-            </div>
-          )}
+            )}
+          </main>
         </div>
       </div>
     </div>
