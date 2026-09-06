@@ -62,7 +62,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [searchError, setSearchError] = useState('');
   const [showItemsList, setShowItemsList] = useState(false);
-  const [activeMapView, setActiveMapView] = useState<'osm_live' | 'vector'>('vector');
+  const [activeMapView, setActiveMapView] = useState<'osm_live' | 'vector'>('osm_live');
 
   // Real GPS State
   const [permissionStatus, setPermissionStatus] = useState<'idle' | 'requesting' | 'granted' | 'denied' | 'error'>('idle');
@@ -127,7 +127,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
     if (typeof window === 'undefined' || !navigator.geolocation) {
       setPermissionStatus('error');
       setErrorMessage('Geolocation is not supported by your browser.');
-      addLog('⚠️ Geolocation API unavailable on device');
+      addLog('⚠️ Device location is unavailable');
       return;
     }
 
@@ -189,9 +189,9 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
         setPermissionStatus('denied');
         let msg = 'Location permission was denied. Please allow location access in your browser.';
         if (err.code === err.POSITION_UNAVAILABLE) {
-          msg = 'GPS signal unavailable. Please ensure location services are enabled on your device.';
+          msg = 'Your location is unavailable. Please check location services on your device.';
         } else if (err.code === err.TIMEOUT) {
-          msg = 'Location request timed out. Retrying GPS lock...';
+          msg = 'Location request timed out. Please try again.';
         }
         setErrorMessage(msg);
         addLog(`❌ GPS status: ${err.message}`);
@@ -380,7 +380,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-extrabold text-sm sm:text-base leading-tight text-white">
-                  Live Dispatch GPS Tracking
+                  Live Delivery Tracking
                 </h3>
                 <span className="flex items-center gap-1 text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
@@ -463,13 +463,13 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
           <div className="bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 px-5 py-2.5 text-xs flex items-center justify-between border-b border-amber-200 dark:border-amber-900/60">
             <div className="flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-              <span>{errorMessage || 'Location access blocked. Allow phone GPS for doorstep live tracking.'}</span>
+                  <span>{errorMessage || 'Location access is blocked. Allow location access to see your position on the map.'}</span>
             </div>
             <button
               onClick={requestLocationPermission}
               className="bg-amber-600 hover:bg-amber-700 text-white font-bold px-2.5 py-1 rounded-lg text-[11px] transition-colors cursor-pointer shrink-0 ml-2"
             >
-              Grant GPS Permission
+              Allow Location
             </button>
           </div>
         )}
@@ -477,7 +477,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
         {permissionStatus === 'requesting' && (
           <div className="bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 px-5 py-2 text-xs flex items-center gap-2 border-b border-blue-200 dark:border-blue-900 animate-pulse">
             <Crosshair className="w-4 h-4 animate-spin text-blue-600" />
-            <span>Connecting to your phone's GPS... please tap <strong>Allow</strong> on your screen.</span>
+            <span>Connecting to your location... please tap <strong>Allow</strong> on your screen.</span>
           </div>
         )}
 
@@ -524,7 +524,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
             <div className="w-full h-56 sm:h-64 rounded-2xl bg-[#0f141c] border border-gray-800 relative overflow-hidden shadow-2xl shadow-black/30">
               {activeMapView === 'osm_live' ? (
                 <iframe
-                  title="NeoMart Live Delivery GPS Map"
+                  title="NeoMart live delivery map"
                   src={osmEmbedUrl}
                   className="w-full h-full border-0 pointer-events-auto filter dark:invert-[0.88] dark:hue-rotate-180"
                   loading="lazy"
@@ -558,12 +558,12 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                   </div>
                   <div className="pointer-events-auto flex overflow-hidden rounded-xl border border-white/20 bg-black/65 p-0.5 shadow-lg backdrop-blur-md">
                     <button type="button" onClick={() => setActiveMapView('osm_live')} className={`flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-bold transition ${activeMapView === 'osm_live' ? 'bg-[#f68b1e] text-white' : 'text-gray-300 hover:bg-white/10'}`}><Layers className="h-3.5 w-3.5" />Map</button>
-                    <button type="button" onClick={() => setActiveMapView('vector')} className={`flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-bold transition ${activeMapView === 'vector' ? 'bg-[#f68b1e] text-white' : 'text-gray-300 hover:bg-white/10'}`}><Navigation className="h-3.5 w-3.5" />Live route</button>
+                    <button type="button" onClick={() => setActiveMapView('vector')} className={`flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-bold transition ${activeMapView === 'vector' ? 'bg-[#f68b1e] text-white' : 'text-gray-300 hover:bg-white/10'}`}><Navigation className="h-3.5 w-3.5" />Delivery route</button>
                   </div>
                 </div>
                 <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-end gap-2">
                   <div className="pointer-events-auto min-w-0 truncate rounded-xl border border-white/10 bg-black/75 px-3 py-1.5 text-[11px] text-gray-300 shadow-md backdrop-blur-md"><span className="mr-2 inline-block h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />Rider: <strong>Musa Garba</strong> • LAG-482-KT</div>
-                  <button type="button" onClick={requestLocationPermission} className="pointer-events-auto flex shrink-0 items-center gap-1 rounded-xl border border-gray-200 bg-white/95 px-3 py-1.5 text-[11px] font-bold text-gray-700 shadow-md backdrop-blur-md transition-all hover:text-[#f68b1e] dark:border-gray-800 dark:bg-black/90 dark:text-gray-300" title="Sync delivery location"><RefreshCw className={`h-3.5 w-3.5 ${permissionStatus === 'requesting' ? 'animate-spin text-[#f68b1e]' : ''}`} /><span>Sync GPS</span></button>
+                  <button type="button" onClick={requestLocationPermission} className="pointer-events-auto flex shrink-0 items-center gap-1 rounded-xl border border-gray-200 bg-white/95 px-3 py-1.5 text-[11px] font-bold text-gray-700 shadow-md backdrop-blur-md transition-all hover:text-[#f68b1e] dark:border-gray-800 dark:bg-black/90 dark:text-gray-300" title="Refresh your location"><RefreshCw className={`h-3.5 w-3.5 ${permissionStatus === 'requesting' ? 'animate-spin text-[#f68b1e]' : ''}`} /><span>Refresh location</span></button>
                 </div>
               </div>
             </div>
@@ -626,17 +626,17 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
               <div className="flex items-center justify-between text-gray-500 dark:text-gray-400 mb-1">
                 <span className="font-bold flex items-center gap-1 text-gray-700 dark:text-gray-300">
                   <Navigation className="w-3.5 h-3.5 text-blue-500" />
-                  Phone GPS Coordinates
+                  Your Location
                 </span>
                 <span className="text-[10px] text-emerald-600 font-mono font-bold">
-                  {permissionStatus === 'granted' ? 'SYNCED' : 'STANDBY'}
+                  {permissionStatus === 'granted' ? 'READY' : 'WAITING'}
                 </span>
               </div>
               <div className="font-mono text-xs font-bold text-gray-900 dark:text-gray-100">
                 {userLocation ? (
                   `${userLocation.latitude.toFixed(5)}° N, ${userLocation.longitude.toFixed(5)}° E`
                 ) : (
-                  'Waiting for GPS lock...'
+                  'Waiting for your location...'
                 )}
               </div>
               <div className="text-[11px] text-gray-500 dark:text-gray-400 mt-1 truncate">
