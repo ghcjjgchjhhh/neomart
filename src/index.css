@@ -198,6 +198,37 @@ dialog {
   50% { transform: translateY(-10px) rotate(-3deg); }
 }
 
+@keyframes neoReveal {
+  from { opacity: 0; transform: translateY(14px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes heroContentIn {
+  from { opacity: 0; transform: translateX(-18px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.neo-product-card {
+  animation: neoReveal 0.55s both ease-out;
+}
+
+.neo-product-card:nth-child(4n + 2) { animation-delay: 60ms; }
+.neo-product-card:nth-child(4n + 3) { animation-delay: 120ms; }
+.neo-product-card:nth-child(4n + 4) { animation-delay: 180ms; }
+
+.neo-hero-content {
+  animation: heroContentIn 0.65s both cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 .animate-float-slow {
   animation: float-slow 4s ease-in-out infinite;
 }

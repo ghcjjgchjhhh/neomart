@@ -85,7 +85,7 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({ onSelectCategory }) => {
                 index === currentSlide ? 'opacity-100 z-10 pointer-events-auto' : 'opacity-0 z-0 pointer-events-none'
               }`}
             >
-              <div className="relative z-10 max-w-md space-y-2">
+              <div className="neo-hero-content relative z-10 max-w-md space-y-2">
                 <span className="inline-block bg-[#f68b1e] text-white text-[11px] font-bold px-2.5 py-1 rounded uppercase tracking-wider">
                   {slide.badge}
                 </span>

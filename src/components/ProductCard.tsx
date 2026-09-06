@@ -81,7 +81,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   return (
     <div
       onClick={() => onSelectProduct(product.id)}
-      className="group bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-xs hover:shadow-md hover:border-[#f68b1e] dark:hover:border-[#f68b1e] transition-all duration-200 cursor-pointer flex flex-col justify-between"
+      className="neo-product-card group bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-xs hover:-translate-y-1 hover:shadow-md hover:border-[#f68b1e] dark:hover:border-[#f68b1e] transition-all duration-300 cursor-pointer flex flex-col justify-between"
     >
       {/* Top Image Wrap */}
       <div className="relative pt-[100%] bg-gray-50 dark:bg-[#242424] overflow-hidden">
