@@ -531,8 +531,8 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
               ) : (
                 <div className="relative h-full w-full overflow-hidden bg-[#101923]">
                   <div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'linear-gradient(28deg, transparent 46%, #5b7180 47%, #5b7180 48%, transparent 49%), linear-gradient(118deg, transparent 45%, #344958 46%, #344958 47%, transparent 48%), linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px)', backgroundSize: '170px 140px, 210px 170px, 34px 34px, 34px 34px' }} />
-                  <div className="absolute -left-12 top-10 h-32 w-[125%] rotate-[15deg] border-y border-white/10 bg-white/[0.03]" />
-                  <div className="absolute -right-16 bottom-0 h-28 w-[120%] -rotate-[18deg] border-y border-white/10 bg-white/[0.03]" />
+                  <div className="absolute -left-12 top-10 h-32 w-[125%] rotate-15 border-y border-white/10 bg-white/3" />
+                  <div className="absolute -right-16 bottom-0 h-28 w-[120%] rotate-[-18deg] border-y border-white/10 bg-white/3" />
                   <svg viewBox="0 0 600 260" className="absolute inset-0 h-full w-full" preserveAspectRatio="none" aria-label="Live courier route">
                     <path d="M55 210 C140 190 120 115 220 130 S315 220 375 155 S455 55 545 55" fill="none" stroke="rgba(255,255,255,.18)" strokeWidth="14" strokeLinecap="round" />
                     <path d="M55 210 C140 190 120 115 220 130 S315 220 375 155 S455 55 545 55" fill="none" stroke="#f68b1e" strokeWidth="5" strokeLinecap="round" strokeDasharray={`${Math.max(8, courierProgress * 7)} 900`} />
